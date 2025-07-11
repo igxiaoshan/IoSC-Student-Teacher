@@ -17,6 +17,10 @@ import StudentProfile from './StudentProfile';
 import StudentSubjects from './StudentSubjects';
 import ViewStdAttendance from './ViewStdAttendance';
 import StudentComplain from './StudentComplain';
+import StudentAIAssistant from './StudentAIAssistant';
+import StudentAIPractice from './StudentAIPractice';
+import StudentLearningPath from './StudentLearningPath';
+import StudentAICompanion from './StudentAICompanion';
 import Logout from '../Logout'
 import AccountMenu from '../../components/AccountMenu';
 import { AppBar, Drawer } from '../../components/styles';
@@ -79,6 +83,12 @@ const StudentDashboard = () => {
                         <Route path="/Student/subjects" element={<StudentSubjects />} />
                         <Route path="/Student/attendance" element={<ViewStdAttendance />} />
                         <Route path="/Student/complain" element={<StudentComplain />} />
+
+                        {/* AI功能路由 */}
+                        <Route path="/Student/ai-assistant" element={<StudentAIAssistant />} />
+                        <Route path="/Student/ai-practice" element={<StudentAIPractice />} />
+                        <Route path="/Student/learning-path" element={<StudentLearningPath />} />
+                        <Route path="/Student/ai-companion" element={<StudentAICompanion />} />
 
                         <Route path="/logout" element={<Logout />} />
                     </Routes>

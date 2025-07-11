@@ -116,4 +116,27 @@ router.delete("/Subject/:id", deleteSubject)
 router.delete("/Subjects/:id", deleteSubjects)
 router.delete("/SubjectsClass/:id", deleteSubjectsByClass)
 
+// AI Enhanced Features Routes
+// 教师侧功能
+router.use('/api/knowledge-base', require('./knowledgeBase'));
+router.use('/api/lesson-plan', require('./lessonPlan'));
+router.use('/api/question', require('./question'));
+router.use('/api/exam', require('./exam'));
+router.use('/api/answer', require('./answer'));
+router.use('/api/analytics', require('./analytics'));
+router.use('/api/teacher-dashboard', require('./teacherDashboard'));
+
+// 学生侧功能
+router.use('/api/study-assistant', require('./studyAssistant'));
+router.use('/api/practice-assistant', require('./practiceAssistant'));
+router.use('/api/learning-path', require('./learningPath'));
+router.use('/api/learning-companion', require('./learningCompanion'));
+router.use('/api/student-dashboard', require('./studentDashboard'));
+
+// 管理侧功能
+router.use('/api/admin-dashboard', require('./adminDashboard'));
+router.use('/api/quality-monitor', require('./qualityMonitor'));
+router.use('/api/resource-manager', require('./resourceManager'));
+router.use('/api/decision-support', require('./decisionSupport'));
+
 module.exports = router;
