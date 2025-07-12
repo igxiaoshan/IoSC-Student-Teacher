@@ -9,11 +9,51 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// 中间件
-app.use(cors());
-app.use(express.json());
+// 中间件 - 详细的CORS配置
+const corsOptions = {
+    origin: [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'http://localhost:3001',
+        'http://127.0.0.1:3001'
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'Accept',
+        'Origin'
+    ],
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 console.log('🚀 启动简化版AI测试服务器...');
+
+// 添加请求日志中间件
+app.use((req, res, next) => {
+    console.log(`📝 ${new Date().toISOString()} - ${req.method} ${req.url}`);
+    console.log('📋 Headers:', JSON.stringify(req.headers, null, 2));
+    if (req.body && Object.keys(req.body).length > 0) {
+        console.log('📦 Body:', JSON.stringify(req.body, null, 2));
+    }
+    next();
+});
+
+// 处理预检请求
+app.options('*', (req, res) => {
+    console.log('🔍 处理预检请求 (OPTIONS):', req.url);
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.sendStatus(200);
+});
 
 // 健康检查
 app.get('/api/ai/health', (req, res) => {

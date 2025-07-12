@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 AI API CORS测试页面</h1>
+        <p>这个页面用于测试前端与后端AI API的跨域请求是否正常工作。</p>
+        
+        <div class="test-section">
+            <h3>🔍 健康检查测试</h3>
+            <button onclick="testHealth()">测试健康检查API</button>
+            <div id="health-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🤖 学生问答测试</h3>
+            <input type="text" id="question-input" placeholder="输入测试问题" value="什么是二次函数？" style="width: 300px; padding: 8px;">
+            <button onclick="testAskQuestion()">测试问答API</button>
+            <div id="question-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 练习生成测试</h3>
+            <button onclick="testGenerateExercise()">测试练习生成API</button>
+            <div id="exercise-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 请求日志</h3>
+            <button onclick="clearLog()">清空日志</button>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api/ai';
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+        
+        async function makeRequest(url, options = {}) {
+            try {
+                log(`发送请求: ${options.method || 'GET'} ${url}`);
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+                
+                log(`响应状态: ${response.status} ${response.statusText}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                log(`响应数据: ${JSON.stringify(data, null, 2)}`);
+                return { success: true, data };
+            } catch (error) {
+                log(`请求失败: ${error.message}`);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = '<p>🔄 测试中...</p>';
+            
+            const result = await makeRequest(`${API_BASE}/health`);
+            
+            if (result.success) {
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ 健康检查成功</h4>
+                        <p>状态: ${result.data.status}</p>
+                        <p>消息: ${result.data.message}</p>
+                        <p>时间: ${result.data.timestamp}</p>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ 健康检查失败</h4>
+                        <p>错误: ${result.error}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function testAskQuestion() {
+            const resultDiv = document.getElementById('question-result');
+            const question = document.getElementById('question-input').value;
+            
+            if (!question.trim()) {
+                alert('请输入问题');
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>🔄 测试中...</p>';
+            
+            const result = await makeRequest(`${API_BASE}/student/ask-question`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    question: question,
+                    studentId: 'test-student-123',
+                    subject: '数学'
+                })
+            });
+            
+            if (result.success) {
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ 问答请求成功</h4>
+                        <p><strong>问题:</strong> ${question}</p>
+                        <p><strong>AI回复:</strong></p>
+                        <div style="background: #f8f9fa; padding: 10px; border-radius: 3px; margin: 10px 0;">
+                            ${result.data.data.answer.replace(/\n/g, '<br>')}
+                        </div>
+                        <p><strong>对话ID:</strong> ${result.data.data.conversationId}</p>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ 问答请求失败</h4>
+                        <p>错误: ${result.error}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function testGenerateExercise() {
+            const resultDiv = document.getElementById('exercise-result');
+            resultDiv.innerHTML = '<p>🔄 测试中...</p>';
+            
+            const result = await makeRequest(`${API_BASE}/student/generate-exercise`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    requirements: '生成关于二次函数的练习题',
+                    studentId: 'test-student-123',
+                    subject: '数学',
+                    difficulty: 3
+                })
+            });
+            
+            if (result.success) {
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ 练习生成成功</h4>
+                        <div style="background: #f8f9fa; padding: 10px; border-radius: 3px; margin: 10px 0;">
+                            ${result.data.data.exercises.replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ 练习生成失败</h4>
+                        <p>错误: ${result.error}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 页面加载时自动测试健康检查
+        window.onload = function() {
+            log('页面加载完成，开始CORS测试');
+            testHealth();
+        };
+    </script>
+</body>
+</html>
