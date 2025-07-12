@@ -21,6 +21,11 @@ import Logout from '../Logout'
 import AccountMenu from '../../components/AccountMenu';
 import { AppBar, Drawer } from '../../components/styles';
 
+// AI功能组件
+import LearningAssistant from '../../components/student/LearningAssistant';
+import ExerciseGenerator from '../../components/student/ExerciseGenerator';
+import LearningHistory from '../../components/student/LearningHistory';
+
 const StudentDashboard = () => {
     const [open, setOpen] = useState(true);
     const toggleDrawer = () => {
@@ -79,6 +84,11 @@ const StudentDashboard = () => {
                         <Route path="/Student/subjects" element={<StudentSubjects />} />
                         <Route path="/Student/attendance" element={<ViewStdAttendance />} />
                         <Route path="/Student/complain" element={<StudentComplain />} />
+
+                        {/* AI功能路由 */}
+                        <Route path="/Student/learning-assistant" element={<LearningAssistant />} />
+                        <Route path="/Student/exercise-generator" element={<ExerciseGenerator />} />
+                        <Route path="/Student/learning-history" element={<LearningHistory />} />
 
                         <Route path="/logout" element={<Logout />} />
                     </Routes>

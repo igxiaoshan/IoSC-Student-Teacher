@@ -1,4 +1,5 @@
 const feedbackRoutes = require('./routes/feedback');
+const aiRoutes = require('./routes/aiRoutes');
 require('dotenv').config();
 
 const express = require("express")
@@ -9,8 +10,11 @@ const dotenv = require("dotenv")
 const app = express()
 const Routes = require("./routes/route.js")
 const chatbotRoutes = require('./routes/chatbot');
+
+// 路由配置
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/chat', chatbotRoutes);
+app.use('/api/ai', aiRoutes); // 新增AI功能路由
 
 const PORT = process.env.PORT || 5000
 

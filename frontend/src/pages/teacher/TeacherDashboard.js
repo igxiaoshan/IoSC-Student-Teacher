@@ -24,6 +24,11 @@ import TeacherProfile from './TeacherProfile';
 import TeacherViewStudent from './TeacherViewStudent';
 import StudentExamMarks from '../admin/studentRelated/StudentExamMarks';
 
+// AI功能组件
+import LessonPlanGenerator from '../../components/teacher/LessonPlanGenerator';
+import ExamGenerator from '../../components/teacher/ExamGenerator';
+import StudentAnalytics from '../../components/teacher/StudentAnalytics';
+
 const TeacherDashboard = () => {
     const [open, setOpen] = useState(true);
     const toggleDrawer = () => {
@@ -86,6 +91,11 @@ const TeacherDashboard = () => {
 
                         <Route path="/Teacher/class/student/attendance/:studentID/:subjectID" element={<StudentAttendance situation="Subject" />} />
                         <Route path="/Teacher/class/student/marks/:studentID/:subjectID" element={<StudentExamMarks situation="Subject" />} />
+
+                        {/* AI功能路由 */}
+                        <Route path="/Teacher/lesson-planner" element={<LessonPlanGenerator />} />
+                        <Route path="/Teacher/exam-generator" element={<ExamGenerator />} />
+                        <Route path="/Teacher/student-analytics" element={<StudentAnalytics />} />
 
                         <Route path="/logout" element={<Logout />} />
                     </Routes>
