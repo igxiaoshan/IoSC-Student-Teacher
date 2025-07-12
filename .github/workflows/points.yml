@@ -1,0 +1,49 @@
+name: Points Tracker
+
+on:
+  push:
+  pull_request:
+  issues:
+  issue_comment:
+
+jobs:
+  track_points:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # Ensures the workflow can push to the repo
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Simulate GitHub Event
+        run: |
+          echo '${{ toJson(github.event) }}' > event.json
+          cat event.json
+
+      - name: Run Point Tracker
+        run: |
+          python3 scripts/update_points.py event.json
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+
+      - name: Generate Leaderboard
+        run: python3 scripts/generate_leaderboard.py
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+      - name: Commit and Push Updated Files
+        run: |
+          git add points.json LEADERBOARD.md
+          git commit -m "🔁 Auto-update points & leaderboard" || echo "No changes to commit"
+          git pull origin main --rebase || echo "No need to rebase"
+          git push origin HEAD:main || echo "No changes to push"
