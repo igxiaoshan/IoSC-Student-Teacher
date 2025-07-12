@@ -1,24 +1,24 @@
-const feedbackRoutes = require('./routes/feedback');
-const aiRoutes = require('./routes/aiRoutes');
+// 首先加载环境变量
 require('dotenv').config();
 
 const express = require("express")
 const cors = require("cors")
 const mongoose = require("mongoose")
-const dotenv = require("dotenv")
 // const bodyParser = require("body-parser")
-const app = express()
+
+// 导入路由
+const feedbackRoutes = require('./routes/feedback');
+const aiRoutes = require('./routes/aiRoutes');
 const Routes = require("./routes/route.js")
 const chatbotRoutes = require('./routes/chatbot');
+
+const app = express()
+const PORT = process.env.PORT || 5000
 
 // 路由配置
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/chat', chatbotRoutes);
 app.use('/api/ai', aiRoutes); // 新增AI功能路由
-
-const PORT = process.env.PORT || 5000
-
-dotenv.config();
 
 // app.use(bodyParser.json({ limit: '10mb', extended: true }))
 // app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }))
