@@ -2,6 +2,50 @@ const StudentLearning = require('../models/studentLearningSchema');
 const Student = require('../models/studentSchema');
 const Subject = require('../models/subjectSchema');
 const Courseware = require('../models/coursewareSchema');
+const mongoose = require('mongoose');
+
+// 标准化选项格式的辅助函数
+const normalizeOptions = (options) => {
+    if (!options) {
+        return [];
+    }
+
+    // 如果已经是正确格式的对象数组
+    if (Array.isArray(options) && options.length > 0 && typeof options[0] === 'object' && options[0].text !== undefined) {
+        return options.map(opt => ({
+            text: String(opt.text || ''),
+            isCorrect: Boolean(opt.isCorrect)
+        }));
+    }
+
+    // 如果是字符串数组
+    if (Array.isArray(options) && options.length > 0 && typeof options[0] === 'string') {
+        return options.map((optText, index) => ({
+            text: String(optText),
+            isCorrect: index === 0 // 默认第一个为正确答案
+        }));
+    }
+
+    // 如果是单个字符串（错误情况）
+    if (typeof options === 'string') {
+        return [{
+            text: String(options),
+            isCorrect: true
+        }];
+    }
+
+    // 如果是其他类型，尝试转换为字符串
+    if (options && typeof options === 'object' && !Array.isArray(options)) {
+        // 可能是单个选项对象
+        return [{
+            text: String(options.text || options.toString()),
+            isCorrect: Boolean(options.isCorrect)
+        }];
+    }
+
+    // 其他情况返回空数组
+    return [];
+};
 const difyService = require('../services/difyService');
 
 // 在线学习助手 - 问答功能
@@ -34,7 +78,9 @@ const askLearningAssistant = async (req, res) => {
         }
 
         // 验证学生和科目
-        const student = await Student.findById(studentId).populate('sclassName');
+        const student = await Student.findById(studentId)
+            .populate('sclassName')
+            .populate('selectedSubjects.subject', 'subName subCode');
         const subject = await Subject.findById(subjectId);
 
         if (!student) {
@@ -48,6 +94,18 @@ const askLearningAssistant = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: '科目不存在'
+            });
+        }
+
+        // 验证学生是否选择了该科目
+        const hasSelectedSubject = student.selectedSubjects.some(
+            selectedSub => selectedSub.subject._id.toString() === subjectId
+        );
+
+        if (!hasSelectedSubject) {
+            return res.status(403).json({
+                success: false,
+                message: '您还没有选择该科目，请先到"课程管理"页面选择科目'
             });
         }
 
@@ -192,7 +250,8 @@ const generatePracticeQuestions = async (req, res) => {
         }
 
         // 验证学生和科目
-        const student = await Student.findById(studentId);
+        const student = await Student.findById(studentId)
+            .populate('selectedSubjects.subject', 'subName subCode');
         const subject = await Subject.findById(subjectId);
 
         if (!student) {
@@ -206,6 +265,18 @@ const generatePracticeQuestions = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: '科目不存在'
+            });
+        }
+
+        // 验证学生是否选择了该科目
+        const hasSelectedSubject = student.selectedSubjects.some(
+            selectedSub => selectedSub.subject._id.toString() === subjectId
+        );
+
+        if (!hasSelectedSubject) {
+            return res.status(403).json({
+                success: false,
+                message: '您还没有选择该科目，请先到"课程管理"页面选择科目'
             });
         }
 
@@ -252,8 +323,13 @@ const generatePracticeQuestions = async (req, res) => {
         const aiResponse = await difyService.generatePracticeQuestions(context);
 
         if (aiResponse.success) {
+            console.log('AI响应成功，题目数量:', aiResponse.questions.length);
+            console.log('第一道题目的选项:', aiResponse.questions[0]?.options);
+
             // 创建练习记录
+            const practiceId = new mongoose.Types.ObjectId();
             const practiceRecord = {
+                practiceId: practiceId,
                 generatedAt: new Date(),
                 practiceConfig: {
                     chapterContent,
@@ -262,17 +338,28 @@ const generatePracticeQuestions = async (req, res) => {
                     questionTypes,
                     focusAreas: studentWeakAreas
                 },
-                questions: aiResponse.questions.map(q => ({
-                    questionId: q.id || `q_${Date.now()}_${Math.random()}`,
-                    questionText: q.questionText || q.question,
-                    questionType: q.questionType || '选择题',
-                    options: q.options || [],
-                    correctAnswer: q.correctAnswer || q.answer,
-                    explanation: q.explanation || '',
-                    difficulty: q.difficulty || adjustedDifficulty,
-                    points: q.points || 10,
-                    knowledgePoints: q.knowledgePoints || []
-                })),
+                questions: aiResponse.questions.map((q, index) => {
+                    console.log(`处理第${index + 1}道题目:`, {
+                        原始选项: q.options,
+                        选项类型: typeof q.options,
+                        是否数组: Array.isArray(q.options)
+                    });
+
+                    const normalizedOptions = normalizeOptions(q.options);
+                    console.log(`标准化后的选项:`, normalizedOptions);
+
+                    return {
+                        questionId: q.id || `q_${Date.now()}_${Math.random()}`,
+                        questionText: q.questionText || q.question,
+                        questionType: q.questionType || '选择题',
+                        options: normalizedOptions,
+                        correctAnswer: q.correctAnswer || q.answer,
+                        explanation: q.explanation || '',
+                        difficulty: q.difficulty || adjustedDifficulty,
+                        points: q.points || 10,
+                        knowledgePoints: q.knowledgePoints || []
+                    };
+                }),
                 practiceStats: {
                     totalQuestions: aiResponse.questions.length,
                     correctAnswers: 0,
@@ -289,7 +376,7 @@ const generatePracticeQuestions = async (req, res) => {
 
             res.json({
                 success: true,
-                practiceId: practiceRecord.practiceId,
+                practiceId: practiceId.toString(),
                 questions: practiceRecord.questions.map(q => ({
                     questionId: q.questionId,
                     questionText: q.questionText,
@@ -325,6 +412,15 @@ const submitPracticeAnswer = async (req, res) => {
     try {
         const { studentId, subjectId, practiceId, questionId, studentAnswer, timeTaken } = req.body;
 
+        console.log('提交答案请求:', {
+            studentId,
+            subjectId,
+            practiceId,
+            questionId,
+            studentAnswer,
+            timeTaken
+        });
+
         // 查找学习记录和练习
         const learningRecord = await StudentLearning.findOne({
             student: studentId,
@@ -338,8 +434,15 @@ const submitPracticeAnswer = async (req, res) => {
             });
         }
 
-        const practice = learningRecord.practiceHistory.find(p => 
-            p.practiceId.toString() === practiceId
+        console.log('查找练习记录:', {
+            传入的practiceId: practiceId,
+            practiceId类型: typeof practiceId,
+            学习记录中的练习数量: learningRecord.practiceHistory.length,
+            练习记录IDs: learningRecord.practiceHistory.map(p => p.practiceId.toString())
+        });
+
+        const practice = learningRecord.practiceHistory.find(p =>
+            p.practiceId.toString() === practiceId.toString()
         );
 
         if (!practice) {

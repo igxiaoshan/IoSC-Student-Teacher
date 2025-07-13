@@ -29,6 +29,9 @@ const { teacherRegister, teacherLogIn, getTeachers, getTeacherDetail, deleteTeac
 // 学生科目管理控制器
 const { getStudentSubjects, getAvailableSubjects, selectSubject, unselectSubject, updateLearningPreferences, autoAssignClassSubjects } = require('../controllers/studentSubject-controller.js');
 
+// 流式学习助手控制器
+const { streamLearningAssistant, chatLearningAssistant, getChatHistory, clearChatHistory } = require('../controllers/streamingLearningAssistant-controller.js');
+
 // AI功能控制器
 const { generateCourseware, getTeacherCourseware, updateCourseware, deleteCourseware, publishCourseware, adjustCoursewareContent, exportCourseware } = require('../controllers/ai-courseware-controller.js');
 const { generateAssessment, getTeacherAssessments, updateAssessment, publishAssessment } = require('../controllers/ai-assessment-controller.js');
@@ -242,5 +245,11 @@ router.post('/student/:studentId/subjects/select', selectSubject);
 router.delete('/student/:studentId/subjects/:subjectId', unselectSubject);
 router.put('/student/:studentId/subjects/:subjectId/preferences', updateLearningPreferences);
 router.post('/student/:studentId/subjects/auto-assign', autoAssignClassSubjects);
+
+// 流式学习助手路由
+router.post('/student/ai/ask/stream', streamLearningAssistant);
+router.post('/student/ai/ask', chatLearningAssistant);
+router.get('/student/:studentId/chat/:conversationId/history', getChatHistory);
+router.delete('/student/:studentId/chat/:conversationId/history', clearChatHistory);
 
 module.exports = router;

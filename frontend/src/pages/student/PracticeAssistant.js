@@ -63,6 +63,7 @@ const PracticeAssistant = () => {
 
     // 其他状态
     const [subjects, setSubjects] = useState([]);
+    const [subjectsLoading, setSubjectsLoading] = useState(false);
     const [showResults, setShowResults] = useState(false);
 
     const steps = ['配置练习', '开始练习', '查看结果'];
@@ -76,25 +77,39 @@ const PracticeAssistant = () => {
     }, [currentUser]);
 
     const fetchSubjects = async () => {
+        setSubjectsLoading(true);
         try {
-            // 根据学生的班级获取真实科目列表
-            const classId = safeGet(currentUser, 'sclassName._id');
-            if (classId) {
-                const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/Subject/${classId}`);
+            // 获取学生的科目列表（包括班级科目和选修科目）
+            const studentId = safeGet(currentUser, '_id');
+            if (studentId) {
+                console.log('获取学生科目，学生ID:', studentId);
 
-                if (response.data && !response.data.message) {
-                    setSubjects(response.data);
+                const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/student/${studentId}/subjects`);
+
+                if (response.data && response.data.success) {
+                    console.log('获取到学生科目列表:', response.data.data.subjects);
+                    setSubjects(response.data.data.subjects);
+
+                    // 如果没有科目，提示用户选择科目
+                    if (response.data.data.subjects.length === 0) {
+                        setError('您还没有选择任何科目，请先到"课程管理"页面选择科目');
+                    }
                 } else {
-                    console.log('未找到科目:', response.data.message);
+                    console.log('获取科目失败:', response.data.message);
                     setSubjects([]);
+                    setError('获取科目失败: ' + (response.data.message || '未知错误'));
                 }
             } else {
-                console.log('学生班级信息不完整');
+                console.log('学生信息不完整，当前用户:', currentUser);
                 setSubjects([]);
+                setError('学生信息不完整');
             }
         } catch (err) {
             console.error('获取科目列表失败:', err);
             setSubjects([]);
+            setError('获取科目列表失败: ' + err.message);
+        } finally {
+            setSubjectsLoading(false);
         }
     };
 
@@ -125,18 +140,46 @@ const PracticeAssistant = () => {
                 return;
             }
 
+            // 获取选中科目的详细信息
+            const selectedSubject = subjects.find(s => s._id === practiceConfig.subjectId);
+
             const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/student/ai/practice/generate`, {
                 studentId: studentId,
+                subjectName: selectedSubject?.subName || '通用',
                 ...practiceConfig
             });
 
             if (response.data.success) {
-                setPracticeData(response.data);
+                console.log('练习生成响应:', response.data);
+
+                // 验证返回的数据结构
+                if (!response.data.questions || !Array.isArray(response.data.questions) || response.data.questions.length === 0) {
+                    console.error('练习题目数据无效:', response.data);
+                    setError('生成的练习题目为空，请重试');
+                    return;
+                }
+
+                // 确保每个题目都有必要的字段
+                const validatedQuestions = response.data.questions.map((question, index) => ({
+                    questionId: question.questionId || `question_${index}_${Date.now()}`,
+                    questionText: question.questionText || question.question || '题目内容缺失',
+                    questionType: question.questionType || '选择题',
+                    options: question.options || [],
+                    difficulty: question.difficulty || '中等',
+                    points: question.points || 10
+                }));
+
+                const practiceData = {
+                    ...response.data,
+                    questions: validatedQuestions
+                };
+
+                setPracticeData(practiceData);
                 setAnswers({});
                 setEvaluations({});
                 setCurrentQuestionIndex(0);
                 setActiveStep(1);
-                setSuccess('练习题目生成成功！');
+                setSuccess(`练习题目生成成功！共 ${validatedQuestions.length} 道题目`);
             } else {
                 setError(response.data.message || '生成练习失败');
             }
@@ -214,12 +257,32 @@ const PracticeAssistant = () => {
                     <Select
                         value={practiceConfig.subjectId}
                         onChange={(e) => handleConfigChange('subjectId', e.target.value)}
+                        disabled={subjectsLoading}
                     >
-                        {subjects.map(subject => (
-                            <MenuItem key={subject._id} value={subject._id}>
-                                {subject.subName}
+                        {subjectsLoading ? (
+                            <MenuItem disabled>
+                                <CircularProgress size={16} sx={{ mr: 1 }} />
+                                加载科目中...
                             </MenuItem>
-                        ))}
+                        ) : subjects.length > 0 ? (
+                            subjects.map(subject => (
+                                <MenuItem key={subject._id} value={subject._id}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        {subject.subName}
+                                        {subject.isRequired && (
+                                            <Chip label="必修" color="primary" size="small" />
+                                        )}
+                                        {subject.source === 'class' && (
+                                            <Chip label="班级课程" color="info" size="small" />
+                                        )}
+                                    </Box>
+                                </MenuItem>
+                            ))
+                        ) : (
+                            <MenuItem disabled>
+                                暂无可用科目，请先到"课程管理"页面选择科目
+                            </MenuItem>
+                        )}
                     </Select>
                 </FormControl>
             </Grid>
@@ -303,10 +366,37 @@ const PracticeAssistant = () => {
     );
 
     const renderPracticeStep = () => {
-        if (!practiceData || !practiceData.questions) return null;
+        // 数据验证
+        if (!practiceData || !practiceData.questions || !Array.isArray(practiceData.questions)) {
+            return (
+                <Alert severity="error">
+                    练习数据加载失败，请重新生成练习题目。
+                </Alert>
+            );
+        }
+
+        // 检查当前题目索引是否有效
+        if (currentQuestionIndex < 0 || currentQuestionIndex >= practiceData.questions.length) {
+            return (
+                <Alert severity="error">
+                    题目索引错误，请重新开始练习。
+                </Alert>
+            );
+        }
 
         const currentQuestion = practiceData.questions[currentQuestionIndex];
-        const questionId = currentQuestion.questionId;
+
+        // 检查当前题目是否存在
+        if (!currentQuestion) {
+            return (
+                <Alert severity="error">
+                    当前题目数据不存在，请重新生成练习。
+                </Alert>
+            );
+        }
+
+        // 确保questionId存在
+        const questionId = currentQuestion.questionId || `question_${currentQuestionIndex}`;
         const evaluation = evaluations[questionId];
 
         return (

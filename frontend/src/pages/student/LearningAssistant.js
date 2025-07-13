@@ -24,6 +24,8 @@ import SendIcon from '@mui/icons-material/Send';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import PersonIcon from '@mui/icons-material/Person';
 import SchoolIcon from '@mui/icons-material/School';
+import SpeedIcon from '@mui/icons-material/Speed';
+import StopIcon from '@mui/icons-material/Stop';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { safeGet } from '../../utils/safeAccess';
@@ -38,6 +40,10 @@ const LearningAssistant = () => {
     const [conversationId, setConversationId] = useState('');
     const [subjects, setSubjects] = useState([]);
     const [subjectsLoading, setSubjectsLoading] = useState(false);
+    const [useStreaming, setUseStreaming] = useState(true);
+    const [streamingMessage, setStreamingMessage] = useState('');
+    const [isStreaming, setIsStreaming] = useState(false);
+    const [eventSource, setEventSource] = useState(null);
     const messagesEndRef = useRef(null);
 
     // 获取学生的科目列表
@@ -100,6 +106,123 @@ const LearningAssistant = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
+    // 停止流式响应
+    const stopStreaming = () => {
+        if (eventSource) {
+            eventSource.close();
+            setEventSource(null);
+        }
+        setIsStreaming(false);
+        setStreamingMessage('');
+    };
+
+    // 流式消息发送
+    const handleSendMessageStream = async () => {
+        if (!inputMessage.trim()) return;
+        if (!selectedSubject) {
+            setError('请先选择一个科目');
+            return;
+        }
+
+        const userMessage = {
+            id: Date.now(),
+            type: 'user',
+            content: inputMessage,
+            timestamp: new Date()
+        };
+
+        setMessages(prev => [...prev, userMessage]);
+        const currentMessage = inputMessage;
+        setInputMessage('');
+        setIsStreaming(true);
+        setStreamingMessage('');
+        setError('');
+
+        try {
+            const response = await fetch(`${process.env.REACT_APP_BASE_URL}/student/ai/ask/stream`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    studentId: safeGet(currentUser, '_id'),
+                    subjectId: selectedSubject,
+                    question: currentMessage,
+                    conversationId: conversationId
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let fullContent = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const jsonStr = line.slice(6);
+                            if (jsonStr === '[DONE]') break;
+
+                            const eventData = JSON.parse(jsonStr);
+
+                            if (eventData.type === 'chunk' && eventData.content) {
+                                fullContent += eventData.content;
+                                setStreamingMessage(fullContent);
+                            } else if (eventData.type === 'complete') {
+                                const aiMessage = {
+                                    id: eventData.messageId || Date.now() + 1,
+                                    type: 'ai',
+                                    content: eventData.fullContent || fullContent,
+                                    timestamp: new Date()
+                                };
+                                setMessages(prev => [...prev, aiMessage]);
+                                setConversationId(eventData.conversationId);
+                                setStreamingMessage('');
+                                setIsStreaming(false);
+                                return;
+                            } else if (eventData.type === 'error') {
+                                setError(eventData.message || '流式响应错误');
+                                setIsStreaming(false);
+                                return;
+                            }
+                        } catch (parseError) {
+                            console.warn('解析流式数据失败:', parseError.message);
+                        }
+                    }
+                }
+            }
+
+            if (fullContent && isStreaming) {
+                const aiMessage = {
+                    id: Date.now() + 1,
+                    type: 'ai',
+                    content: fullContent,
+                    timestamp: new Date()
+                };
+                setMessages(prev => [...prev, aiMessage]);
+                setStreamingMessage('');
+            }
+
+        } catch (err) {
+            setError('发送消息失败：' + err.message);
+        } finally {
+            setIsStreaming(false);
+            setStreamingMessage('');
+        }
+    };
+
     const handleSendMessage = async () => {
         if (!inputMessage.trim()) return;
         if (!selectedSubject) {
@@ -147,10 +270,19 @@ const LearningAssistant = () => {
         }
     };
 
+    // 根据模式选择发送方法
+    const handleSend = () => {
+        if (useStreaming) {
+            handleSendMessageStream();
+        } else {
+            handleSendMessage();
+        }
+    };
+
     const handleKeyPress = (event) => {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
-            handleSendMessage();
+            handleSend();
         }
     };
 
@@ -232,6 +364,28 @@ const LearningAssistant = () => {
                                 )}
                             </Select>
                         </FormControl>
+
+                        {/* 流式响应控制 */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Chip
+                                icon={<SpeedIcon />}
+                                label={useStreaming ? "流式响应" : "普通响应"}
+                                color={useStreaming ? "primary" : "default"}
+                                onClick={() => setUseStreaming(!useStreaming)}
+                                clickable
+                                size="small"
+                            />
+                            {isStreaming && (
+                                <Button
+                                    size="small"
+                                    color="error"
+                                    startIcon={<StopIcon />}
+                                    onClick={stopStreaming}
+                                >
+                                    停止
+                                </Button>
+                            )}
+                        </Box>
                     </Box>
 
                     {/* 消息列表 */}
@@ -296,6 +450,27 @@ const LearningAssistant = () => {
                                     </Box>
                                 </ListItem>
                             )}
+                            {/* 流式消息显示 */}
+                            {isStreaming && streamingMessage && (
+                                <ListItem sx={{ justifyContent: 'flex-start' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, maxWidth: '80%' }}>
+                                        <Avatar sx={{ bgcolor: 'secondary.main', width: 32, height: 32 }}>
+                                            <SmartToyIcon />
+                                        </Avatar>
+                                        <Paper sx={{ p: 2, bgcolor: 'grey.100', position: 'relative' }}>
+                                            <Typography variant="body2">
+                                                {formatMessage(streamingMessage)}
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                                                <CircularProgress size={12} sx={{ mr: 1 }} />
+                                                <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                                                    正在输入...
+                                                </Typography>
+                                            </Box>
+                                        </Paper>
+                                    </Box>
+                                </ListItem>
+                            )}
                         </List>
                         <div ref={messagesEndRef} />
                     </Box>
@@ -321,11 +496,12 @@ const LearningAssistant = () => {
                         />
                         <Button
                             variant="contained"
-                            onClick={handleSendMessage}
-                            disabled={loading || !inputMessage.trim() || !selectedSubject}
+                            onClick={isStreaming ? stopStreaming : handleSend}
+                            disabled={(loading || isStreaming) && !isStreaming || !inputMessage.trim() || !selectedSubject}
+                            color={isStreaming ? "error" : "primary"}
                             sx={{ minWidth: 'auto', px: 2 }}
                         >
-                            <SendIcon />
+                            {isStreaming ? <StopIcon /> : <SendIcon />}
                         </Button>
                     </Box>
                 </Paper>
