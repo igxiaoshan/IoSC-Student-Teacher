@@ -3,7 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getSubjectList } from '../../redux/sclassRelated/sclassHandle';
 import { BottomNavigation, BottomNavigationAction, Container, Paper, Table, TableBody, TableHead, Typography } from '@mui/material';
 import { getUserDetails } from '../../redux/userRelated/userHandle';
-import CustomBarChart from '../../components/CustomBarChart'
+import CustomBarChart from '../../components/CustomBarChart';
+import { safeGet } from '../../utils/safeAccess';
 
 import InsertChartIcon from '@mui/icons-material/InsertChart';
 import InsertChartOutlinedIcon from '@mui/icons-material/InsertChartOutlined';
@@ -34,10 +35,11 @@ const StudentSubjects = () => {
     }, [userDetails])
 
     useEffect(() => {
-        if (subjectMarks === []) {
-            dispatch(getSubjectList(currentUser.sclassName._id, "ClassSubjects"));
+        const classId = safeGet(currentUser, 'sclassName._id');
+        if (subjectMarks.length === 0 && classId) {
+            dispatch(getSubjectList(classId, "ClassSubjects"));
         }
-    }, [subjectMarks, dispatch, currentUser.sclassName._id]);
+    }, [subjectMarks, dispatch, currentUser]);
 
     const handleSectionChange = (event, newSection) => {
         setSelectedSection(newSection);
@@ -63,7 +65,7 @@ const StudentSubjects = () => {
                             }
                             return (
                                 <StyledTableRow key={index}>
-                                    <StyledTableCell>{result.subName.subName}</StyledTableCell>
+                                    <StyledTableCell>{safeGet(result, 'subName.subName', '未知科目')}</StyledTableCell>
                                     <StyledTableCell>{result.marksObtained}</StyledTableCell>
                                 </StyledTableRow>
                             );
@@ -85,16 +87,16 @@ const StudentSubjects = () => {
                     Class Details
                 </Typography>
                 <Typography variant="h5" gutterBottom>
-                    You are currently in Class {sclassDetails && sclassDetails.sclassName}
+                    You are currently in Class {safeGet(sclassDetails, 'sclassName', '未分配班级')}
                 </Typography>
                 <Typography variant="h6" gutterBottom>
                     And these are the subjects:
                 </Typography>
-                {subjectsList &&
+                {subjectsList && Array.isArray(subjectsList) &&
                     subjectsList.map((subject, index) => (
                         <div key={index}>
                             <Typography variant="subtitle1">
-                                {subject.subName} ({subject.subCode})
+                                {safeGet(subject, 'subName', '未知科目')} ({safeGet(subject, 'subCode', 'N/A')})
                             </Typography>
                         </div>
                     ))}

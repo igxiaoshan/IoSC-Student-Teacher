@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 import Popup from '../../../components/Popup';
+import { safeGet } from '../../../utils/safeAccess';
 
 const AddNotice = () => {
   const dispatch = useDispatch();
@@ -23,7 +24,7 @@ const AddNotice = () => {
   const [title, setTitle] = useState('');
   const [details, setDetails] = useState('');
   const [date, setDate] = useState('');
-  const adminID = currentUser._id;
+  const adminID = safeGet(currentUser, '_id');
 
   const [loader, setLoader] = useState(false);
   const [showPopup, setShowPopup] = useState(false);

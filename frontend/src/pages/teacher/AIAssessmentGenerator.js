@@ -26,6 +26,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
+import { safeGet } from '../../utils/safeAccess';
 
 const AIAssessmentGenerator = () => {
     const { currentUser } = useSelector(state => state.user);
@@ -103,10 +104,18 @@ const AIAssessmentGenerator = () => {
         setSuccess('');
         
         try {
+            const subjectId = safeGet(currentUser, 'teachSubject._id');
+            const teacherId = safeGet(currentUser, '_id');
+
+            if (!subjectId || !teacherId) {
+                setError('用户信息不完整，无法生成考核');
+                return;
+            }
+
             const response = await axios.post('/api/ai/assessment/generate', {
                 ...formData,
-                subjectId: currentUser.teachSubject._id,
-                teacherId: currentUser._id
+                subjectId: subjectId,
+                teacherId: teacherId
             });
 
             if (response.data.success) {

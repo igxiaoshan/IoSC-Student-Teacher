@@ -3,6 +3,7 @@ import { getTeacherDetails } from '../../../redux/teacherRelated/teacherHandle';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Button, Container, Typography } from '@mui/material';
+import { safeGet } from '../../../utils/safeAccess';
 
 const TeacherDetails = () => {
     const navigate = useNavigate();
@@ -20,10 +21,12 @@ const TeacherDetails = () => {
         console.log(error);
     }
 
-    const isSubjectNamePresent = teacherDetails?.teachSubject?.subName;
+    const isSubjectNamePresent = safeGet(teacherDetails, 'teachSubject.subName');
 
     const handleAddSubject = () => {
-        navigate(`/Admin/teachers/choosesubject/${teacherDetails?.teachSclass?._id}/${teacherDetails?._id}`);
+        const classId = safeGet(teacherDetails, 'teachSclass._id');
+        const teacherId = safeGet(teacherDetails, '_id');
+        navigate(`/Admin/teachers/choosesubject/${classId}/${teacherId}`);
     };
 
     return (
@@ -36,18 +39,18 @@ const TeacherDetails = () => {
                         Teacher Details
                     </Typography>
                     <Typography variant="h6" gutterBottom>
-                        Teacher Name: {teacherDetails?.name}
+                        Teacher Name: {safeGet(teacherDetails, 'name', '未知教师')}
                     </Typography>
                     <Typography variant="h6" gutterBottom>
-                        Class Name: {teacherDetails?.teachSclass?.sclassName}
+                        Class Name: {safeGet(teacherDetails, 'teachSclass.sclassName', '未分配班级')}
                     </Typography>
                     {isSubjectNamePresent ? (
                         <>
                             <Typography variant="h6" gutterBottom>
-                                Subject Name: {teacherDetails?.teachSubject?.subName}
+                                Subject Name: {safeGet(teacherDetails, 'teachSubject.subName', '未知科目')}
                             </Typography>
                             <Typography variant="h6" gutterBottom>
-                                Subject Sessions: {teacherDetails?.teachSubject?.sessions}
+                                Subject Sessions: {safeGet(teacherDetails, 'teachSubject.sessions', 0)}
                             </Typography>
                         </>
                     ) : (

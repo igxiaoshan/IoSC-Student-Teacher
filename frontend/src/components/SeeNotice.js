@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getAllNotices } from '../redux/noticeRelated/noticeHandle';
 import { Paper } from '@mui/material';
 import TableViewTemplate from './TableViewTemplate';
+import { safeGet } from '../utils/safeAccess';
 
 const SeeNotice = () => {
     const dispatch = useDispatch();
@@ -12,12 +13,18 @@ const SeeNotice = () => {
 
     useEffect(() => {
         if (currentRole === "Admin") {
-            dispatch(getAllNotices(currentUser._id, "Notice"));
+            const adminId = safeGet(currentUser, '_id');
+            if (adminId) {
+                dispatch(getAllNotices(adminId, "Notice"));
+            }
         }
         else {
-            dispatch(getAllNotices(currentUser.school._id, "Notice"));
+            const schoolId = safeGet(currentUser, 'school._id');
+            if (schoolId) {
+                dispatch(getAllNotices(schoolId, "Notice"));
+            }
         }
-    }, [dispatch]);
+    }, [dispatch, currentUser, currentRole]);
 
     if (error) {
         console.log(error);

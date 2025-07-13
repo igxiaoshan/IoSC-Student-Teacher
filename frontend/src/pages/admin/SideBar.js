@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { Divider, ListItemButton, ListItemIcon, ListItemText, ListSubheader } from '@mui/material';
+import { Divider, ListItemButton, ListItemIcon, ListItemText, ListSubheader, Collapse, List } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
+import { ExpandLess, ExpandMore } from '@mui/icons-material';
 
 import HomeIcon from "@mui/icons-material/Home";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
@@ -14,6 +15,17 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 
 const SideBar = () => {
     const location = useLocation();
+    const [classMenuOpen, setClassMenuOpen] = React.useState(false);
+    const [studentMenuOpen, setStudentMenuOpen] = React.useState(false);
+
+    const handleClassMenuClick = () => {
+        setClassMenuOpen(!classMenuOpen);
+    };
+
+    const handleStudentMenuClick = () => {
+        setStudentMenuOpen(!studentMenuOpen);
+    };
+
     return (
         <>
             <React.Fragment>
@@ -23,12 +35,49 @@ const SideBar = () => {
                     </ListItemIcon>
                     <ListItemText primary="首页" />
                 </ListItemButton>
-                <ListItemButton component={Link} to="/Admin/classes">
+
+                {/* 班级管理菜单 */}
+                <ListItemButton onClick={handleClassMenuClick}>
                     <ListItemIcon>
-                        <ClassOutlinedIcon color={location.pathname.startsWith('/Admin/classes') ? 'primary' : 'inherit'} />
+                        <ClassOutlinedIcon color={location.pathname.startsWith('/Admin/classes') || location.pathname.startsWith('/Admin/addclass') ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="班级" />
+                    <ListItemText primary="班级管理" />
+                    {classMenuOpen ? <ExpandLess /> : <ExpandMore />}
                 </ListItemButton>
+                <Collapse in={classMenuOpen} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding>
+                        <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/class-management">
+                            <ListItemIcon>
+                                <ClassOutlinedIcon color={location.pathname === '/Admin/class-management' ? 'primary' : 'inherit'} />
+                            </ListItemIcon>
+                            <ListItemText primary="管理中心" />
+                        </ListItemButton>
+                        <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/classes">
+                            <ListItemIcon>
+                                <ClassOutlinedIcon color={location.pathname === '/Admin/classes' ? 'primary' : 'inherit'} />
+                            </ListItemIcon>
+                            <ListItemText primary="班级列表" />
+                        </ListItemButton>
+                        <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/addclass">
+                            <ListItemIcon>
+                                <ClassOutlinedIcon color={location.pathname === '/Admin/addclass' ? 'primary' : 'inherit'} />
+                            </ListItemIcon>
+                            <ListItemText primary="创建班级" />
+                        </ListItemButton>
+                        <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/classes/enhanced">
+                            <ListItemIcon>
+                                <ClassOutlinedIcon color={location.pathname === '/Admin/classes/enhanced' ? 'primary' : 'inherit'} />
+                            </ListItemIcon>
+                            <ListItemText primary="高级管理" />
+                        </ListItemButton>
+                        <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/classes/statistics">
+                            <ListItemIcon>
+                                <ClassOutlinedIcon color={location.pathname === '/Admin/classes/statistics' ? 'primary' : 'inherit'} />
+                            </ListItemIcon>
+                            <ListItemText primary="统计报表" />
+                        </ListItemButton>
+                    </List>
+                </Collapse>
                 <ListItemButton component={Link} to="/Admin/subjects">
                     <ListItemIcon>
                         <AssignmentIcon color={location.pathname.startsWith("/Admin/subjects") ? 'primary' : 'inherit'} />
@@ -41,12 +90,36 @@ const SideBar = () => {
                     </ListItemIcon>
                     <ListItemText primary="教师" />
                 </ListItemButton>
-                <ListItemButton component={Link} to="/Admin/students">
+                {/* 学生管理菜单 */}
+                <ListItemButton onClick={handleStudentMenuClick}>
                     <ListItemIcon>
-                        <PersonOutlineIcon color={location.pathname.startsWith("/Admin/students") ? 'primary' : 'inherit'} />
+                        <PersonOutlineIcon color={location.pathname.startsWith('/Admin/students') ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="学生" />
+                    <ListItemText primary="学生管理" />
+                    {studentMenuOpen ? <ExpandLess /> : <ExpandMore />}
                 </ListItemButton>
+                <Collapse in={studentMenuOpen} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding>
+                        <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/students">
+                            <ListItemIcon>
+                                <PersonOutlineIcon color={location.pathname === '/Admin/students' ? 'primary' : 'inherit'} />
+                            </ListItemIcon>
+                            <ListItemText primary="学生列表" />
+                        </ListItemButton>
+                        <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/addstudents">
+                            <ListItemIcon>
+                                <PersonOutlineIcon color={location.pathname === '/Admin/addstudents' ? 'primary' : 'inherit'} />
+                            </ListItemIcon>
+                            <ListItemText primary="添加学生" />
+                        </ListItemButton>
+                        <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/students/reassign">
+                            <ListItemIcon>
+                                <PersonOutlineIcon color={location.pathname === '/Admin/students/reassign' ? 'primary' : 'inherit'} />
+                            </ListItemIcon>
+                            <ListItemText primary="班级重新分配" />
+                        </ListItemButton>
+                    </List>
+                </Collapse>
                 <ListItemButton component={Link} to="/Admin/notices">
                     <ListItemIcon>
                         <AnnouncementOutlinedIcon color={location.pathname.startsWith("/Admin/notices") ? 'primary' : 'inherit'} />

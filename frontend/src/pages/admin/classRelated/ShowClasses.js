@@ -16,6 +16,7 @@ import AddCardIcon from '@mui/icons-material/AddCard';
 import styled from 'styled-components';
 import SpeedDialTemplate from '../../../components/SpeedDialTemplate';
 import Popup from '../../../components/Popup';
+import QuickAddClass from './QuickAddClass';
 
 const ShowClasses = () => {
   const navigate = useNavigate()
@@ -36,6 +37,7 @@ const ShowClasses = () => {
 
   const [showPopup, setShowPopup] = useState(false);
   const [message, setMessage] = useState("");
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   const deleteHandler = (deleteID, address) => {
     console.log(deleteID);
@@ -143,10 +145,21 @@ const ShowClasses = () => {
     );
   }
 
+  const handleQuickAddSuccess = (newClass) => {
+    setMessage(`班级 "${newClass.sclassName}" 创建成功！`);
+    setShowPopup(true);
+    // 刷新班级列表
+    dispatch(getAllSclasses(adminID, "Sclass"));
+  };
+
   const actions = [
     {
       icon: <AddCardIcon color="primary" />, name: 'Add New Class',
       action: () => navigate("/Admin/addclass")
+    },
+    {
+      icon: <AddCardIcon color="success" />, name: 'Quick Add Class',
+      action: () => setQuickAddOpen(true)
     },
     {
       icon: <DeleteIcon color="error" />, name: 'Delete All Classes',
@@ -176,6 +189,11 @@ const ShowClasses = () => {
         </>
       }
       <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
+      <QuickAddClass
+        open={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+        onSuccess={handleQuickAddSuccess}
+      />
 
     </>
   );

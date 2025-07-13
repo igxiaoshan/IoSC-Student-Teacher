@@ -4,6 +4,7 @@ import Popup from '../../components/Popup';
 import { BlueButton } from '../../components/buttonStyles';
 import { addStuff } from '../../redux/userRelated/userHandle';
 import { useDispatch, useSelector } from 'react-redux';
+import { safeGet } from '../../utils/safeAccess';
 
 const StudentComplain = () => {
     const [complaint, setComplaint] = useState("");
@@ -13,8 +14,8 @@ const StudentComplain = () => {
 
     const { status, currentUser, error } = useSelector(state => state.user);
 
-    const user = currentUser._id
-    const school = currentUser.school._id
+    const user = safeGet(currentUser, '_id');
+    const school = safeGet(currentUser, 'school._id');
     const address = "Complain"
 
     const [loader, setLoader] = useState(false)

@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
     teachersList: [],
     teacherDetails: [],
+    pagination: null,
     loading: false,
     error: null,
     response: null,
@@ -22,7 +23,16 @@ const teacherSlice = createSlice({
             state.response = null;
         },
         getSuccess: (state, action) => {
-            state.teachersList = action.payload;
+            // 处理新的API响应格式
+            if (action.payload && action.payload.success && action.payload.data) {
+                state.teachersList = action.payload.data;
+                state.pagination = action.payload.pagination;
+            } else if (Array.isArray(action.payload)) {
+                // 兼容旧格式
+                state.teachersList = action.payload;
+            } else {
+                state.teachersList = [];
+            }
             state.loading = false;
             state.error = null;
             state.response = null;

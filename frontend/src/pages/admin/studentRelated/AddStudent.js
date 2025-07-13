@@ -6,6 +6,7 @@ import Popup from '../../../components/Popup';
 import { underControl } from '../../../redux/userRelated/userSlice';
 import { getAllSclasses } from '../../../redux/sclassRelated/sclassHandle';
 import { CircularProgress } from '@mui/material';
+import { safeGet } from '../../../utils/safeAccess';
 
 const AddStudent = ({ situation }) => {
     const dispatch = useDispatch()
@@ -22,7 +23,7 @@ const AddStudent = ({ situation }) => {
     const [className, setClassName] = useState('')
     const [sclassName, setSclassName] = useState('')
 
-    const adminID = currentUser._id
+    const adminID = safeGet(currentUser, '_id');
     const role = "Student"
     const attendance = []
 

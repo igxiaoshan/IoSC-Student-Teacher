@@ -13,13 +13,20 @@ export const getAllTeachers = (id) => async (dispatch) => {
 
     try {
         const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/Teachers/${id}`);
-        if (result.data.message) {
+
+        // 处理新的API响应格式
+        if (result.data.success === false) {
+            dispatch(getFailed(result.data.message || '获取教师列表失败'));
+        } else if (result.data.message && !result.data.success) {
+            // 兼容旧格式的错误响应
             dispatch(getFailed(result.data.message));
         } else {
+            // 成功响应
             dispatch(getSuccess(result.data));
         }
     } catch (error) {
-        dispatch(getError(error));
+        console.error('获取教师列表错误:', error);
+        dispatch(getError(error.response?.data?.message || error.message || '网络错误'));
     }
 }
 

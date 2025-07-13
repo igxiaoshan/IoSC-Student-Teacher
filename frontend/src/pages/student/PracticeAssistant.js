@@ -36,6 +36,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
+import { safeGet } from '../../utils/safeAccess';
 
 const PracticeAssistant = () => {
     const { currentUser } = useSelector(state => state.user);
@@ -77,8 +78,9 @@ const PracticeAssistant = () => {
     const fetchSubjects = async () => {
         try {
             // 根据学生的班级获取真实科目列表
-            if (currentUser && currentUser.sclassName) {
-                const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/Subject/${currentUser.sclassName._id || currentUser.sclassName}`);
+            const classId = safeGet(currentUser, 'sclassName._id');
+            if (classId) {
+                const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/Subject/${classId}`);
 
                 if (response.data && !response.data.message) {
                     setSubjects(response.data);
@@ -117,8 +119,14 @@ const PracticeAssistant = () => {
         setError('');
 
         try {
+            const studentId = safeGet(currentUser, '_id');
+            if (!studentId) {
+                setError('用户信息不完整，无法生成练习');
+                return;
+            }
+
             const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/student/ai/practice/generate`, {
-                studentId: currentUser._id,
+                studentId: studentId,
                 ...practiceConfig
             });
 
@@ -157,8 +165,14 @@ const PracticeAssistant = () => {
         setError('');
 
         try {
+            const studentId = safeGet(currentUser, '_id');
+            if (!studentId) {
+                setError('用户信息不完整，无法提交答案');
+                return;
+            }
+
             const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/student/ai/practice/submit`, {
-                studentId: currentUser._id,
+                studentId: studentId,
                 subjectId: practiceConfig.subjectId,
                 practiceId: practiceData.practiceId,
                 questionId: questionId,

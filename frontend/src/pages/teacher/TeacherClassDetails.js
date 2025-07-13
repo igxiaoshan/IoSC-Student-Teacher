@@ -7,6 +7,7 @@ import { Paper, Box, Typography, ButtonGroup, Button, Popper, Grow, ClickAwayLis
 import { BlackButton, BlueButton} from "../../components/buttonStyles";
 import TableTemplate from "../../components/TableTemplate";
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
+import { safeGet } from '../../utils/safeAccess';
 
 const TeacherClassDetails = () => {
     const navigate = useNavigate()
@@ -14,8 +15,8 @@ const TeacherClassDetails = () => {
     const { sclassStudents, loading, error, getresponse } = useSelector((state) => state.sclass);
 
     const { currentUser } = useSelector((state) => state.user);
-    const classID = currentUser.teachSclass?._id
-    const subjectID = currentUser.teachSubject?._id
+    const classID = safeGet(currentUser, 'teachSclass._id');
+    const subjectID = safeGet(currentUser, 'teachSubject._id');
 
     useEffect(() => {
         dispatch(getClassStudents(classID));

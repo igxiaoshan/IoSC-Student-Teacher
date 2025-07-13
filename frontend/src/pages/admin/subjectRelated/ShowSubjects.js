@@ -13,6 +13,7 @@ import TableTemplate from '../../../components/TableTemplate';
 import { BlueButton, GreenButton } from '../../../components/buttonStyles';
 import SpeedDialTemplate from '../../../components/SpeedDialTemplate';
 import Popup from '../../../components/Popup';
+import { mapSafeSubjectData } from '../../../utils/safeAccess';
 
 const ShowSubjects = () => {
     const navigate = useNavigate()
@@ -55,15 +56,8 @@ const ShowSubjects = () => {
         { id: 'sclassName', label: 'Class', minWidth: 170 },
     ]
 
-    const subjectRows = subjectsList.map((subject) => {
-        return {
-            subName: subject.subName,
-            sessions: subject.sessions,
-            sclassName: subject.sclassName.sclassName,
-            sclassID: subject.sclassName._id,
-            id: subject._id,
-        };
-    })
+    // 使用安全映射函数处理科目数据
+    const subjectRows = mapSafeSubjectData(subjectsList);
 
     const SubjectsButtonHaver = ({ row }) => {
         return (
@@ -108,7 +102,7 @@ const ShowSubjects = () => {
                         </Box>
                         :
                         <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-                            {Array.isArray(subjectsList) && subjectsList.length > 0 &&
+                            {Array.isArray(subjectsList) && subjectsList.length > 0 && subjectRows.length > 0 &&
                                 <TableTemplate buttonHaver={SubjectsButtonHaver} columns={subjectColumns} rows={subjectRows} />
                             }
                             <SpeedDialTemplate actions={actions} />

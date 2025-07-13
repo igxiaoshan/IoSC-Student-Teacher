@@ -4,7 +4,8 @@ const router = require('express').Router();
 
 const { adminRegister, adminLogIn, getAdminDetail} = require('../controllers/admin-controller.js');
 
-const { sclassCreate, sclassList, deleteSclass, deleteSclasses, getSclassDetail, getSclassStudents, updateSclass } = require('../controllers/class-controller.js');
+const { sclassCreate, sclassList, deleteSclass, deleteSclasses, getSclassDetail, getSclassStudents, updateSclass, batchDeleteSclasses, getClassStatistics } = require('../controllers/class-controller.js');
+const { createClassValidation, updateClassValidation, getClassValidation, getClassListValidation, batchDeleteValidation, handleValidationErrors } = require('../validation/classValidation.js');
 const { complainCreate, complainList } = require('../controllers/complain-controller.js');
 const { noticeCreate, noticeList, deleteNotices, deleteNotice, updateNotice } = require('../controllers/notice-controller.js');
 const {
@@ -22,8 +23,11 @@ const {
     clearAllStudentsAttendance,
     removeStudentAttendanceBySubject,
     removeStudentAttendance } = require('../controllers/student_controller.js');
-const { subjectCreate, classSubjects, deleteSubjectsByClass, getSubjectDetail, deleteSubject, freeSubjectList, allSubjects, deleteSubjects, updateSubject } = require('../controllers/subject-controller.js');
-const { teacherRegister, teacherLogIn, getTeachers, getTeacherDetail, deleteTeachers, deleteTeachersByClass, deleteTeacher, updateTeacherSubject, teacherAttendance } = require('../controllers/teacher-controller.js');
+const { subjectCreate, classSubjects, deleteSubjectsByClass, getSubjectDetail, deleteSubject, freeSubjectList, allSubjects, deleteSubjects, updateSubject, addClassToSubject, removeClassFromSubject, getSubjectStatistics } = require('../controllers/subject-controller.js');
+const { teacherRegister, teacherLogIn, getTeachers, getTeacherDetail, deleteTeachers, deleteTeachersByClass, deleteTeacher, updateTeacherSubject, teacherAttendance, addClassToTeacher, removeClassFromTeacher, getTeacherStatistics } = require('../controllers/teacher-controller.js');
+
+// 学生科目管理控制器
+const { getStudentSubjects, getAvailableSubjects, selectSubject, unselectSubject, updateLearningPreferences, autoAssignClassSubjects } = require('../controllers/studentSubject-controller.js');
 
 // AI功能控制器
 const { generateCourseware, getTeacherCourseware, updateCourseware, deleteCourseware, publishCourseware, adjustCoursewareContent, exportCourseware } = require('../controllers/ai-courseware-controller.js');
@@ -65,20 +69,32 @@ router.put('/RemoveAllStudentsAtten/:id', clearAllStudentsAttendance);
 router.put('/RemoveStudentSubAtten/:id', removeStudentAttendanceBySubject);
 router.put('/RemoveStudentAtten/:id', removeStudentAttendance)
 
-// Teacher
+// Teacher - 教师管理路由
 
+// 教师注册和登录
 router.post('/TeacherReg', teacherRegister);
 router.post('/TeacherLogin', teacherLogIn)
 
+// 获取教师列表和详情 (支持分页、搜索、筛选)
 router.get("/Teachers/:id", getTeachers)
 router.get("/Teacher/:id", getTeacherDetail)
 
+// 获取教师统计信息
+router.get("/TeacherStats/:id", getTeacherStatistics);
+
+// 更新教师信息
+router.put("/TeacherSubject", updateTeacherSubject)
+
+// 教师班级关联管理
+router.post("/Teacher/addClass", addClassToTeacher);
+router.delete("/Teacher/removeClass", removeClassFromTeacher);
+
+// 删除教师
 router.delete("/Teachers/:id", deleteTeachers)
 router.delete("/TeachersClass/:id", deleteTeachersByClass)
 router.delete("/Teacher/:id", deleteTeacher)
 
-router.put("/TeacherSubject", updateTeacherSubject)
-
+// 教师考勤
 router.post('/TeacherAttendance/:id', teacherAttendance)
 
 // Notice
@@ -98,32 +114,62 @@ router.post('/ComplainCreate', complainCreate);
 
 router.get('/ComplainList/:id', complainList);
 
-// Sclass
+// Sclass - 班级管理路由
 
-router.post('/SclassCreate', sclassCreate);
+// 创建班级 (带验证)
+router.post('/SclassCreate', createClassValidation, handleValidationErrors, sclassCreate);
 
-router.get('/SclassList/:id', sclassList);
-router.get("/Sclass/:id", getSclassDetail)
+// 获取班级列表 (带分页、搜索、筛选)
+router.get('/SclassList/:id', getClassListValidation, handleValidationErrors, sclassList);
 
-router.get("/Sclass/Students/:id", getSclassStudents)
+// 获取班级详情
+router.get("/Sclass/:id", getClassValidation, handleValidationErrors, getSclassDetail);
 
-router.delete("/Sclasses/:id", deleteSclasses)
-router.delete("/Sclass/:id", deleteSclass)
-router.put("/Sclass/:id", updateSclass)
+// 获取班级学生列表
+router.get("/Sclass/Students/:id", getClassValidation, handleValidationErrors, getSclassStudents);
 
-// Subject
+// 获取班级统计信息
+router.get("/SclassStats/:id", getClassListValidation, handleValidationErrors, getClassStatistics);
 
+// 更新班级信息
+router.put("/Sclass/:id", updateClassValidation, handleValidationErrors, updateSclass);
+
+// 删除单个班级
+router.delete("/Sclass/:id", getClassValidation, handleValidationErrors, deleteSclass);
+
+// 删除学校所有班级
+router.delete("/Sclasses/:id", getClassListValidation, handleValidationErrors, deleteSclasses);
+
+// 批量删除班级
+router.delete("/SclassBatch/:schoolId", batchDeleteValidation, handleValidationErrors, batchDeleteSclasses);
+
+// Subject - 科目管理路由
+
+// 创建科目
 router.post('/SubjectCreate', subjectCreate);
 
+// 获取科目列表 (支持分页、搜索、筛选)
 router.get('/AllSubjects/:id', allSubjects);
 router.get('/ClassSubjects/:id', classSubjects);
 router.get('/FreeSubjectList/:id', freeSubjectList);
-router.get("/Subject/:id", getSubjectDetail)
 
-router.delete("/Subject/:id", deleteSubject)
-router.delete("/Subjects/:id", deleteSubjects)
-router.delete("/SubjectsClass/:id", deleteSubjectsByClass)
-router.put("/Subject/:id", updateSubject)
+// 获取科目详情
+router.get("/Subject/:id", getSubjectDetail);
+
+// 获取科目统计信息
+router.get("/SubjectStats/:id", getSubjectStatistics);
+
+// 更新科目信息
+router.put("/Subject/:id", updateSubject);
+
+// 科目班级关联管理
+router.post("/Subject/addClass", addClassToSubject);
+router.delete("/Subject/removeClass", removeClassFromSubject);
+
+// 删除科目
+router.delete("/Subject/:id", deleteSubject);
+router.delete("/Subjects/:id", deleteSubjects);
+router.delete("/SubjectsClass/:id", deleteSubjectsByClass);
 
 // 文件上传路由
 router.post('/upload/courseware-document', upload.single('document'), uploadCourseDocument);
@@ -188,5 +234,13 @@ router.get('/dify/info', (req, res) => {
         serviceInfo: serviceInfo
     });
 });
+
+// 学生科目管理路由
+router.get('/student/:studentId/subjects', getStudentSubjects);
+router.get('/student/:studentId/subjects/available', getAvailableSubjects);
+router.post('/student/:studentId/subjects/select', selectSubject);
+router.delete('/student/:studentId/subjects/:subjectId', unselectSubject);
+router.put('/student/:studentId/subjects/:subjectId/preferences', updateLearningPreferences);
+router.post('/student/:studentId/subjects/auto-assign', autoAssignClassSubjects);
 
 module.exports = router;

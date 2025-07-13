@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { getAllComplains } from '../../../redux/complainRelated/complainHandle';
 import TableTemplate from '../../../components/TableTemplate';
+import { safeGet } from '../../../utils/safeAccess';
 
 const SeeComplains = () => {
   const dispatch = useDispatch();
@@ -17,8 +18,11 @@ const SeeComplains = () => {
   const { currentUser } = useSelector(state => state.user);
 
   useEffect(() => {
-    dispatch(getAllComplains(currentUser._id, "Complain"));
-  }, [currentUser._id, dispatch]);
+    const userId = safeGet(currentUser, '_id');
+    if (userId) {
+      dispatch(getAllComplains(userId, "Complain"));
+    }
+  }, [currentUser, dispatch]);
 
   const label = { inputProps: { 'aria-label': 'Checkbox demo' } };
 

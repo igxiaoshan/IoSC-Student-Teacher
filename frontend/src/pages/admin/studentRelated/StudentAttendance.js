@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { PurpleButton } from '../../../components/buttonStyles';
 import Popup from '../../../components/Popup';
+import { safeGet } from '../../../utils/safeAccess';
 
 const StudentAttendance = ({ situation }) => {
     const dispatch = useDispatch();
@@ -46,10 +47,11 @@ const StudentAttendance = ({ situation }) => {
     }, [situation]);
 
     useEffect(() => {
-        if (userDetails && userDetails.sclassName && situation === "Student") {
-            dispatch(getSubjectList(userDetails.sclassName._id, "ClassSubjects"));
+        const classId = safeGet(userDetails, 'sclassName._id');
+        if (classId && situation === "Student") {
+            dispatch(getSubjectList(classId, "ClassSubjects"));
         }
-    }, [dispatch, userDetails]);
+    }, [dispatch, userDetails, situation]);
 
     const changeHandler = (event) => {
         const selectedSubject = subjectsList.find(

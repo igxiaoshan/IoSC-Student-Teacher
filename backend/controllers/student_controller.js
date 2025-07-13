@@ -40,11 +40,15 @@ const studentLogIn = async (req, res) => {
             const validated = await bcrypt.compare(req.body.password, student.password);
             if (validated) {
                 student = await student.populate("school", "schoolName")
-                student = await student.populate("sclassName", "sclassName")
-                student.password = undefined;
-                student.examResult = undefined;
-                student.attendance = undefined;
-                res.send(student);
+                student = await student.populate("sclassName", "sclassName grade")
+
+                // 处理学生数据，确保兼容性
+                const studentData = student.toObject();
+                studentData.password = undefined;
+                studentData.examResult = undefined;
+                studentData.attendance = undefined;
+
+                res.send(studentData);
             } else {
                 res.send({ message: "Invalid password" });
             }

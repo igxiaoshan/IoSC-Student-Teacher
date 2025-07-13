@@ -10,6 +10,7 @@ import CountUp from 'react-countup';
 import Subject from "../../assets/subjects.svg";
 import Assignment from "../../assets/assignment.svg";
 import { getSubjectList } from '../../redux/sclassRelated/sclassHandle';
+import { safeGet } from '../../utils/safeAccess';
 
 const StudentHomePage = () => {
     const dispatch = useDispatch();
@@ -19,12 +20,17 @@ const StudentHomePage = () => {
 
     const [subjectAttendance, setSubjectAttendance] = useState([]);
 
-    const classID = currentUser.sclassName._id
+    const classID = safeGet(currentUser, 'sclassName._id');
 
     useEffect(() => {
-        dispatch(getUserDetails(currentUser._id, "Student"));
-        dispatch(getSubjectList(classID, "ClassSubjects"));
-    }, [dispatch, currentUser._id, classID]);
+        const userId = safeGet(currentUser, '_id');
+        if (userId) {
+            dispatch(getUserDetails(userId, "Student"));
+        }
+        if (classID) {
+            dispatch(getSubjectList(classID, "ClassSubjects"));
+        }
+    }, [dispatch, currentUser, classID]);
 
     const numberOfSubjects = subjectsList && subjectsList.length;
 

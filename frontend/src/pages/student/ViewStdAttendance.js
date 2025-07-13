@@ -5,7 +5,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getUserDetails } from '../../redux/userRelated/userHandle';
 import { calculateOverallAttendancePercentage, calculateSubjectAttendancePercentage, groupAttendanceBySubject } from '../../components/attendanceCalculator';
 
-import CustomBarChart from '../../components/CustomBarChart'
+import CustomBarChart from '../../components/CustomBarChart';
+import { safeGet } from '../../utils/safeAccess';
 
 import InsertChartIcon from '@mui/icons-material/InsertChart';
 import InsertChartOutlinedIcon from '@mui/icons-material/InsertChartOutlined';
@@ -28,8 +29,11 @@ const ViewStdAttendance = () => {
     const { userDetails, currentUser, loading, response, error } = useSelector((state) => state.user);
 
     useEffect(() => {
-        dispatch(getUserDetails(currentUser._id, "Student"));
-    }, [dispatch, currentUser._id]);
+        const userId = safeGet(currentUser, '_id');
+        if (userId) {
+            dispatch(getUserDetails(userId, "Student"));
+        }
+    }, [dispatch, currentUser]);
 
     if (response) { console.log(response) }
     else if (error) { console.log(error) }

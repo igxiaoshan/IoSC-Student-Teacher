@@ -7,9 +7,11 @@ import {
     Paper, Box, IconButton
 } from '@mui/material';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
+import EditIcon from '@mui/icons-material/Edit';
 import { BlackButton, BlueButton, GreenButton } from '../../../components/buttonStyles';
 import TableTemplate from '../../../components/TableTemplate';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import SpeedDialTemplate from '../../../components/SpeedDialTemplate';
 
 import * as React from 'react';
@@ -62,9 +64,9 @@ const ShowStudents = () => {
 
     const studentRows = studentsList && studentsList.length > 0 && studentsList.map((student) => {
         return {
-            name: student.name,
-            rollNum: student.rollNum,
-            sclassName: student.sclassName.sclassName,
+            name: student.name || '未知学生',
+            rollNum: student.rollNum || '未分配',
+            sclassName: student.sclassName?.sclassName || '未分配班级',
             id: student._id,
         };
     })
@@ -110,7 +112,10 @@ const ShowStudents = () => {
         };
         return (
             <>
-                <IconButton onClick={() => deleteHandler(row.id, "Student")}>
+                <IconButton onClick={() => navigate("/Admin/students/edit/" + row.id)} title="编辑学生">
+                    <EditIcon color="primary" />
+                </IconButton>
+                <IconButton onClick={() => deleteHandler(row.id, "Student")} title="删除学生">
                     <PersonRemoveIcon color="error" />
                 </IconButton>
                 <BlueButton variant="contained"
@@ -177,6 +182,10 @@ const ShowStudents = () => {
         {
             icon: <PersonAddAlt1Icon color="primary" />, name: 'Add New Student',
             action: () => navigate("/Admin/addstudents")
+        },
+        {
+            icon: <SwapHorizIcon color="info" />, name: 'Reassign Classes',
+            action: () => navigate("/Admin/students/reassign")
         },
         {
             icon: <PersonRemoveIcon color="error" />, name: 'Delete All Students',

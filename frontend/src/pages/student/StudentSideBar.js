@@ -8,6 +8,7 @@ import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined
 import AnnouncementOutlinedIcon from '@mui/icons-material/AnnouncementOutlined';
 import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import SchoolIcon from '@mui/icons-material/School';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import QuizIcon from '@mui/icons-material/Quiz';
 
@@ -26,7 +27,13 @@ const StudentSideBar = () => {
                     <ListItemIcon>
                         <AssignmentIcon color={location.pathname.startsWith("/Student/subjects") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="科目" />
+                    <ListItemText primary="科目成绩" />
+                </ListItemButton>
+                <ListItemButton component={Link} to="/Student/subject-selection">
+                    <ListItemIcon>
+                        <SchoolIcon color={location.pathname.startsWith("/Student/subject-selection") ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary="课程管理" />
                 </ListItemButton>
                 <ListItemButton component={Link} to="/Student/attendance">
                     <ListItemIcon>

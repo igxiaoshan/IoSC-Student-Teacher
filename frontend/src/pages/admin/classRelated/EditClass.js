@@ -21,6 +21,11 @@ const EditClass = () => {
     
     const [classData, setClassData] = useState({
         sclassName: '',
+        description: '',
+        grade: '',
+        maxStudents: 50,
+        status: 'active',
+        academicYear: '',
         school: currentUser?._id || ''
     });
     const [loading, setLoading] = useState(false);
@@ -37,9 +42,15 @@ const EditClass = () => {
             const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/Sclass/${id}`);
             
             if (response.data && !response.data.message) {
+                const data = response.data.data || response.data;
                 setClassData({
-                    sclassName: response.data.sclassName,
-                    school: response.data.school
+                    sclassName: data.sclassName || '',
+                    description: data.description || '',
+                    grade: data.grade || '',
+                    maxStudents: data.maxStudents || 50,
+                    status: data.status || 'active',
+                    academicYear: data.academicYear || '',
+                    school: data.school
                 });
             } else {
                 setError('班级不存在');
@@ -74,6 +85,11 @@ const EditClass = () => {
         try {
             const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/Sclass/${id}`, {
                 sclassName: classData.sclassName.trim(),
+                description: classData.description.trim(),
+                grade: classData.grade.trim(),
+                maxStudents: classData.maxStudents,
+                status: classData.status,
+                academicYear: classData.academicYear.trim(),
                 school: currentUser._id
             });
 
@@ -139,6 +155,75 @@ const EditClass = () => {
                         </Grid>
 
                         <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="班级描述"
+                                name="description"
+                                value={classData.description}
+                                onChange={handleInputChange}
+                                disabled={loading}
+                                multiline
+                                rows={3}
+                                placeholder="班级的简要描述（可选）"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="年级"
+                                name="grade"
+                                value={classData.grade}
+                                onChange={handleInputChange}
+                                disabled={loading}
+                                placeholder="例如：一年级、高一"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="最大学生数"
+                                name="maxStudents"
+                                type="number"
+                                value={classData.maxStudents}
+                                onChange={handleInputChange}
+                                disabled={loading}
+                                inputProps={{ min: 1, max: 100 }}
+                                helperText="班级可容纳的最大学生数量（1-100）"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                select
+                                label="状态"
+                                name="status"
+                                value={classData.status}
+                                onChange={handleInputChange}
+                                disabled={loading}
+                            >
+                                <MenuItem value="active">活跃</MenuItem>
+                                <MenuItem value="inactive">非活跃</MenuItem>
+                                <MenuItem value="archived">已归档</MenuItem>
+                            </TextField>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="学年"
+                                name="academicYear"
+                                value={classData.academicYear}
+                                onChange={handleInputChange}
+                                disabled={loading}
+                                placeholder="例如：2023-2024"
+                                helperText="格式：YYYY-YYYY"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12}>
                             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
                                 <Button
                                     type="submit"
@@ -148,7 +233,7 @@ const EditClass = () => {
                                 >
                                     {loading ? <CircularProgress size={24} /> : '更新班级'}
                                 </Button>
-                                
+
                                 <Button
                                     variant="outlined"
                                     onClick={() => navigate('/Admin/classes')}

@@ -11,10 +11,11 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import QuizIcon from '@mui/icons-material/Quiz';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import { useSelector } from 'react-redux';
+import { getSafeClassName } from '../../utils/safeAccess';
 
 const TeacherSideBar = () => {
     const { currentUser } = useSelector((state) => state.user);
-    const sclassName = currentUser.teachSclass
+    const sclassName = getSafeClassName(currentUser?.teachSclass) || '未分配班级';
 
     const location = useLocation();
     return (
@@ -30,7 +31,7 @@ const TeacherSideBar = () => {
                     <ListItemIcon>
                         <ClassOutlinedIcon color={location.pathname.startsWith("/Teacher/class") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary={`${sclassName.sclassName}班`} />
+                    <ListItemText primary={`${sclassName}班`} />
                 </ListItemButton>
                 {/* <ListItemButton component={Link} to="/Teacher/complain">
                     <ListItemIcon>

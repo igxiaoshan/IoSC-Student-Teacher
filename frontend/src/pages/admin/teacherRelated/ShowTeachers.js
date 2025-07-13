@@ -5,6 +5,7 @@ import { getAllTeachers } from '../../../redux/teacherRelated/teacherHandle';
 import {
     Paper, Table, TableBody, TableContainer,
     TableHead, TablePagination, Button, Box, IconButton,
+    Alert, Typography, CircularProgress
 } from '@mui/material';
 import { deleteUser } from '../../../redux/userRelated/userHandle';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
@@ -13,6 +14,8 @@ import { BlueButton, GreenButton } from '../../../components/buttonStyles';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import SpeedDialTemplate from '../../../components/SpeedDialTemplate';
 import Popup from '../../../components/Popup';
+import { mapSafeTeacherData } from '../../../utils/safeAccess';
+import TeacherClassManager from './TeacherClassManager';
 
 const ShowTeachers = () => {
     const [page, setPage] = useState(0);
@@ -24,24 +27,58 @@ const ShowTeachers = () => {
     const { currentUser } = useSelector((state) => state.user);
 
     useEffect(() => {
-        dispatch(getAllTeachers(currentUser._id));
-    }, [currentUser._id, dispatch]);
+        const adminId = safeGet(currentUser, '_id');
+        if (adminId) {
+            dispatch(getAllTeachers(adminId));
+        }
+    }, [currentUser, dispatch]);
 
     const [showPopup, setShowPopup] = useState(false);
     const [message, setMessage] = useState("");
+    const [classManagerOpen, setClassManagerOpen] = useState(false);
+    const [selectedTeacher, setSelectedTeacher] = useState(null);
+
+    // 调试信息
+    console.log('ShowTeachers - teachersList:', teachersList);
+    console.log('ShowTeachers - loading:', loading);
+    console.log('ShowTeachers - error:', error);
+    console.log('ShowTeachers - response:', response);
 
     if (loading) {
-        return <div>Loading...</div>;
-    } else if (response) {
         return (
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-                <GreenButton variant="contained" onClick={() => navigate("/Admin/teachers/chooseclass")}>
-                    Add Teacher
-                </GreenButton>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+                <CircularProgress />
+                <Typography sx={{ ml: 2 }}>加载教师列表中...</Typography>
             </Box>
         );
-    } else if (error) {
-        console.log(error);
+    }
+
+    if (error) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    获取教师列表失败: {error}
+                </Alert>
+                <Button variant="contained" onClick={() => dispatch(getAllTeachers(safeGet(currentUser, '_id')))}>
+                    重试
+                </Button>
+            </Box>
+        );
+    }
+
+    if (response) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Alert severity="info" sx={{ mb: 2 }}>
+                    {response}
+                </Alert>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+                    <GreenButton variant="contained" onClick={() => navigate("/Admin/teachers/chooseclass")}>
+                        Add Teacher
+                    </GreenButton>
+                </Box>
+            </Box>
+        );
     }
 
     const deleteHandler = (deleteID, address) => {
@@ -58,18 +95,27 @@ const ShowTeachers = () => {
     const columns = [
         { id: 'name', label: 'Name', minWidth: 170 },
         { id: 'teachSubject', label: 'Subject', minWidth: 100 },
-        { id: 'teachSclass', label: 'Class', minWidth: 170 },
+        { id: 'teachSclass', label: 'Primary Class', minWidth: 150 },
+        { id: 'classCount', label: 'Classes', minWidth: 80 },
+        { id: 'classNames', label: 'All Classes', minWidth: 200 },
     ];
 
-    const rows = teachersList.map((teacher) => {
-        return {
-            name: teacher.name,
-            teachSubject: teacher.teachSubject?.subName || null,
-            teachSclass: teacher.teachSclass.sclassName,
-            teachSclassID: teacher.teachSclass._id,
-            id: teacher._id,
-        };
-    });
+    // 使用安全映射函数处理教师数据
+    const rows = mapSafeTeacherData(teachersList);
+
+    console.log('ShowTeachers - processed rows:', rows);
+
+    const handleManageClasses = (teacher) => {
+        setSelectedTeacher(teacher);
+        setClassManagerOpen(true);
+    };
+
+    const handleClassManagerUpdate = () => {
+        // 重新获取教师列表
+        dispatch(getAllTeachers(currentUser._id));
+        setMessage("班级关联更新成功！");
+        setShowPopup(true);
+    };
 
     const actions = [
         {
@@ -82,8 +128,34 @@ const ShowTeachers = () => {
         },
     ];
 
+    // 如果没有教师数据，显示空状态
+    if (!teachersList || teachersList.length === 0) {
+        return (
+            <Paper sx={{ width: '100%', overflow: 'hidden', p: 3 }}>
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <Typography variant="h6" color="textSecondary" gutterBottom>
+                        暂无教师数据
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+                        还没有添加任何教师，点击下方按钮开始添加教师
+                    </Typography>
+                    <GreenButton variant="contained" onClick={() => navigate("/Admin/teachers/chooseclass")}>
+                        添加教师
+                    </GreenButton>
+                </Box>
+            </Paper>
+        );
+    }
+
     return (
         <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+            {/* 调试信息 */}
+            <Box sx={{ p: 2, bgcolor: 'grey.100', borderBottom: 1, borderColor: 'divider' }}>
+                <Typography variant="body2">
+                    调试信息: 教师总数 {teachersList.length}, 处理后行数 {rows.length}
+                </Typography>
+            </Box>
+
             <TableContainer>
                 <Table stickyHeader aria-label="sticky table">
                     <TableHead>
@@ -140,6 +212,13 @@ const ShowTeachers = () => {
                                                 onClick={() => navigate("/Admin/teachers/teacher/" + row.id)}>
                                                 View
                                             </BlueButton>
+                                            {row.classCount > 1 && (
+                                                <GreenButton variant="outlined" size="small"
+                                                    onClick={() => handleManageClasses(row)}
+                                                    sx={{ ml: 1 }}>
+                                                    Manage Classes
+                                                </GreenButton>
+                                            )}
                                         </StyledTableCell>
                                     </StyledTableRow>
                                 );
@@ -162,6 +241,14 @@ const ShowTeachers = () => {
 
             <SpeedDialTemplate actions={actions} />
             <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
+
+            {/* 教师班级管理对话框 */}
+            <TeacherClassManager
+                open={classManagerOpen}
+                onClose={() => setClassManagerOpen(false)}
+                teacher={selectedTeacher}
+                onUpdate={handleClassManagerUpdate}
+            />
         </Paper >
     );
 };

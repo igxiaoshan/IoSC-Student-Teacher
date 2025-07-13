@@ -75,8 +75,8 @@ const getStudentDashboard = async (req, res) => {
             student: {
                 id: student._id,
                 name: student.name,
-                class: student.sclassName.sclassName,
-                school: student.school.schoolName
+                class: student.sclassName?.sclassName || '未分配班级',
+                school: student.school?.schoolName || '未知学校'
             },
             timeRange,
             overview: {

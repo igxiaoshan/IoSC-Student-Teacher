@@ -10,7 +10,13 @@ import Classroom from "../../../assets/classroom.png";
 import styled from "styled-components";
 
 const AddClass = () => {
-    const [sclassName, setSclassName] = useState("");
+    const [formData, setFormData] = useState({
+        sclassName: "",
+        description: "",
+        grade: "",
+        maxStudents: 50,
+        academicYear: ""
+    });
 
     const dispatch = useDispatch()
     const navigate = useNavigate()
@@ -25,8 +31,15 @@ const AddClass = () => {
     const [message, setMessage] = useState("");
     const [showPopup, setShowPopup] = useState(false);
 
+    const handleInputChange = (field) => (event) => {
+        setFormData({
+            ...formData,
+            [field]: event.target.value
+        });
+    };
+
     const fields = {
-        sclassName,
+        ...formData,
         adminID,
     };
 
@@ -70,14 +83,51 @@ const AddClass = () => {
                     <form onSubmit={submitHandler}>
                         <Stack spacing={3}>
                             <TextField
-                                label="Create a class"
+                                label="班级名称"
                                 variant="outlined"
-                                value={sclassName}
-                                onChange={(event) => {
-                                    setSclassName(event.target.value);
-                                }}
+                                value={formData.sclassName}
+                                onChange={handleInputChange('sclassName')}
                                 required
+                                placeholder="例如：高一(1)班"
                             />
+
+                            <TextField
+                                label="班级描述"
+                                variant="outlined"
+                                value={formData.description}
+                                onChange={handleInputChange('description')}
+                                multiline
+                                rows={3}
+                                placeholder="班级的简要描述（可选）"
+                            />
+
+                            <TextField
+                                label="年级"
+                                variant="outlined"
+                                value={formData.grade}
+                                onChange={handleInputChange('grade')}
+                                placeholder="例如：一年级、高一"
+                            />
+
+                            <TextField
+                                label="最大学生数"
+                                type="number"
+                                variant="outlined"
+                                value={formData.maxStudents}
+                                onChange={handleInputChange('maxStudents')}
+                                inputProps={{ min: 1, max: 100 }}
+                                helperText="班级可容纳的最大学生数量（1-100）"
+                            />
+
+                            <TextField
+                                label="学年"
+                                variant="outlined"
+                                value={formData.academicYear}
+                                onChange={handleInputChange('academicYear')}
+                                placeholder="例如：2023-2024"
+                                helperText="格式：YYYY-YYYY"
+                            />
+
                             <BlueButton
                                 fullWidth
                                 size="large"
@@ -86,10 +136,10 @@ const AddClass = () => {
                                 type="submit"
                                 disabled={loader}
                             >
-                                {loader ? <CircularProgress size={24} color="inherit" /> : "Create"}
+                                {loader ? <CircularProgress size={24} color="inherit" /> : "创建班级"}
                             </BlueButton>
                             <Button variant="outlined" onClick={() => navigate(-1)}>
-                                Go Back
+                                返回
                             </Button>
                         </Stack>
                     </form>

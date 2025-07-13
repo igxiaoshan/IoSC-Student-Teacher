@@ -47,11 +47,11 @@ const EditSubject = () => {
             
             if (response.data && !response.data.message) {
                 setSubjectData({
-                    subName: response.data.subName,
-                    subCode: response.data.subCode,
-                    sessions: response.data.sessions,
-                    sclassName: response.data.sclassName._id || response.data.sclassName,
-                    school: response.data.school
+                    subName: response.data.subName || '',
+                    subCode: response.data.subCode || '',
+                    sessions: response.data.sessions || 0,
+                    sclassName: response.data.sclassName?._id || response.data.sclassName || '',
+                    school: response.data.school || ''
                 });
             } else {
                 setError('科目不存在');

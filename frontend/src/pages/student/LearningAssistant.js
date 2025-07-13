@@ -26,6 +26,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import SchoolIcon from '@mui/icons-material/School';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
+import { safeGet } from '../../utils/safeAccess';
 
 const LearningAssistant = () => {
     const { currentUser } = useSelector(state => state.user);
@@ -61,25 +62,30 @@ const LearningAssistant = () => {
     const fetchSubjects = async () => {
         setSubjectsLoading(true);
         try {
-            // 根据学生的班级获取真实科目列表
-            if (currentUser && currentUser.sclassName) {
-                const classId = currentUser.sclassName._id || currentUser.sclassName;
-                console.log('获取班级科目，班级ID:', classId);
+            // 获取学生的科目列表（包括班级科目和选修科目）
+            const studentId = safeGet(currentUser, '_id');
+            if (studentId) {
+                console.log('获取学生科目，学生ID:', studentId);
 
-                const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/Subject/${classId}`);
+                const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/student/${studentId}/subjects`);
 
-                if (response.data && !response.data.message) {
-                    console.log('获取到科目列表:', response.data);
-                    setSubjects(response.data);
+                if (response.data && response.data.success) {
+                    console.log('获取到学生科目列表:', response.data.data.subjects);
+                    setSubjects(response.data.data.subjects);
+
+                    // 如果没有科目，提示用户选择科目
+                    if (response.data.data.subjects.length === 0) {
+                        setError('您还没有选择任何科目，请先到"课程管理"页面选择科目');
+                    }
                 } else {
-                    console.log('未找到科目:', response.data.message);
+                    console.log('获取科目失败:', response.data.message);
                     setSubjects([]);
-                    setError('未找到可用的科目');
+                    setError('获取科目失败: ' + (response.data.message || '未知错误'));
                 }
             } else {
-                console.log('学生班级信息不完整，当前用户:', currentUser);
+                console.log('学生信息不完整，当前用户:', currentUser);
                 setSubjects([]);
-                setError('学生班级信息不完整');
+                setError('学生信息不完整');
             }
         } catch (err) {
             console.error('获取科目列表失败:', err);
@@ -115,7 +121,7 @@ const LearningAssistant = () => {
 
         try {
             const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/student/ai/ask`, {
-                studentId: currentUser._id,
+                studentId: safeGet(currentUser, '_id'),
                 subjectId: selectedSubject,
                 question: inputMessage,
                 conversationId: conversationId

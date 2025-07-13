@@ -9,6 +9,7 @@ import Time from "../../assets/time.svg";
 import { getClassStudents, getSubjectDetails } from '../../redux/sclassRelated/sclassHandle';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
+import { safeGet } from '../../utils/safeAccess';
 
 const TeacherHomePage = () => {
     const dispatch = useDispatch();
@@ -16,8 +17,8 @@ const TeacherHomePage = () => {
     const { currentUser } = useSelector((state) => state.user);
     const { subjectDetails, sclassStudents } = useSelector((state) => state.sclass);
 
-    const classID = currentUser.teachSclass?._id
-    const subjectID = currentUser.teachSubject?._id
+    const classID = safeGet(currentUser, 'teachSclass._id');
+    const subjectID = safeGet(currentUser, 'teachSubject._id');
 
     useEffect(() => {
         dispatch(getSubjectDetails(subjectID, "Subject"));
