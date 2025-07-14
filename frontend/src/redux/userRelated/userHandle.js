@@ -26,7 +26,8 @@ export const loginUser = (fields, role) => async (dispatch) => {
             dispatch(authFailed(result.data.message));
         }
     } catch (error) {
-        dispatch(authError(error));
+        console.error('登录错误:', error);
+        dispatch(authError(error.response?.data?.message || error.message || '网络错误'));
     }
 };
 
@@ -47,7 +48,8 @@ export const registerUser = (fields, role) => async (dispatch) => {
             dispatch(authFailed(result.data.message));
         }
     } catch (error) {
-        dispatch(authError(error));
+        console.error('注册错误:', error);
+        dispatch(authError(error.response?.data?.message || error.message || '网络错误'));
     }
 };
 
@@ -64,7 +66,8 @@ export const getUserDetails = (id, address) => async (dispatch) => {
             dispatch(doneSuccess(result.data));
         }
     } catch (error) {
-        dispatch(getError(error));
+        console.error('获取用户详情错误:', error);
+        dispatch(getError(error.response?.data?.message || error.message || '网络错误'));
     }
 }
 
@@ -103,7 +106,8 @@ export const updateUser = (fields, id, address) => async (dispatch) => {
             dispatch(doneSuccess(result.data));
         }
     } catch (error) {
-        dispatch(getError(error));
+        console.error('更新用户错误:', error);
+        dispatch(getError(error.response?.data?.message || error.message || '网络错误'));
     }
 }
 

@@ -17,6 +17,7 @@ export const getAllComplains = (id, address) => async (dispatch) => {
             dispatch(getSuccess(result.data));
         }
     } catch (error) {
-        dispatch(getError(error));
+        console.error('获取投诉列表错误:', error);
+        dispatch(getError(error.response?.data?.message || error.message || '网络错误'));
     }
 }

@@ -5,6 +5,7 @@ import {
     getFailed,
     getError,
     getStudentsSuccess,
+    getTeachersSuccess,
     detailsSuccess,
     getFailedTwo,
     getSubjectsSuccess,
@@ -17,6 +18,7 @@ import {
     setFilters,
     clearError
 } from './sclassSlice';
+import { handleReduxError } from '../../utils/errorHandler';
 
 export const getAllSclasses = (id, address, filters = {}) => async (dispatch) => {
     dispatch(getRequest());
@@ -42,7 +44,7 @@ export const getAllSclasses = (id, address, filters = {}) => async (dispatch) =>
         }
     } catch (error) {
         console.error('获取班级列表错误:', error);
-        dispatch(getError(error.response?.data?.message || error.message || '网络错误'));
+        dispatch(getError(handleReduxError(error)));
     }
 }
 
@@ -57,7 +59,24 @@ export const getClassStudents = (id) => async (dispatch) => {
             dispatch(getStudentsSuccess(result.data));
         }
     } catch (error) {
-        dispatch(getError(error));
+        console.error('获取班级学生错误:', error);
+        dispatch(getError(error.response?.data?.message || error.message || '网络错误'));
+    }
+}
+
+export const getClassTeachers = (id) => async (dispatch) => {
+    dispatch(getRequest());
+
+    try {
+        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/Sclass/Teachers/${id}`);
+        if (result.data.success === false || result.data.message) {
+            dispatch(getFailedTwo(result.data.message || '获取班级教师失败'));
+        } else {
+            dispatch(getTeachersSuccess(result.data));
+        }
+    } catch (error) {
+        console.error('获取班级教师错误:', error);
+        dispatch(getError(handleReduxError(error)));
     }
 }
 
@@ -70,7 +89,8 @@ export const getClassDetails = (id, address) => async (dispatch) => {
             dispatch(detailsSuccess(result.data));
         }
     } catch (error) {
-        dispatch(getError(error));
+        console.error('获取班级详情错误:', error);
+        dispatch(getError(error.response?.data?.message || error.message || '网络错误'));
     }
 }
 
@@ -85,7 +105,8 @@ export const getSubjectList = (id, address) => async (dispatch) => {
             dispatch(getSubjectsSuccess(result.data));
         }
     } catch (error) {
-        dispatch(getError(error));
+        console.error('获取科目列表错误:', error);
+        dispatch(getError(error.response?.data?.message || error.message || '网络错误'));
     }
 }
 
@@ -100,7 +121,8 @@ export const getTeacherFreeClassSubjects = (id) => async (dispatch) => {
             dispatch(getSubjectsSuccess(result.data));
         }
     } catch (error) {
-        dispatch(getError(error));
+        console.error('获取教师空闲班级科目错误:', error);
+        dispatch(getError(error.response?.data?.message || error.message || '网络错误'));
     }
 }
 

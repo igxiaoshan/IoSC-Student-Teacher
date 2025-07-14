@@ -4,7 +4,7 @@ const router = require('express').Router();
 
 const { adminRegister, adminLogIn, getAdminDetail} = require('../controllers/admin-controller.js');
 
-const { sclassCreate, sclassList, deleteSclass, deleteSclasses, getSclassDetail, getSclassStudents, updateSclass, batchDeleteSclasses, getClassStatistics } = require('../controllers/class-controller.js');
+const { sclassCreate, sclassList, deleteSclass, deleteSclasses, getSclassDetail, getSclassStudents, getSclassTeachers, updateSclass, batchDeleteSclasses, getClassStatistics } = require('../controllers/class-controller.js');
 const { createClassValidation, updateClassValidation, getClassValidation, getClassListValidation, batchDeleteValidation, handleValidationErrors } = require('../validation/classValidation.js');
 const { complainCreate, complainList } = require('../controllers/complain-controller.js');
 const { noticeCreate, noticeList, deleteNotices, deleteNotice, updateNotice } = require('../controllers/notice-controller.js');
@@ -130,6 +130,9 @@ router.get("/Sclass/:id", getClassValidation, handleValidationErrors, getSclassD
 
 // 获取班级学生列表
 router.get("/Sclass/Students/:id", getClassValidation, handleValidationErrors, getSclassStudents);
+
+// 获取班级教师列表
+router.get("/Sclass/Teachers/:id", getClassValidation, handleValidationErrors, getSclassTeachers);
 
 // 获取班级统计信息
 router.get("/SclassStats/:id", getClassListValidation, handleValidationErrors, getClassStatistics);

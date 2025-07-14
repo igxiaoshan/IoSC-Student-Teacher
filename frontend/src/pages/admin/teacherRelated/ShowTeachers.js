@@ -2,13 +2,12 @@ import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom'
 import { getAllTeachers } from '../../../redux/teacherRelated/teacherHandle';
-import { useTranslation } from '../../../hooks/useTranslation';
 import {
     Paper, Table, TableBody, TableContainer,
     TableHead, TablePagination, Button, Box, IconButton,
     Alert, Typography, CircularProgress
 } from '@mui/material';
-
+import { deleteUser } from '../../../redux/userRelated/userHandle';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import { StyledTableCell, StyledTableRow } from '../../../components/styles';
 import { BlueButton, GreenButton } from '../../../components/buttonStyles';
@@ -19,7 +18,6 @@ import { mapSafeTeacherData, safeGet } from '../../../utils/safeAccess';
 import TeacherClassManager from './TeacherClassManager';
 
 const ShowTeachers = () => {
-    const { tTeacher, tCommon, tTable, tSubject, tClass } = useTranslation();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
 
@@ -50,7 +48,7 @@ const ShowTeachers = () => {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
                 <CircularProgress />
-                <Typography sx={{ ml: 2 }}>{tCommon('loading')}</Typography>
+                <Typography sx={{ ml: 2 }}>加载教师列表中...</Typography>
             </Box>
         );
     }
@@ -59,10 +57,10 @@ const ShowTeachers = () => {
         return (
             <Box sx={{ p: 3 }}>
                 <Alert severity="error" sx={{ mb: 2 }}>
-                    {tTeacher('getTeacherListFailed')}: {error}
+                    获取教师列表失败: {error}
                 </Alert>
                 <Button variant="contained" onClick={() => dispatch(getAllTeachers(safeGet(currentUser, '_id')))}>
-                    {tCommon('retry')}
+                    重试
                 </Button>
             </Box>
         );
@@ -76,7 +74,7 @@ const ShowTeachers = () => {
                 </Alert>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
                     <GreenButton variant="contained" onClick={() => navigate("/Admin/teachers/chooseclass")}>
-                        {tTeacher('addTeacher')}
+                        Add Teacher
                     </GreenButton>
                 </Box>
             </Box>
@@ -95,11 +93,11 @@ const ShowTeachers = () => {
     };
 
     const columns = [
-        { id: 'name', label: tTeacher('teacherName'), minWidth: 170 },
-        { id: 'teachSubject', label: tSubject('subjectName'), minWidth: 100 },
-        { id: 'teachSclass', label: tClass('primaryClass'), minWidth: 150 },
-        { id: 'classCount', label: tClass('classCount'), minWidth: 80 },
-        { id: 'classNames', label: tClass('allClasses'), minWidth: 200 },
+        { id: 'name', label: 'Name', minWidth: 170 },
+        { id: 'teachSubject', label: 'Subject', minWidth: 100 },
+        { id: 'teachSclass', label: 'Primary Class', minWidth: 150 },
+        { id: 'classCount', label: 'Classes', minWidth: 80 },
+        { id: 'classNames', label: 'All Classes', minWidth: 200 },
     ];
 
     // 使用安全映射函数处理教师数据
@@ -121,11 +119,11 @@ const ShowTeachers = () => {
 
     const actions = [
         {
-            icon: <PersonAddAlt1Icon color="primary" />, name: tTeacher('addTeacher'),
+            icon: <PersonAddAlt1Icon color="primary" />, name: 'Add New Teacher',
             action: () => navigate("/Admin/teachers/chooseclass")
         },
         {
-            icon: <PersonRemoveIcon color="error" />, name: tTeacher('deleteAllTeachers'),
+            icon: <PersonRemoveIcon color="error" />, name: 'Delete All Teachers',
             action: () => deleteHandler(currentUser._id, "Teachers")
         },
     ];
@@ -172,7 +170,7 @@ const ShowTeachers = () => {
                                 </StyledTableCell>
                             ))}
                             <StyledTableCell align="center">
-                                {tTable('actions')}
+                                Actions
                             </StyledTableCell>
                         </StyledTableRow>
                     </TableHead>

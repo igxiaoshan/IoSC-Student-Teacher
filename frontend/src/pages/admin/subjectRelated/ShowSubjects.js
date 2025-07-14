@@ -51,9 +51,9 @@ const ShowSubjects = () => {
     }
 
     const subjectColumns = [
-        { id: 'subName', label: 'Sub Name', minWidth: 170 },
-        { id: 'sessions', label: 'Sessions', minWidth: 170 },
-        { id: 'sclassName', label: 'Class', minWidth: 170 },
+        { id: 'subName', label: '科目名称', minWidth: 170 },
+        { id: 'sessions', label: '学期', minWidth: 170 },
+        { id: 'sclassName', label: '班级', minWidth: 170 },
     ]
 
     // 使用安全映射函数处理科目数据
@@ -70,7 +70,7 @@ const ShowSubjects = () => {
                 </IconButton>
                 <BlueButton variant="contained"
                     onClick={() => navigate(`/Admin/subjects/subject/${row.sclassID}/${row.id}`)}>
-                    View
+                    查看
                 </BlueButton>
             </>
         );
@@ -78,11 +78,11 @@ const ShowSubjects = () => {
 
     const actions = [
         {
-            icon: <PostAddIcon color="primary" />, name: 'Add New Subject',
+            icon: <PostAddIcon color="primary" />, name: '添加科目',
             action: () => navigate("/Admin/subjects/chooseclass")
         },
         {
-            icon: <DeleteIcon color="error" />, name: 'Delete All Subjects',
+            icon: <DeleteIcon color="error" />, name: '删除所有科目',
             action: () => deleteHandler(currentUser._id, "Subjects")
         }
     ];
@@ -97,7 +97,7 @@ const ShowSubjects = () => {
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
                             <GreenButton variant="contained"
                                 onClick={() => navigate("/Admin/subjects/chooseclass")}>
-                                Add Subjects
+                                添加科目
                             </GreenButton>
                         </Box>
                         :

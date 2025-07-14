@@ -81,7 +81,12 @@ const EnhancedShowClasses = () => {
 
     useEffect(() => {
         if (error) {
-            setMessage(error);
+            // 确保错误是字符串类型
+            const errorMessage = typeof error === 'string' ? error :
+                                error?.message ||
+                                JSON.stringify(error) ||
+                                '未知错误';
+            setMessage(errorMessage);
             setShowPopup(true);
             dispatch(clearClassError());
         }

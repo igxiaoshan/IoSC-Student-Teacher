@@ -18,7 +18,8 @@ export const getAllStudents = (id) => async (dispatch) => {
             dispatch(getSuccess(result.data));
         }
     } catch (error) {
-        dispatch(getError(error));
+        console.error('获取学生列表错误:', error);
+        dispatch(getError(error.response?.data?.message || error.message || '网络错误'));
     }
 }
 
@@ -35,7 +36,8 @@ export const updateStudentFields = (id, fields, address) => async (dispatch) => 
             dispatch(stuffDone());
         }
     } catch (error) {
-        dispatch(getError(error));
+        console.error('更新学生字段错误:', error);
+        dispatch(getError(error.response?.data?.message || error.message || '网络错误'));
     }
 }
 
@@ -50,6 +52,7 @@ export const removeStuff = (id, address) => async (dispatch) => {
             dispatch(stuffDone());
         }
     } catch (error) {
-        dispatch(getError(error));
+        console.error('删除操作错误:', error);
+        dispatch(getError(error.response?.data?.message || error.message || '网络错误'));
     }
 }

@@ -213,6 +213,93 @@ const getSclassDetail = async (req, res) => {
     }
 }
 
+// 获取班级教师列表
+const getSclassTeachers = async (req, res) => {
+    try {
+        const classId = req.params.id;
+
+        // 验证ID格式
+        if (!mongoose.Types.ObjectId.isValid(classId)) {
+            return res.status(400).json({
+                success: false,
+                message: '班级ID格式不正确'
+            });
+        }
+
+        // 获取班级信息（包含班主任）
+        const classInfo = await Sclass.findById(classId)
+            .populate('classTeacher', 'name email phone teacherType position status teachSubject')
+            .populate({
+                path: 'classTeacher',
+                populate: {
+                    path: 'teachSubject',
+                    select: 'subName'
+                }
+            });
+
+        if (!classInfo) {
+            return res.status(404).json({
+                success: false,
+                message: '班级不存在'
+            });
+        }
+
+        // 查找所有任教该班级的教师（主班级或附加班级）
+        const teachers = await Teacher.find({
+            $or: [
+                { teachSclass: classId },
+                { additionalClasses: classId }
+            ]
+        })
+        .populate('teachSubject', 'subName')
+        .populate('teachSclass', 'sclassName')
+        .populate('additionalClasses', 'sclassName')
+        .select('-password');
+
+        // 处理教师数据
+        const processedTeachers = teachers.map(teacher => {
+            const teacherObj = teacher.toObject();
+
+            // 判断教师在该班级的角色
+            const isMainClass = teacherObj.teachSclass && teacherObj.teachSclass._id.toString() === classId;
+            const isAdditionalClass = teacherObj.additionalClasses &&
+                teacherObj.additionalClasses.some(cls => cls._id.toString() === classId);
+
+            let role = '任课教师';
+            if (classInfo.classTeacher && classInfo.classTeacher._id.toString() === teacherObj._id.toString()) {
+                role = '班主任';
+            } else if (isMainClass) {
+                role = '主任课教师';
+            }
+
+            return {
+                ...teacherObj,
+                role,
+                isMainClass,
+                isAdditionalClass,
+                subjectName: teacherObj.teachSubject?.subName || '未分配科目'
+            };
+        });
+
+        res.json({
+            success: true,
+            data: processedTeachers,
+            classInfo: {
+                sclassName: classInfo.sclassName,
+                classTeacher: classInfo.classTeacher
+            }
+        });
+
+    } catch (error) {
+        console.error('获取班级教师错误:', error);
+        res.status(500).json({
+            success: false,
+            message: '获取班级教师失败',
+            error: error.message
+        });
+    }
+};
+
 const getSclassStudents = async (req, res) => {
     try {
         let students = await Student.find({ sclassName: req.params.id })
@@ -512,6 +599,7 @@ module.exports = {
     deleteSclasses,
     getSclassDetail,
     getSclassStudents,
+    getSclassTeachers,
     updateSclass,
     batchDeleteSclasses,
     getClassStatistics
