@@ -20,7 +20,7 @@ const AccountMenu = () => {
     return (
         <>
             <Box sx={{ display: 'flex', alignItems: 'center', textAlign: 'center' }}>
-                <Tooltip title="Account settings">
+                <Tooltip title="帐户设置">
                     <IconButton
                         onClick={handleClick}
                         size="small"
@@ -51,7 +51,7 @@ const AccountMenu = () => {
                 <MenuItem>
                     <Avatar />
                     <Link to={`/${currentRole}/profile`}>
-                        Profile
+                        个人资料
                     </Link>
                 </MenuItem>
                 <Divider />
@@ -59,14 +59,14 @@ const AccountMenu = () => {
                     <ListItemIcon>
                         <Settings fontSize="small" />
                     </ListItemIcon>
-                    Settings
+                    帐户设置
                 </MenuItem>
                 <MenuItem>
                     <ListItemIcon>
                         <Logout fontSize="small" />
                     </ListItemIcon>
                     <Link to="/logout">
-                        Logout
+                        登出
                     </Link>
                 </MenuItem>
             </Menu>

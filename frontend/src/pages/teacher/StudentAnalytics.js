@@ -48,6 +48,7 @@ const StudentAnalytics = () => {
     const { currentUser } = useSelector(state => state.user);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [assessments, setAssessments] = useState([]);
     const [selectedAssessment, setSelectedAssessment] = useState('');
     const [analysisReport, setAnalysisReport] = useState(null);

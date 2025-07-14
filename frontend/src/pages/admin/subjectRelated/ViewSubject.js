@@ -43,8 +43,8 @@ const ViewSubject = () => {
   };
 
   const studentColumns = [
-    { id: 'rollNum', label: 'Roll No.', minWidth: 100 },
-    { id: 'name', label: 'Name', minWidth: 170 },
+    { id: 'rollNum', label: '学号', minWidth: 100 },
+    { id: 'name', label: '姓名', minWidth: 170 },
   ]
 
   const studentRows = sclassStudents.map((student) => {
@@ -62,7 +62,7 @@ const ViewSubject = () => {
           variant="contained"
           onClick={() => navigate("/Admin/students/student/" + row.id)}
         >
-          View
+          查看
         </BlueButton>
         <PurpleButton
           variant="contained"
@@ -70,7 +70,7 @@ const ViewSubject = () => {
             navigate(`/Admin/subject/student/attendance/${row.id}/${subjectID}`)
           }
         >
-          Take Attendance
+          考勤
         </PurpleButton>
       </>
     );
@@ -83,11 +83,11 @@ const ViewSubject = () => {
           variant="contained"
           onClick={() => navigate("/Admin/students/student/" + row.id)}
         >
-          View
+          查看
         </BlueButton>
         <PurpleButton variant="contained"
           onClick={() => navigate(`/Admin/subject/student/marks/${row.id}/${subjectID}`)}>
-          Provide Marks
+          提供分数
         </PurpleButton>
       </>
     );
@@ -103,14 +103,14 @@ const ViewSubject = () => {
                 variant="contained"
                 onClick={() => navigate("/Admin/class/addstudents/" + classID)}
               >
-                Add Students
+                添加学生
               </GreenButton>
             </Box>
           </>
         ) : (
           <>
             <Typography variant="h5" gutterBottom>
-              Students List:
+              学生列表:
             </Typography>
 
             {selectedSection === 'attendance' &&
@@ -123,12 +123,12 @@ const ViewSubject = () => {
             <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
               <BottomNavigation value={selectedSection} onChange={handleSectionChange} showLabels>
                 <BottomNavigationAction
-                  label="Attendance"
+                  label="考勤"
                   value="attendance"
                   icon={selectedSection === 'attendance' ? <TableChartIcon /> : <TableChartOutlinedIcon />}
                 />
                 <BottomNavigationAction
-                  label="Marks"
+                  label="分数"
                   value="marks"
                   icon={selectedSection === 'marks' ? <InsertChartIcon /> : <InsertChartOutlinedIcon />}
                 />
@@ -147,31 +147,31 @@ const ViewSubject = () => {
     return (
       <>
         <Typography variant="h4" align="center" gutterBottom>
-          Subject Details
+          科目详情
         </Typography>
         <Typography variant="h6" gutterBottom>
-          Subject Name : {subjectDetails && subjectDetails.subName}
+          科目名称 : {subjectDetails && subjectDetails.subName}
         </Typography>
         <Typography variant="h6" gutterBottom>
-          Subject Code : {subjectDetails && subjectDetails.subCode}
+          科目代码 : {subjectDetails && subjectDetails.subCode}
         </Typography>
         <Typography variant="h6" gutterBottom>
-          Subject Sessions : {subjectDetails && subjectDetails.sessions}
+          科目会话 : {subjectDetails && subjectDetails.sessions}
         </Typography>
         <Typography variant="h6" gutterBottom>
-          Number of Students: {numberOfStudents}
+          学生数量: {numberOfStudents}
         </Typography>
         <Typography variant="h6" gutterBottom>
-          Class Name : {subjectDetails && subjectDetails.sclassName && subjectDetails.sclassName.sclassName}
+          班级名称 : {subjectDetails && subjectDetails.sclassName && subjectDetails.sclassName.sclassName}
         </Typography>
         {subjectDetails && subjectDetails.teacher ?
           <Typography variant="h6" gutterBottom>
-            Teacher Name : {subjectDetails.teacher.name}
+            教师名称 : {subjectDetails.teacher.name}
           </Typography>
           :
           <GreenButton variant="contained"
             onClick={() => navigate("/Admin/teachers/addteacher/" + subjectDetails._id)}>
-            Add Subject Teacher
+            添加科目教师
           </GreenButton>
         }
       </>
@@ -188,8 +188,8 @@ const ViewSubject = () => {
             <TabContext value={value}>
               <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <TabList onChange={handleChange} sx={{ position: 'fixed', width: '100%', bgcolor: 'background.paper', zIndex: 1 }}>
-                  <Tab label="Details" value="1" />
-                  <Tab label="Students" value="2" />
+                  <Tab label="详情" value="1" />
+                  <Tab label="学生" value="2" />
                 </TabList>
               </Box>
               <Container sx={{ marginTop: "3rem", marginBottom: "4rem" }}>

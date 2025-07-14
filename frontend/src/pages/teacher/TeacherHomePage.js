@@ -2,6 +2,7 @@ import { Container, Grid, Paper } from '@mui/material'
 import SeeNotice from '../../components/SeeNotice';
 import CountUp from 'react-countup';
 import styled from 'styled-components';
+import { useTranslation } from '../../hooks/useTranslation';
 import Students from "../../assets/img1.png";
 import Lessons from "../../assets/subjects.svg";
 import Tests from "../../assets/assignment.svg";
@@ -13,6 +14,7 @@ import { safeGet } from '../../utils/safeAccess';
 
 const TeacherHomePage = () => {
     const dispatch = useDispatch();
+    const { tTeacher, tClass } = useTranslation();
 
     const { currentUser } = useSelector((state) => state.user);
     const { subjectDetails, sclassStudents } = useSelector((state) => state.sclass);
@@ -36,7 +38,7 @@ const TeacherHomePage = () => {
                         <StyledPaper>
                             <img src={Students} alt="Students" />
                             <Title>
-                                班级学生
+                                {tClass('classStudents')}
                             </Title>
                             <Data start={0} end={numberOfStudents} duration={2.5} />
                         </StyledPaper>
@@ -45,7 +47,7 @@ const TeacherHomePage = () => {
                         <StyledPaper>
                             <img src={Lessons} alt="Lessons" />
                             <Title>
-                                课程总数
+                                {tTeacher('totalLessons')}
                             </Title>
                             <Data start={0} end={numberOfSessions} duration={5} />
                         </StyledPaper>
@@ -54,7 +56,7 @@ const TeacherHomePage = () => {
                         <StyledPaper>
                             <img src={Tests} alt="Tests" />
                             <Title>
-                                已完成测试
+                                {tTeacher('completedTests')}
                             </Title>
                             <Data start={0} end={24} duration={4} />
                         </StyledPaper>
@@ -63,7 +65,7 @@ const TeacherHomePage = () => {
                         <StyledPaper>
                             <img src={Time} alt="Time" />
                             <Title>
-                                总课时
+                                {tTeacher('totalHours')}
                             </Title>
                             <Data start={0} end={30} duration={4} suffix="hrs"/>                        </StyledPaper>
                     </Grid>

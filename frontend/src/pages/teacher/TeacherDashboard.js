@@ -8,6 +8,7 @@ import {
     Divider,
     IconButton,
 } from '@mui/material';
+import { useTranslation } from '../../hooks/useTranslation';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import TeacherSideBar from './TeacherSideBar';
@@ -29,6 +30,7 @@ import StudentAnalytics from './StudentAnalytics';
 
 const TeacherDashboard = () => {
     const [open, setOpen] = useState(true);
+    const { tTeacher } = useTranslation();
     const toggleDrawer = () => {
         setOpen(!open);
     };
@@ -58,7 +60,7 @@ const TeacherDashboard = () => {
                             noWrap
                             sx={{ flexGrow: 1 }}
                         >
-                            教师 仪表板
+                            {tTeacher('teacherDashboard')}
                         </Typography>
                         <AccountMenu />
                     </Toolbar>

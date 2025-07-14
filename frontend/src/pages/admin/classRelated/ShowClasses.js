@@ -59,7 +59,7 @@ const ShowClasses = () => {
   }
 
   const sclassColumns = [
-    { id: 'name', label: 'Class Name', minWidth: 170 },
+    { id: 'name', label: '班级名称', minWidth: 170 },
   ]
 
   const sclassRows = sclassesList && sclassesList.length > 0 && sclassesList.map((sclass) => {
@@ -71,8 +71,8 @@ const ShowClasses = () => {
 
   const SclassButtonHaver = ({ row }) => {
     const actions = [
-      { icon: <PostAddIcon />, name: 'Add Subjects', action: () => navigate("/Admin/addsubject/" + row.id) },
-      { icon: <PersonAddAlt1Icon />, name: 'Add Student', action: () => navigate("/Admin/class/addstudents/" + row.id) },
+      { icon: <PostAddIcon />, name: '添加科目', action: () => navigate("/Admin/addsubject/" + row.id) },
+      { icon: <PersonAddAlt1Icon />, name: '添加学生', action: () => navigate("/Admin/class/addstudents/" + row.id) },
     ];
     return (
       <ButtonContainer>
@@ -84,7 +84,7 @@ const ShowClasses = () => {
         </IconButton>
         <BlueButton variant="contained"
           onClick={() => navigate("/Admin/classes/class/" + row.id)}>
-          View
+          查看
         </BlueButton>
         <ActionMenu actions={actions} />
       </ButtonContainer>
@@ -105,7 +105,7 @@ const ShowClasses = () => {
     return (
       <>
         <Box sx={{ display: 'flex', alignItems: 'center', textAlign: 'center' }}>
-          <Tooltip title="Add Students & Subjects">
+          <Tooltip title="添加学生和科目">
             <IconButton
               onClick={handleClick}
               size="small"
@@ -114,7 +114,7 @@ const ShowClasses = () => {
               aria-haspopup="true"
               aria-expanded={open ? 'true' : undefined}
             >
-              <h5>Add</h5>
+              <h5>添加</h5>
               <SpeedDialIcon />
             </IconButton>
           </Tooltip>
@@ -154,15 +154,15 @@ const ShowClasses = () => {
 
   const actions = [
     {
-      icon: <AddCardIcon color="primary" />, name: 'Add New Class',
+      icon: <AddCardIcon color="primary" />, name: '添加新班级',
       action: () => navigate("/Admin/addclass")
     },
     {
-      icon: <AddCardIcon color="success" />, name: 'Quick Add Class',
+      icon: <AddCardIcon color="success" />, name: '快速添加班级',
       action: () => setQuickAddOpen(true)
     },
     {
-      icon: <DeleteIcon color="error" />, name: 'Delete All Classes',
+      icon: <DeleteIcon color="error" />, name: '删除所有班级',
       action: () => deleteHandler(adminID, "Sclasses")
     },
   ];
@@ -176,7 +176,7 @@ const ShowClasses = () => {
           {getresponse ?
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
               <GreenButton variant="contained" onClick={() => navigate("/Admin/addclass")}>
-                Add Class
+                添加新班级
               </GreenButton>
             </Box>
             :

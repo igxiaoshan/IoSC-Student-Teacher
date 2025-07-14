@@ -11,9 +11,11 @@ import Subject from "../../assets/subjects.svg";
 import Assignment from "../../assets/assignment.svg";
 import { getSubjectList } from '../../redux/sclassRelated/sclassHandle';
 import { safeGet } from '../../utils/safeAccess';
+import { useTranslation } from '../../hooks/useTranslation';
 
 const StudentHomePage = () => {
     const dispatch = useDispatch();
+    const { tStudent, tSubject, tDashboard } = useTranslation();
 
     const { userDetails, currentUser, loading, response } = useSelector((state) => state.user);
     const { subjectsList } = useSelector((state) => state.sclass);
@@ -55,7 +57,7 @@ const StudentHomePage = () => {
                         <StyledPaper>
                             <img src={Subject} alt="Subjects" />
                             <Title>
-                                科目总数
+                                {tSubject('totalSubjects')}
                             </Title>
                             <Data start={0} end={numberOfSubjects} duration={2.5} />
                         </StyledPaper>
@@ -64,7 +66,7 @@ const StudentHomePage = () => {
                         <StyledPaper>
                             <img src={Assignment} alt="Assignments" />
                             <Title>
-                                作业总数
+                                {tStudent('totalAssignments')}
                             </Title>
                             <Data start={0} end={15} duration={4} />
                         </StyledPaper>
@@ -73,12 +75,12 @@ const StudentHomePage = () => {
                         <ChartContainer>
                             {
                                 response ?
-                                    <Typography variant="h6">未找到考勤记录</Typography>
+                                    <Typography variant="h6">{tStudent('noAttendanceRecord')}</Typography>
                                     :
                                     <>
                                         {loading
                                             ? (
-                                                <Typography variant="h6">加载中...</Typography>
+                                                <Typography variant="h6">{tDashboard('loading')}</Typography>
                                             )
                                             :
                                             <>

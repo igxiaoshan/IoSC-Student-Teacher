@@ -8,6 +8,7 @@ import {
     Divider,
     IconButton,
 } from '@mui/material';
+import { useTranslation } from '../../hooks/useTranslation';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import StudentSideBar from './StudentSideBar';
@@ -26,6 +27,7 @@ import { AppBar, Drawer } from '../../components/styles';
 
 const StudentDashboard = () => {
     const [open, setOpen] = useState(true);
+    const { tStudent } = useTranslation();
     const toggleDrawer = () => {
         setOpen(!open);
     };
@@ -55,7 +57,7 @@ const StudentDashboard = () => {
                             noWrap
                             sx={{ flexGrow: 1 }}
                         >
-                            学生 仪表板
+                            {tStudent('studentDashboard')}
                         </Typography>
                         <AccountMenu />
                     </Toolbar>

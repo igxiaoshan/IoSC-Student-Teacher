@@ -1,11 +1,12 @@
 import * as React from 'react';
 import { Divider, ListItemButton, ListItemIcon, ListItemText, ListSubheader } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from '../../hooks/useTranslation';
 
 import HomeIcon from '@mui/icons-material/Home';
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
-import AnnouncementOutlinedIcon from '@mui/icons-material/AnnouncementOutlined';
+
 import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import QuizIcon from '@mui/icons-material/Quiz';
@@ -15,7 +16,8 @@ import { getSafeClassName } from '../../utils/safeAccess';
 
 const TeacherSideBar = () => {
     const { currentUser } = useSelector((state) => state.user);
-    const sclassName = getSafeClassName(currentUser?.teachSclass) || '未分配班级';
+    const { tNav, tTeacher, tClass } = useTranslation();
+    const sclassName = getSafeClassName(currentUser?.teachSclass) || tClass('unassignedClass');
 
     const location = useLocation();
     return (
@@ -25,13 +27,13 @@ const TeacherSideBar = () => {
                     <ListItemIcon>
                         <HomeIcon color={location.pathname === ("/" || "/Teacher/dashboard") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="首页" />
+                    <ListItemText primary={tNav('home')} />
                 </ListItemButton>
                 <ListItemButton component={Link} to="/Teacher/class">
                     <ListItemIcon>
                         <ClassOutlinedIcon color={location.pathname.startsWith("/Teacher/class") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary={`${sclassName}班`} />
+                    <ListItemText primary={`${sclassName}${tClass('classUnit')}`} />
                 </ListItemButton>
                 {/* <ListItemButton component={Link} to="/Teacher/complain">
                     <ListItemIcon>
@@ -43,25 +45,25 @@ const TeacherSideBar = () => {
             <Divider sx={{ my: 1 }} />
             <React.Fragment>
                 <ListSubheader component="div" inset>
-                    AI助手
+                    {tTeacher('aiTools')}
                 </ListSubheader>
                 <ListItemButton component={Link} to="/Teacher/ai-courseware">
                     <ListItemIcon>
                         <AutoAwesomeIcon color={location.pathname.startsWith("/Teacher/ai-courseware") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="AI备课" />
+                    <ListItemText primary={tTeacher('aiCourseware')} />
                 </ListItemButton>
                 <ListItemButton component={Link} to="/Teacher/ai-assessment">
                     <ListItemIcon>
                         <QuizIcon color={location.pathname.startsWith("/Teacher/ai-assessment") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="AI考核" />
+                    <ListItemText primary={tTeacher('aiAssessment')} />
                 </ListItemButton>
                 <ListItemButton component={Link} to="/Teacher/analytics">
                     <ListItemIcon>
                         <AnalyticsIcon color={location.pathname.startsWith("/Teacher/analytics") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="学情分析" />
+                    <ListItemText primary={tTeacher('studentAnalytics')} />
                 </ListItemButton>
             </React.Fragment>
             <Divider sx={{ my: 1 }} />

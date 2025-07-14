@@ -3,12 +3,12 @@ import {
     CssBaseline,
     Box,
     Toolbar,
-    List,
     Typography,
     useTheme,
     Divider,
     IconButton,
 } from '@mui/material';
+import { useTranslation } from '../../hooks/useTranslation';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import { Navigate, Route, Routes } from 'react-router-dom';
@@ -56,6 +56,7 @@ import AccountMenu from '../../components/AccountMenu';
 const AdminDashboard = () => {
     const [open, setOpen] = useState(false);
     const theme = useTheme();
+    const { tAdmin } = useTranslation();
     
     const toggleDrawer = () => {
         setOpen(!open);
@@ -102,7 +103,7 @@ const AdminDashboard = () => {
                             fontSize: '1.25rem'
                         }}
                     >
-                        Admin Dashboard
+                        {tAdmin('adminDashboard')}
                     </Typography>
                     <AccountMenu />
                 </Toolbar>

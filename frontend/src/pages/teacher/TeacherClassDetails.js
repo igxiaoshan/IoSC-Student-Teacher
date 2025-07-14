@@ -3,6 +3,7 @@ import * as React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom'
 import { getClassStudents } from "../../redux/sclassRelated/sclassHandle";
+import { useTranslation } from '../../hooks/useTranslation';
 import { Paper, Box, Typography, ButtonGroup, Button, Popper, Grow, ClickAwayListener, MenuList, MenuItem } from '@mui/material';
 import { BlackButton, BlueButton} from "../../components/buttonStyles";
 import TableTemplate from "../../components/TableTemplate";
@@ -12,6 +13,7 @@ import { safeGet } from '../../utils/safeAccess';
 const TeacherClassDetails = () => {
     const navigate = useNavigate()
     const dispatch = useDispatch();
+    const { tStudent } = useTranslation();
     const { sclassStudents, loading, error, getresponse } = useSelector((state) => state.sclass);
 
     const { currentUser } = useSelector((state) => state.user);
@@ -27,8 +29,8 @@ const TeacherClassDetails = () => {
     }
 
     const studentColumns = [
-        { id: 'name', label: '姓名', minWidth: 170 },
-        { id: 'rollNum', label: '学号', minWidth: 100 },
+        { id: 'name', label: tStudent('studentName'), minWidth: 170 },
+        { id: 'rollNum', label: tStudent('studentId'), minWidth: 100 },
     ]
 
     const studentRows = sclassStudents.map((student) => {
@@ -40,7 +42,7 @@ const TeacherClassDetails = () => {
     })
 
     const StudentsButtonHaver = ({ row }) => {
-        const options = ['考勤', '提供成绩'];
+        const options = [tStudent('attendance'), tStudent('provideGrades')];
 
         const [open, setOpen] = React.useState(false);
         const anchorRef = React.useRef(null);

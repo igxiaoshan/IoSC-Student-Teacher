@@ -36,26 +36,26 @@ const TeacherDetails = () => {
             ) : (
                 <Container>
                     <Typography variant="h4" align="center" gutterBottom>
-                        Teacher Details
+                        教师详情
                     </Typography>
                     <Typography variant="h6" gutterBottom>
-                        Teacher Name: {safeGet(teacherDetails, 'name', '未知教师')}
+                        教师姓名: {safeGet(teacherDetails, 'name', '未知教师')}
                     </Typography>
                     <Typography variant="h6" gutterBottom>
-                        Class Name: {safeGet(teacherDetails, 'teachSclass.sclassName', '未分配班级')}
+                        班级名称: {safeGet(teacherDetails, 'teachSclass.sclassName', '未分配班级')}
                     </Typography>
                     {isSubjectNamePresent ? (
                         <>
                             <Typography variant="h6" gutterBottom>
-                                Subject Name: {safeGet(teacherDetails, 'teachSubject.subName', '未知科目')}
+                                科目名称: {safeGet(teacherDetails, 'teachSubject.subName', '未知科目')}
                             </Typography>
                             <Typography variant="h6" gutterBottom>
-                                Subject Sessions: {safeGet(teacherDetails, 'teachSubject.sessions', 0)}
+                                科目学期: {safeGet(teacherDetails, 'teachSubject.sessions', 0)}
                             </Typography>
                         </>
                     ) : (
                         <Button variant="contained" onClick={handleAddSubject}>
-                            Add Subject
+                            添加科目
                         </Button>
                     )}
                 </Container>

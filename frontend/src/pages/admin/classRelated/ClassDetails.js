@@ -150,7 +150,7 @@ const ClassDetails = () => {
                     variant="contained"
                     onClick={() => navigate("/Admin/students/student/" + row.id)}
                 >
-                    View
+                    查看
                 </BlueButton>
                 <PurpleButton
                     variant="contained"
@@ -158,7 +158,7 @@ const ClassDetails = () => {
                         navigate("/Admin/students/student/attendance/" + row.id)
                     }
                 >
-                    Attendance
+                    考勤
                 </PurpleButton>
             </>
         );
@@ -166,11 +166,11 @@ const ClassDetails = () => {
 
     const studentActions = [
         {
-            icon: <PersonAddAlt1Icon color="primary" />, name: 'Add New Student',
+            icon: <PersonAddAlt1Icon color="primary" />, name: '添加新学生',
             action: () => navigate("/Admin/class/addstudents/" + classID)
         },
         {
-            icon: <PersonRemoveIcon color="error" />, name: 'Delete All Students',
+            icon: <PersonRemoveIcon color="error" />, name: '删除所有学生',
             action: () => deleteHandler(classID, "StudentsClass")
         },
     ];
@@ -185,14 +185,14 @@ const ClassDetails = () => {
                                 variant="contained"
                                 onClick={() => navigate("/Admin/class/addstudents/" + classID)}
                             >
-                                Add Students
+                                添加学生
                             </GreenButton>
                         </Box>
                     </>
                 ) : (
                     <>
                         <Typography variant="h5" gutterBottom>
-                            Students List:
+                            学生列表:
                         </Typography>
 
                         <TableTemplate buttonHaver={StudentsButtonHaver} columns={studentColumns} rows={studentRows} />
@@ -206,7 +206,7 @@ const ClassDetails = () => {
     const ClassTeachersSection = () => {
         return (
             <>
-                Teachers
+                教师
             </>
         )
     }
@@ -218,23 +218,23 @@ const ClassDetails = () => {
         return (
             <>
                 <Typography variant="h4" align="center" gutterBottom>
-                    Class Details
+                    班级详情
                 </Typography>
                 <Typography variant="h5" gutterBottom>
-                    This is Class {sclassDetails && sclassDetails.sclassName}
+                    这是班级 {sclassDetails && sclassDetails.sclassName}
                 </Typography>
                 <Typography variant="h6" gutterBottom>
-                    Number of Subjects: {numberOfSubjects}
+                    科目数量: {numberOfSubjects}
                 </Typography>
                 <Typography variant="h6" gutterBottom>
-                    Number of Students: {numberOfStudents}
+                    学生数量: {numberOfStudents}
                 </Typography>
                 {getresponse &&
                     <GreenButton
                         variant="contained"
                         onClick={() => navigate("/Admin/class/addstudents/" + classID)}
                     >
-                        Add Students
+                        添加学生
                     </GreenButton>
                 }
                 {response &&
@@ -242,7 +242,7 @@ const ClassDetails = () => {
                         variant="contained"
                         onClick={() => navigate("/Admin/addsubject/" + classID)}
                     >
-                        Add Subjects
+                        添加科目
                     </GreenButton>
                 }
             </>

@@ -55,7 +55,7 @@ const StudentSubjects = () => {
                     <TableHead>
                         <StyledTableRow>
                             <StyledTableCell>课程名称</StyledTableCell>
-                            <StyledTableCell>序号</StyledTableCell>
+                            <StyledTableCell>成绩</StyledTableCell>
                         </StyledTableRow>
                     </TableHead>
                     <TableBody>
@@ -84,13 +84,13 @@ const StudentSubjects = () => {
         return (
             <Container>
                 <Typography variant="h4" align="center" gutterBottom>
-                    Class Details
+                    班级详情
                 </Typography>
                 <Typography variant="h5" gutterBottom>
-                    You are currently in Class {safeGet(sclassDetails, 'sclassName', '未分配班级')}
+                    你目前在班级 {safeGet(sclassDetails, 'sclassName', '未分配班级')}
                 </Typography>
                 <Typography variant="h6" gutterBottom>
-                    And these are the subjects:
+                    这些是科目:
                 </Typography>
                 {subjectsList && Array.isArray(subjectsList) &&
                     subjectsList.map((subject, index) => (

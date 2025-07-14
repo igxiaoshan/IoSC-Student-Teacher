@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Divider, ListItemButton, ListItemIcon, ListItemText, ListSubheader } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from '../../hooks/useTranslation';
 
 import HomeIcon from '@mui/icons-material/Home';
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
@@ -14,6 +15,7 @@ import QuizIcon from '@mui/icons-material/Quiz';
 
 const StudentSideBar = () => {
     const location = useLocation();
+    const { tNav, tStudent } = useTranslation();
     return (
         <>
             <React.Fragment>
@@ -21,37 +23,37 @@ const StudentSideBar = () => {
                     <ListItemIcon>
                         <HomeIcon color={location.pathname === ("/" || "/Student/dashboard") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="首页" />
+                    <ListItemText primary={tNav('home')} />
                 </ListItemButton>
                 <ListItemButton component={Link} to="/Student/subjects">
                     <ListItemIcon>
                         <AssignmentIcon color={location.pathname.startsWith("/Student/subjects") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="科目成绩" />
+                    <ListItemText primary={tStudent('myGrades')} />
                 </ListItemButton>
                 <ListItemButton component={Link} to="/Student/subject-selection">
                     <ListItemIcon>
                         <SchoolIcon color={location.pathname.startsWith("/Student/subject-selection") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="课程管理" />
+                    <ListItemText primary={tStudent('courseManagement')} />
                 </ListItemButton>
                 <ListItemButton component={Link} to="/Student/attendance">
                     <ListItemIcon>
                         <ClassOutlinedIcon color={location.pathname.startsWith("/Student/attendance") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="考勤" />
+                    <ListItemText primary={tStudent('myAttendance')} />
                 </ListItemButton>
                 {/* <ListItemButton component={Link} to="/Student/complain">
                     <ListItemIcon>
                         <AnnouncementOutlinedIcon color={location.pathname.startsWith("/Student/complain") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="投诉" />
+                    <ListItemText primary={tStudent('complaints')} />
                 </ListItemButton> */}
             </React.Fragment>
             <Divider sx={{ my: 1 }} />
             <React.Fragment>
                 <ListSubheader component="div" inset>
-                    AI学习助手
+                    {tStudent('aiAssistant')}
                 </ListSubheader>
                 <ListItemButton component={Link} to="/Student/learning-assistant">
                     <ListItemIcon>

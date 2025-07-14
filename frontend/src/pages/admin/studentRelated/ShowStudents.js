@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from "react-router-dom";
 import { getAllStudents } from '../../../redux/studentRelated/studentHandle';
-import { deleteUser } from '../../../redux/userRelated/userHandle';
+import { useTranslation } from '../../../hooks/useTranslation';
 import {
     Paper, Box, IconButton
 } from '@mui/material';
@@ -27,6 +27,7 @@ import MenuList from '@mui/material/MenuList';
 import Popup from '../../../components/Popup';
 
 const ShowStudents = () => {
+    const { tStudent } = useTranslation();
 
     const navigate = useNavigate()
     const dispatch = useDispatch();
@@ -57,9 +58,9 @@ const ShowStudents = () => {
     }
 
     const studentColumns = [
-        { id: 'name', label: 'Name', minWidth: 170 },
-        { id: 'rollNum', label: 'Roll Number', minWidth: 100 },
-        { id: 'sclassName', label: 'Class', minWidth: 170 },
+        { id: 'name', label: tStudent('studentName'), minWidth: 170 },
+        { id: 'rollNum', label: tStudent('studentId'), minWidth: 100 },
+        { id: 'sclassName', label: tStudent('className'), minWidth: 170 },
     ]
 
     const studentRows = studentsList && studentsList.length > 0 && studentsList.map((student) => {
@@ -112,10 +113,10 @@ const ShowStudents = () => {
         };
         return (
             <>
-                <IconButton onClick={() => navigate("/Admin/students/edit/" + row.id)} title="编辑学生">
+                <IconButton onClick={() => navigate("/Admin/students/edit/" + row.id)} title={tStudent('editStudent')}>
                     <EditIcon color="primary" />
                 </IconButton>
-                <IconButton onClick={() => deleteHandler(row.id, "Student")} title="删除学生">
+                <IconButton onClick={() => deleteHandler(row.id, "Student")} title={tStudent('deleteStudent')}>
                     <PersonRemoveIcon color="error" />
                 </IconButton>
                 <BlueButton variant="contained"
@@ -180,15 +181,15 @@ const ShowStudents = () => {
 
     const actions = [
         {
-            icon: <PersonAddAlt1Icon color="primary" />, name: 'Add New Student',
+            icon: <PersonAddAlt1Icon color="primary" />, name: tStudent('addStudent'),
             action: () => navigate("/Admin/addstudents")
         },
         {
-            icon: <SwapHorizIcon color="info" />, name: 'Reassign Classes',
+            icon: <SwapHorizIcon color="info" />, name: tStudent('classReassignment'),
             action: () => navigate("/Admin/students/reassign")
         },
         {
-            icon: <PersonRemoveIcon color="error" />, name: 'Delete All Students',
+            icon: <PersonRemoveIcon color="error" />, name: tStudent('deleteAllStudents'),
             action: () => deleteHandler(currentUser._id, "Students")
         },
     ];

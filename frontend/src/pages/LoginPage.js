@@ -9,10 +9,13 @@ import { IndigoButton } from '../components/buttonStyles';
 import styled from 'styled-components';
 import { loginUser } from '../redux/userRelated/userHandle';
 import Popup from '../components/Popup';
+import { useTranslation } from '../hooks/useTranslation';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const defaultTheme = createTheme();
 
 const LoginPage = ({ role }) => {
+    const { tAuth, tCommon } = useTranslation();
 
     const dispatch = useDispatch()
     const navigate = useNavigate()
@@ -133,8 +136,13 @@ const LoginPage = ({ role }) => {
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
+                            position: 'relative',
                         }}
                     >
+                        {/* 语言切换器 */}
+                        <Box sx={{ position: 'absolute', top: -20, right: 0 }}>
+                            <LanguageSwitcher />
+                        </Box>
                         <Typography variant="h4" sx={{ mb: 2, color: "#2c2143" }}>
                             {role} 登录
                         </Typography>
@@ -149,13 +157,13 @@ const LoginPage = ({ role }) => {
                                         required
                                         fullWidth
                                         id="rollNumber"
-                                        label="输入你的学号"
+                                        label={tAuth('studentIdPlaceholder')}
                                         name="rollNumber"
                                         autoComplete="off"
                                         type="number"
                                         autoFocus
                                         error={rollNumberError}
-                                        helperText={rollNumberError && 'Roll Number is required'}
+                                        helperText={rollNumberError && tAuth('studentIdRequired')}
                                         onChange={handleInputChange}
                                     />
                                     <TextField
@@ -163,12 +171,12 @@ const LoginPage = ({ role }) => {
                                         required
                                         fullWidth
                                         id="studentName"
-                                        label="输入你的姓名"
+                                        label={tAuth('namePlaceholder')}
                                         name="studentName"
                                         autoComplete="name"
                                         autoFocus
                                         error={studentNameError}
-                                        helperText={studentNameError && 'Name is required'}
+                                        helperText={studentNameError && tAuth('nameRequired')}
                                         onChange={handleInputChange}
                                     />
                                 </>
@@ -178,12 +186,12 @@ const LoginPage = ({ role }) => {
                                     required
                                     fullWidth
                                     id="email"
-                                    label="请输入你的邮箱"
+                                    label={tAuth('emailPlaceholder')}
                                     name="email"
                                     autoComplete="email"
                                     autoFocus
                                     error={emailError}
-                                    helperText={emailError && 'Email is required'}
+                                    helperText={emailError && tAuth('emailRequired')}
                                     onChange={handleInputChange}
                                 />
                             )}
@@ -192,12 +200,12 @@ const LoginPage = ({ role }) => {
                                 required
                                 fullWidth
                                 name="password"
-                                label="密码"
+                                label={tAuth('passwordPlaceholder')}
                                 type={toggle ? 'text' : 'password'}
                                 id="password"
                                 autoComplete="current-password"
                                 error={passwordError}
-                                helperText={passwordError && 'Password is required'}
+                                helperText={passwordError && tAuth('passwordRequired')}
                                 onChange={handleInputChange}
                                 InputProps={{
                                     endAdornment: (
@@ -216,10 +224,10 @@ const LoginPage = ({ role }) => {
                             <Grid container sx={{ display: "flex", justifyContent: "space-between" }}>
                                 <FormControlLabel
                                     control={<Checkbox value="remember" color="primary" />}
-                                    label="记住我"
+                                    label={tAuth('rememberMe')}
                                 />
                                 <StyledLink href="#">
-                                    忘记密码？
+                                    {tAuth('forgotPassword')}
                                 </StyledLink>
                             </Grid>
                             <IndigoButton
@@ -230,7 +238,7 @@ const LoginPage = ({ role }) => {
                             >
                                 {loader ?
                                     <CircularProgress size={24} color="inherit" />
-                                    : "登录"}
+                                    : tCommon('login')}
                             </IndigoButton>
                             <Button
                                 fullWidth
@@ -238,7 +246,7 @@ const LoginPage = ({ role }) => {
                                 variant="outlined"
                                 sx={{ mt: 2, mb: 3, color: "#1976d2", borderColor: "#1976d2" }}
                             >
-                                游客登录
+                                {tAuth('guestLogin')}
                             </Button>
                             {role === "Admin" &&
                                 <Grid container>

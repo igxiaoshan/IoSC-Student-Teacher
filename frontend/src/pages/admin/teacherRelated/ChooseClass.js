@@ -31,7 +31,7 @@ const ChooseClass = ({ situation }) => {
     }
 
     const sclassColumns = [
-        { id: 'name', label: 'Class Name', minWidth: 170 },
+        { id: 'name', label: '班级名称', minWidth: 170 },
     ]
 
     const sclassRows = sclassesList && sclassesList.length > 0 && sclassesList.map((sclass) => {
@@ -46,7 +46,7 @@ const ChooseClass = ({ situation }) => {
             <>
                 <PurpleButton variant="contained"
                     onClick={() => navigateHandler(row.id)}>
-                    Choose
+                    选择
                 </PurpleButton>
             </>
         );
@@ -61,13 +61,13 @@ const ChooseClass = ({ situation }) => {
                     {getresponse ?
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
                             <Button variant="contained" onClick={() => navigate("/Admin/addclass")}>
-                                Add Class
+                                添加新班级
                             </Button>
                         </Box>
                         :
                         <>
                             <Typography variant="h6" gutterBottom component="div">
-                                Choose a class
+                                选择一个班级
                             </Typography>
                             {Array.isArray(sclassesList) && sclassesList.length > 0 &&
                                 <TableTemplate buttonHaver={SclassButtonHaver} columns={sclassColumns} rows={sclassRows} />

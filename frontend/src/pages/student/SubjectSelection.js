@@ -25,6 +25,7 @@ import {
     CircularProgress,
     Divider
 } from '@mui/material';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
     School as SchoolIcon,
     Add as AddIcon,
@@ -39,6 +40,7 @@ import Popup from '../../components/Popup';
 
 const SubjectSelection = () => {
     const { currentUser } = useSelector(state => state.user);
+    const { tStudent, tSubject, tCommon } = useTranslation();
     const [selectedSubjects, setSelectedSubjects] = useState([]);
     const [availableSubjects, setAvailableSubjects] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -97,13 +99,13 @@ const SubjectSelection = () => {
             });
             
             if (response.data.success) {
-                setMessage('科目选择成功！');
+                setMessage(tSubject('subjectSelectionSuccess'));
                 setShowPopup(true);
                 fetchStudentSubjects();
                 fetchAvailableSubjects();
             }
         } catch (error) {
-            setMessage('科目选择失败: ' + (error.response?.data?.message || error.message));
+            setMessage(tSubject('subjectSelectionFailed') + ': ' + (error.response?.data?.message || error.message));
             setShowPopup(true);
         }
     };
