@@ -164,7 +164,7 @@ const AdminRegisterPage = () => {
                             <Grid container sx={{ display: "flex", justifyContent: "space-between" }}>
                                 <FormControlLabel
                                     control={<Checkbox value="remember" color="primary" />}
-                                    label="Remember me"
+                                    label="记住我"
                                 />
                             </Grid>
                             <LightPurpleButton
@@ -177,11 +177,11 @@ const AdminRegisterPage = () => {
                             </LightPurpleButton>
                             <Grid container>
                                 <Grid>
-                                    Already have an account?
+                                    已经有账户?
                                 </Grid>
                                 <Grid item sx={{ ml: 2 }}>
                                     <StyledLink to="/Adminlogin">
-                                        Log in
+                                        登录
                                     </StyledLink>
                                 </Grid>
                             </Grid>
