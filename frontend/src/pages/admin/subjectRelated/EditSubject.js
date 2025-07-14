@@ -65,12 +65,18 @@ const EditSubject = () => {
 
     const fetchClasses = async () => {
         try {
-            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/Sclasses/${currentUser._id}`);
-            if (response.data && !response.data.message) {
-                setClasses(response.data);
+            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/SclassList/${currentUser._id}`);
+            if (response.data && response.data.success !== false) {
+                // 处理分页数据结构
+                const classesData = response.data.data || response.data;
+                setClasses(Array.isArray(classesData) ? classesData : []);
+            } else {
+                console.error('获取班级列表失败:', response.data.message);
+                setClasses([]);
             }
         } catch (err) {
             console.error('获取班级列表失败:', err);
+            setClasses([]);
         }
     };
 

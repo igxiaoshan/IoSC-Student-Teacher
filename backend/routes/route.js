@@ -161,6 +161,7 @@ router.get('/FreeSubjectList/:id', freeSubjectList);
 
 // 获取科目详情
 router.get("/Subject/:id", getSubjectDetail);
+router.get("/Subject/Detail/:id", getSubjectDetail); // 兼容前端调用
 
 // 获取科目统计信息
 router.get("/SubjectStats/:id", getSubjectStatistics);

@@ -42,8 +42,8 @@ const AddStudent = ({ situation }) => {
     }, [adminID, dispatch]);
 
     const changeHandler = (event) => {
-        if (event.target.value === 'Select Class') {
-            setClassName('Select Class');
+        if (event.target.value === '选择班级') {
+            setClassName('选择班级');
             setSclassName('');
         } else {
             const selectedClass = sclassesList.find(
@@ -59,7 +59,7 @@ const AddStudent = ({ situation }) => {
     const submitHandler = (event) => {
         event.preventDefault()
         if (sclassName === "") {
-            setMessage("Please select a classname")
+            setMessage("请选择一个班级名称")
             setShowPopup(true)
         }
         else {
@@ -79,7 +79,7 @@ const AddStudent = ({ situation }) => {
             setLoader(false)
         }
         else if (status === 'error') {
-            setMessage("Network Error")
+            setMessage("网络错误")
             setShowPopup(true)
             setLoader(false)
         }
@@ -89,9 +89,9 @@ const AddStudent = ({ situation }) => {
         <>
             <div className="register">
                 <form className="registerForm" onSubmit={submitHandler}>
-                    <span className="registerTitle">Add Student</span>
-                    <label>Name</label>
-                    <input className="registerInput" type="text" placeholder="Enter student's name..."
+                    <span className="registerTitle">添加学生</span>
+                    <label>姓名</label>
+                    <input className="registerInput" type="text" placeholder="输入学生姓名..."
                         value={name}
                         onChange={(event) => setName(event.target.value)}
                         autoComplete="name" required />
@@ -99,12 +99,12 @@ const AddStudent = ({ situation }) => {
                     {
                         situation === "Student" &&
                         <>
-                            <label>Class</label>
+                            <label>班级</label>
                             <select
                                 className="registerInput"
                                 value={className}
                                 onChange={changeHandler} required>
-                                <option value='Select Class'>Select Class</option>
+                                <option value='选择班级'>选择班级</option>
                                 {sclassesList.map((classItem, index) => (
                                     <option key={index} value={classItem.sclassName}>
                                         {classItem.sclassName}
@@ -114,14 +114,14 @@ const AddStudent = ({ situation }) => {
                         </>
                     }
 
-                    <label>Roll Number</label>
-                    <input className="registerInput" type="number" placeholder="Enter student's Roll Number..."
+                    <label>学号</label>
+                    <input className="registerInput" type="number" placeholder="输入学生学号..."
                         value={rollNum}
                         onChange={(event) => setRollNum(event.target.value)}
                         required />
 
-                    <label>Password</label>
-                    <input className="registerInput" type="password" placeholder="Enter student's password..."
+                    <label>密码</label>
+                    <input className="registerInput" type="password" placeholder="输入学生密码..."
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
                         autoComplete="new-password" required />
@@ -130,7 +130,7 @@ const AddStudent = ({ situation }) => {
                         {loader ? (
                             <CircularProgress size={24} color="inherit" />
                         ) : (
-                            'Add'
+                            '添加'
                         )}
                     </button>
                 </form>

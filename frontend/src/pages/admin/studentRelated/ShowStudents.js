@@ -48,7 +48,7 @@ const ShowStudents = () => {
     const deleteHandler = (deleteID, address) => {
         console.log(deleteID);
         console.log(address);
-        setMessage("Sorry the delete function has been disabled for now.")
+        setMessage("抱歉，删除功能暂时被禁用。") // 稍后会启用
         setShowPopup(true)
 
         // dispatch(deleteUser(deleteID, address))
@@ -73,14 +73,14 @@ const ShowStudents = () => {
     })
 
     const StudentButtonHaver = ({ row }) => {
-        const options = ['Take Attendance', 'Provide Marks'];
+        const options = ['考勤', '成绩'];
 
         const [open, setOpen] = React.useState(false);
         const anchorRef = React.useRef(null);
         const [selectedIndex, setSelectedIndex] = React.useState(0);
 
         const handleClick = () => {
-            console.info(`You clicked ${options[selectedIndex]}`);
+            console.info(`您点击了 ${options[selectedIndex]}`);
             if (selectedIndex === 0) {
                 handleAttendance();
             } else if (selectedIndex === 1) {
@@ -121,7 +121,7 @@ const ShowStudents = () => {
                 </IconButton>
                 <BlueButton variant="contained"
                     onClick={() => navigate("/Admin/students/student/" + row.id)}>
-                    View
+                    查看
                 </BlueButton>
                 <React.Fragment>
                     <ButtonGroup variant="contained" ref={anchorRef} aria-label="split button">
@@ -197,13 +197,13 @@ const ShowStudents = () => {
     return (
         <>
             {loading ?
-                <div>Loading...</div>
+                <div>加载中...</div>
                 :
                 <>
                     {response ?
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
                             <GreenButton variant="contained" onClick={() => navigate("/Admin/addstudents")}>
-                                Add Students
+                                添加学生
                             </GreenButton>
                         </Box>
                         :

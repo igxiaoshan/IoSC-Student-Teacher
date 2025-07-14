@@ -104,7 +104,7 @@ const ViewStudent = () => {
     }
 
     const deleteHandler = () => {
-        setMessage("Sorry the delete function has been disabled for now.")
+        setMessage("抱歉，删除功能暂时被禁用。") // 稍后会启用
         setShowPopup(true)
 
         // dispatch(deleteUser(studentID, address))
@@ -131,8 +131,8 @@ const ViewStudent = () => {
     const overallAbsentPercentage = 100 - overallAttendancePercentage;
 
     const chartData = [
-        { name: 'Present', value: overallAttendancePercentage },
-        { name: 'Absent', value: overallAbsentPercentage }
+        { name: '出席', value: overallAttendancePercentage },
+        { name: '缺席', value: overallAbsentPercentage }
     ];
 
     const subjectData = Object.entries(groupAttendanceBySubject(subjectAttendance)).map(([subName, { subCode, present, sessions }]) => {
@@ -194,7 +194,7 @@ const ViewStudent = () => {
                                                         <TableHead>
                                                             <StyledTableRow>
                                                                 <StyledTableCell>日期</StyledTableCell>
-                                                                <StyledTableCell align="right">Status</StyledTableCell>
+                                                                <StyledTableCell align="right">状态</StyledTableCell>
                                                             </StyledTableRow>
                                                         </TableHead>
                                                         <TableBody>
@@ -222,11 +222,11 @@ const ViewStudent = () => {
                         )}
                     </Table>
                     <div>
-                        Overall Attendance Percentage: {overallAttendancePercentage.toFixed(2)}%
+                        总出勤百分比: {overallAttendancePercentage.toFixed(2)}%
                     </div>
-                    <Button variant="contained" color="error" startIcon={<DeleteIcon />} onClick={() => removeHandler(studentID, "RemoveStudentAtten")}>Delete All</Button>
+                    <Button variant="contained" color="error" startIcon={<DeleteIcon />} onClick={() => removeHandler(studentID, "RemoveStudentAtten")}>删除所有</Button>
                     <Button variant="contained" sx={styles.styledButton} onClick={() => navigate("/Admin/students/student/attendance/" + studentID)}>
-                        Add Attendance
+                        添加考勤
                     </Button>
                 </>
             )
@@ -263,7 +263,7 @@ const ViewStudent = () => {
                     </>
                     :
                     <Button variant="contained" sx={styles.styledButton} onClick={() => navigate("/Admin/students/student/attendance/" + studentID)}>
-                        Add Attendance
+                        添加考勤
                     </Button>
                 }
             </>
@@ -274,12 +274,12 @@ const ViewStudent = () => {
         const renderTableSection = () => {
             return (
                 <>
-                    <h3>Subject Marks:</h3>
+                    <h3>科目成绩:</h3>
                     <Table>
                         <TableHead>
                             <StyledTableRow>
-                                <StyledTableCell>Subject</StyledTableCell>
-                                <StyledTableCell>Marks</StyledTableCell>
+                                <StyledTableCell>科目名称</StyledTableCell>
+                                <StyledTableCell>成绩</StyledTableCell>
                             </StyledTableRow>
                         </TableHead>
                         <TableBody>
@@ -297,7 +297,7 @@ const ViewStudent = () => {
                         </TableBody>
                     </Table>
                     <Button variant="contained" sx={styles.styledButton} onClick={() => navigate("/Admin/students/student/marks/" + studentID)}>
-                        Add Marks
+                        添加成绩
                     </Button>
                 </>
             )
@@ -334,7 +334,7 @@ const ViewStudent = () => {
                     </>
                     :
                     <Button variant="contained" sx={styles.styledButton} onClick={() => navigate("/Admin/students/student/marks/" + studentID)}>
-                        Add Marks
+                        添加成绩
                     </Button>
                 }
             </>
@@ -403,7 +403,7 @@ const ViewStudent = () => {
             {loading
                 ?
                 <>
-                    <div>Loading...</div>
+                    <div>加载中...</div>
                 </>
                 :
                 <>
@@ -411,9 +411,9 @@ const ViewStudent = () => {
                         <TabContext value={value}>
                             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                                 <TabList onChange={handleChange} sx={{ position: 'fixed', width: '100%', bgcolor: 'background.paper', zIndex: 1 }}>
-                                    <Tab label="Details" value="1" />
-                                    <Tab label="Attendance" value="2" />
-                                    <Tab label="Marks" value="3" />
+                                    <Tab label="详情" value="1" />
+                                    <Tab label="考勤" value="2" />
+                                    <Tab label="成绩" value="3" />
                                 </TabList>
                             </Box>
                             <Container sx={{ marginTop: "3rem", marginBottom: "4rem" }}>
