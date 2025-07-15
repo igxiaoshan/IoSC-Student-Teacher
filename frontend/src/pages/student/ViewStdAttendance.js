@@ -69,16 +69,16 @@ const ViewStdAttendance = () => {
         return (
             <>
                 <Typography variant="h4" align="center" gutterBottom>
-                    Attendance
+                    考勤
                 </Typography>
                 <Table>
                     <TableHead>
                         <StyledTableRow>
-                            <StyledTableCell>Subject</StyledTableCell>
-                            <StyledTableCell>Present</StyledTableCell>
-                            <StyledTableCell>Total Sessions</StyledTableCell>
-                            <StyledTableCell>Attendance Percentage</StyledTableCell>
-                            <StyledTableCell align="center">Actions</StyledTableCell>
+                            <StyledTableCell>科目</StyledTableCell>
+                            <StyledTableCell>出席</StyledTableCell>
+                            <StyledTableCell>总会议</StyledTableCell>
+                            <StyledTableCell>出勤百分比</StyledTableCell>
+                            <StyledTableCell align="center">操作</StyledTableCell>
                         </StyledTableRow>
                     </TableHead>
                     {Object.entries(attendanceBySubject).map(([subName, { present, allData, subId, sessions }], index) => {
@@ -94,7 +94,7 @@ const ViewStdAttendance = () => {
                                     <StyledTableCell align="center">
                                         <Button variant="contained"
                                             onClick={() => handleOpen(subId)}>
-                                            {openStates[subId] ? <KeyboardArrowUp /> : <KeyboardArrowDown />}Details
+                                            {openStates[subId] ? <KeyboardArrowUp /> : <KeyboardArrowDown />}详情
                                         </Button>
                                     </StyledTableCell>
                                 </StyledTableRow>
@@ -103,13 +103,13 @@ const ViewStdAttendance = () => {
                                         <Collapse in={openStates[subId]} timeout="auto" unmountOnExit>
                                             <Box sx={{ margin: 1 }}>
                                                 <Typography variant="h6" gutterBottom component="div">
-                                                    Attendance Details
+                                                    考勤详情
                                                 </Typography>
                                                 <Table size="small" aria-label="purchases">
                                                     <TableHead>
                                                         <StyledTableRow>
-                                                            <StyledTableCell>Date</StyledTableCell>
-                                                            <StyledTableCell align="right">Status</StyledTableCell>
+                                                            <StyledTableCell>日期</StyledTableCell>
+                                                            <StyledTableCell align="right">状态</StyledTableCell>
                                                         </StyledTableRow>
                                                     </TableHead>
                                                     <TableBody>
@@ -137,7 +137,7 @@ const ViewStdAttendance = () => {
                     )}
                 </Table>
                 <div>
-                    Overall Attendance Percentage: {overallAttendancePercentage.toFixed(2)}%
+                    总考勤百分比: {overallAttendancePercentage.toFixed(2)}%
                 </div>
             </>
         )
@@ -155,7 +155,7 @@ const ViewStdAttendance = () => {
         <>
             {loading
                 ? (
-                    <div>Loading...</div>
+                    <div>加载中...</div>
                 )
                 :
                 <div>
@@ -167,12 +167,12 @@ const ViewStdAttendance = () => {
                             <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
                                 <BottomNavigation value={selectedSection} onChange={handleSectionChange} showLabels>
                                     <BottomNavigationAction
-                                        label="Table"
+                                        label="表格"
                                         value="table"
                                         icon={selectedSection === 'table' ? <TableChartIcon /> : <TableChartOutlinedIcon />}
                                     />
                                     <BottomNavigationAction
-                                        label="Chart"
+                                        label="图表"
                                         value="chart"
                                         icon={selectedSection === 'chart' ? <InsertChartIcon /> : <InsertChartOutlinedIcon />}
                                     />

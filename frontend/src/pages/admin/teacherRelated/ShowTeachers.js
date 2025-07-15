@@ -74,7 +74,7 @@ const ShowTeachers = () => {
                 </Alert>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
                     <GreenButton variant="contained" onClick={() => navigate("/Admin/teachers/chooseclass")}>
-                        Add Teacher
+                        添加老师
                     </GreenButton>
                 </Box>
             </Box>
@@ -84,7 +84,7 @@ const ShowTeachers = () => {
     const deleteHandler = (deleteID, address) => {
         console.log(deleteID);
         console.log(address);
-        setMessage("Sorry the delete function has been disabled for now.")
+        setMessage("抱歉，删除功能暂时被禁用。")
         setShowPopup(true)
 
         // dispatch(deleteUser(deleteID, address)).then(() => {
@@ -93,11 +93,11 @@ const ShowTeachers = () => {
     };
 
     const columns = [
-        { id: 'name', label: 'Name', minWidth: 170 },
-        { id: 'teachSubject', label: 'Subject', minWidth: 100 },
-        { id: 'teachSclass', label: 'Primary Class', minWidth: 150 },
-        { id: 'classCount', label: 'Classes', minWidth: 80 },
-        { id: 'classNames', label: 'All Classes', minWidth: 200 },
+        { id: 'name', label: '姓名', minWidth: 170 },
+        { id: 'teachSubject', label: '科目', minWidth: 100 },
+        { id: 'teachSclass', label: '主班级', minWidth: 150 },
+        { id: 'classCount', label: '班级数量', minWidth: 80 },
+        { id: 'classNames', label: '所有班级', minWidth: 200 },
     ];
 
     // 使用安全映射函数处理教师数据
@@ -119,11 +119,11 @@ const ShowTeachers = () => {
 
     const actions = [
         {
-            icon: <PersonAddAlt1Icon color="primary" />, name: 'Add New Teacher',
+            icon: <PersonAddAlt1Icon color="primary" />, name: '添加新老师',
             action: () => navigate("/Admin/teachers/chooseclass")
         },
         {
-            icon: <PersonRemoveIcon color="error" />, name: 'Delete All Teachers',
+            icon: <PersonRemoveIcon color="error" />, name: '删除所有老师',
             action: () => deleteHandler(currentUser._id, "Teachers")
         },
     ];
@@ -170,7 +170,7 @@ const ShowTeachers = () => {
                                 </StyledTableCell>
                             ))}
                             <StyledTableCell align="center">
-                                Actions
+                                操作
                             </StyledTableCell>
                         </StyledTableRow>
                     </TableHead>
@@ -192,7 +192,7 @@ const ShowTeachers = () => {
                                                                 onClick={() => {
                                                                     navigate(`/Admin/teachers/choosesubject/${row.teachSclassID}/${row.id}`)
                                                                 }}>
-                                                                Add Subject
+                                                                添加科目
                                                             </Button>
                                                         )}
                                                     </StyledTableCell>
@@ -210,13 +210,13 @@ const ShowTeachers = () => {
                                             </IconButton>
                                             <BlueButton variant="contained"
                                                 onClick={() => navigate("/Admin/teachers/teacher/" + row.id)}>
-                                                View
+                                                查看
                                             </BlueButton>
                                             {row.classCount > 1 && (
                                                 <GreenButton variant="outlined" size="small"
                                                     onClick={() => handleManageClasses(row)}
                                                     sx={{ ml: 1 }}>
-                                                    Manage Classes
+                                                    管理班级
                                                 </GreenButton>
                                             )}
                                         </StyledTableCell>

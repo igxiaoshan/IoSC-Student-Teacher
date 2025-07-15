@@ -33,14 +33,14 @@ const ChooseSubject = ({ situation }) => {
     }, [situation]);
 
     if (loading) {
-        return <div>Loading...</div>;
+        return <div>加载中...</div>;
     } else if (response) {
         return <div>
-            <h1>Sorry all subjects have teachers assigned already</h1>
+            <h1>对不起，所有科目都已经分配了老师</h1>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
                 <PurpleButton variant="contained"
                     onClick={() => navigate("/Admin/addsubject/" + classID)}>
-                    Add Subjects
+                    添加科目
                 </PurpleButton>
             </Box>
         </div>;
@@ -57,7 +57,7 @@ const ChooseSubject = ({ situation }) => {
     return (
         <Paper sx={{ width: '100%', overflow: 'hidden' }}>
             <Typography variant="h6" gutterBottom component="div">
-                Choose a subject
+                选择一个科目
             </Typography>
             <>
                 <TableContainer>
@@ -65,9 +65,9 @@ const ChooseSubject = ({ situation }) => {
                         <TableHead>
                             <StyledTableRow>
                                 <StyledTableCell></StyledTableCell>
-                                <StyledTableCell align="center">Subject Name</StyledTableCell>
-                                <StyledTableCell align="center">Subject Code</StyledTableCell>
-                                <StyledTableCell align="center">Actions</StyledTableCell>
+                                <StyledTableCell align="center">科目名称</StyledTableCell>
+                                <StyledTableCell align="center">科目代码</StyledTableCell>
+                                <StyledTableCell align="center">操作</StyledTableCell>
                             </StyledTableRow>
                         </TableHead>
                         <TableBody>
@@ -82,7 +82,7 @@ const ChooseSubject = ({ situation }) => {
                                         {situation === "Norm" ?
                                             <GreenButton variant="contained"
                                                 onClick={() => navigate("/Admin/teachers/addteacher/" + subject._id)}>
-                                                Choose
+                                                选择
                                             </GreenButton>
                                             :
                                             <GreenButton variant="contained" disabled={loader}
@@ -90,7 +90,7 @@ const ChooseSubject = ({ situation }) => {
                                                 {loader ? (
                                                     <div className="load"></div>
                                                 ) : (
-                                                    'Choose Sub'
+                                                    '选择科目'
                                                 )}
                                             </GreenButton>}
                                     </StyledTableCell>

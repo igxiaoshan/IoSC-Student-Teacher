@@ -13,7 +13,7 @@ const teacherRegister = async (req, res) => {
         const existingTeacherByEmail = await Teacher.findOne({ email });
 
         if (existingTeacherByEmail) {
-            res.send({ message: 'Email already exists' });
+            res.send({ message: '邮箱已存在' });
         }
         else {
             let result = await teacher.save();
@@ -53,10 +53,10 @@ const teacherLogIn = async (req, res) => {
 
                 res.send(teacherData);
             } else {
-                res.send({ message: "Invalid password" });
+                res.send({ message: "无效密码" });
             }
         } else {
-            res.send({ message: "Teacher not found" });
+            res.send({ message: "教师未找到" });
         }
     } catch (err) {
         console.error('教师登录错误:', err);
@@ -134,7 +134,7 @@ const getTeachers = async (req, res) => {
         } else {
             res.json({
                 success: true,
-                message: "No teachers found",
+                message: "没有找到教师",
                 data: [],
                 pagination: {
                     currentPage: parseInt(page),
@@ -178,7 +178,7 @@ const getTeacherDetail = async (req, res) => {
             res.send(teacherData);
         }
         else {
-            res.send({ message: "No teacher found" });
+            res.send({ message: "没有找到教师" });
         }
     } catch (err) {
         console.error('获取教师详情错误:', err);
@@ -273,7 +273,7 @@ const teacherAttendance = async (req, res) => {
         const teacher = await Teacher.findById(req.params.id);
 
         if (!teacher) {
-            return res.send({ message: 'Teacher not found' });
+            return res.send({ message: '教师未找到' });
         }
 
         const existingAttendance = teacher.attendance.find(

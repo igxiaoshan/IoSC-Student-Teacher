@@ -39,12 +39,12 @@ const StudentComplain = () => {
         if (status === "added") {
             setLoader(false)
             setShowPopup(true)
-            setMessage("Done Successfully")
+            setMessage("成功完成")
         }
         else if (error) {
             setLoader(false)
             setShowPopup(true)
-            setMessage("Network Error")
+            setMessage("网络错误")
         }
     }, [status, error])
 
@@ -68,13 +68,13 @@ const StudentComplain = () => {
                 >
                     <div>
                         <Stack spacing={1} sx={{ mb: 3 }}>
-                            <Typography variant="h4">Complain</Typography>
+                            <Typography variant="h4">投诉</Typography>
                         </Stack>
                         <form onSubmit={submitHandler}>
                             <Stack spacing={3}>
                                 <TextField
                                     fullWidth
-                                    label="Select Date"
+                                    label="选择日期"
                                     type="date"
                                     value={date}
                                     onChange={(event) => setDate(event.target.value)} required
@@ -84,7 +84,7 @@ const StudentComplain = () => {
                                 />
                                 <TextField
                                     fullWidth
-                                    label="Write your complain"
+                                    label="写下你的投诉"
                                     variant="outlined"
                                     value={complaint}
                                     onChange={(event) => {
@@ -103,7 +103,7 @@ const StudentComplain = () => {
                                 type="submit"
                                 disabled={loader}
                             >
-                                {loader ? <CircularProgress size={24} color="inherit" /> : "Add"}
+                                {loader ? <CircularProgress size={24} color="inherit" /> : "添加"}
                             </BlueButton>
                         </form>
                     </div>

@@ -83,7 +83,7 @@ const StudentAttendance = ({ situation }) => {
         else if (statestatus === "added") {
             setLoader(false)
             setShowPopup(true)
-            setMessage("Done Successfully")
+            setMessage("成功完成")
         }
     }, [response, statestatus, error])
 
@@ -92,7 +92,7 @@ const StudentAttendance = ({ situation }) => {
             {loading
                 ?
                 <>
-                    <div>Loading...</div>
+                    <div>加载中...</div>
                 </>
                 :
                 <>
@@ -132,7 +132,7 @@ const StudentAttendance = ({ situation }) => {
                                                 labelId="demo-simple-select-label"
                                                 id="demo-simple-select"
                                                 value={subjectName}
-                                                label="Choose an option"
+                                                label="选择一个选项"
                                                 onChange={changeHandler} required
                                             >
                                                 {subjectsList ?
@@ -155,7 +155,7 @@ const StudentAttendance = ({ situation }) => {
                                             labelId="demo-simple-select-label"
                                             id="demo-simple-select"
                                             value={status}
-                                            label="Choose an option"
+                                            label="选择一个选项"
                                             onChange={(event) => setStatus(event.target.value)}
                                             required
                                         >
@@ -184,7 +184,7 @@ const StudentAttendance = ({ situation }) => {
                                     type="submit"
                                     disabled={loader}
                                 >
-                                    {loader ? <CircularProgress size={24} color="inherit" /> : "Submit"}
+                                    {loader ? <CircularProgress size={24} color="inherit" /> : "提交"}
                                 </PurpleButton>
                             </form>
                         </Box>

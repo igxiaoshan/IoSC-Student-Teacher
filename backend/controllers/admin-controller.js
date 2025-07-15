@@ -65,10 +65,10 @@ const adminRegister = async (req, res) => {
         const existingSchool = await Admin.findOne({ schoolName: req.body.schoolName });
 
         if (existingAdminByEmail) {
-            res.send({ message: 'Email already exists' });
+            res.send({ message: '邮箱已存在' });
         }
         else if (existingSchool) {
-            res.send({ message: 'School name already exists' });
+            res.send({ message: '学校名称已存在' });
         }
         else {
             let result = await admin.save();
@@ -88,13 +88,13 @@ const adminLogIn = async (req, res) => {
                 admin.password = undefined;
                 res.send(admin);
             } else {
-                res.send({ message: "Invalid password" });
+                res.send({ message: "无效密码" });
             }
         } else {
-            res.send({ message: "User not found" });
+            res.send({ message: "用户未找到" });
         }
     } else {
-        res.send({ message: "Email and password are required" });
+        res.send({ message: "邮箱和密码是必需的" });
     }
 };
 
@@ -106,7 +106,7 @@ const getAdminDetail = async (req, res) => {
             res.send(admin);
         }
         else {
-            res.send({ message: "No admin found" });
+            res.send({ message: "没有找到管理员" });
         }
     } catch (err) {
         res.status(500).json(err);

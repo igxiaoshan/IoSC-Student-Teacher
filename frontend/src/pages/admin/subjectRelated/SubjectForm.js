@@ -80,7 +80,7 @@ const SubjectForm = () => {
             setLoader(false)
         }
         else if (status === 'error') {
-            setMessage("Network Error")
+            setMessage("网络错误")
             setShowPopup(true)
             setLoader(false)
         }
@@ -89,7 +89,7 @@ const SubjectForm = () => {
     return (
         <form onSubmit={submitHandler}>
             <Box mb={2}>
-                <Typography variant="h6" >Add Subjects</Typography>
+                <Typography variant="h6" >添加科目</Typography>
             </Box>
             <Grid container spacing={2}>
                 {subjects.map((subject, index) => (
@@ -97,7 +97,7 @@ const SubjectForm = () => {
                         <Grid item xs={6}>
                             <TextField
                                 fullWidth
-                                label="Subject Name"
+                                label="科目名称"
                                 variant="outlined"
                                 value={subject.subName}
                                 onChange={handleSubjectNameChange(index)}
@@ -108,7 +108,7 @@ const SubjectForm = () => {
                         <Grid item xs={4}>
                             <TextField
                                 fullWidth
-                                label="Subject Code"
+                                label="科目代码"
                                 variant="outlined"
                                 value={subject.subCode}
                                 onChange={handleSubjectCodeChange(index)}
@@ -119,7 +119,7 @@ const SubjectForm = () => {
                         <Grid item xs={4}>
                             <TextField
                                 fullWidth
-                                label="Sessions"
+                                label="学期"
                                 variant="outlined"
                                 type="number"
                                 inputProps={{ min: 0 }}
@@ -137,7 +137,7 @@ const SubjectForm = () => {
                                         color="primary"
                                         onClick={handleAddSubject}
                                     >
-                                        Add Subject
+                                        添加科目
                                     </Button>
                                 ) : (
                                     <Button
@@ -145,7 +145,7 @@ const SubjectForm = () => {
                                         color="error"
                                         onClick={handleRemoveSubject(index)}
                                     >
-                                        Remove
+                                        删除
                                     </Button>
                                 )}
                             </Box>
@@ -158,7 +158,7 @@ const SubjectForm = () => {
                             {loader ? (
                                 <CircularProgress size={24} color="inherit" />
                             ) : (
-                                'Save'
+                                '保存'
                             )}
                         </Button>
                     </Box>

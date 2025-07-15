@@ -53,7 +53,7 @@ const AddTeacher = () => {
       setLoader(false)
     }
     else if (status === 'error') {
-      setMessage("Network Error")
+      setMessage("网络错误")
       setShowPopup(true)
       setLoader(false)
     }
@@ -63,28 +63,28 @@ const AddTeacher = () => {
     <div>
       <div className="register">
         <form className="registerForm" onSubmit={submitHandler}>
-          <span className="registerTitle">Add Teacher</span>
+          <span className="registerTitle">添加老师</span>
           <br />
           <label>
-            Subject : {subjectDetails && subjectDetails.subName}
+            科目 : {subjectDetails && subjectDetails.subName}
           </label>
           <label>
-            Class : {subjectDetails && subjectDetails.sclassName && subjectDetails.sclassName.sclassName}
+            班级 : {subjectDetails && subjectDetails.sclassName && subjectDetails.sclassName.sclassName}
           </label>
-          <label>Name</label>
-          <input className="registerInput" type="text" placeholder="Enter teacher's name..."
+          <label>姓名</label>
+          <input className="registerInput" type="text" placeholder="输入老师姓名..."
             value={name}
             onChange={(event) => setName(event.target.value)}
             autoComplete="name" required />
 
-          <label>Email</label>
-          <input className="registerInput" type="email" placeholder="Enter teacher's email..."
+          <label>邮箱</label>
+          <input className="registerInput" type="email" placeholder="输入老师邮箱..."
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             autoComplete="email" required />
 
-          <label>Password</label>
-          <input className="registerInput" type="password" placeholder="Enter teacher's password..."
+          <label>密码</label>
+          <input className="registerInput" type="password" placeholder="输入老师密码..."
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="new-password" required />
@@ -93,7 +93,7 @@ const AddTeacher = () => {
             {loader ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              'Register'
+              '注册'
             )}
           </button>
         </form>
