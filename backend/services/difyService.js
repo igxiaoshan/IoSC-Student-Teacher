@@ -5,6 +5,38 @@ class DifyService {
         this.baseURL = process.env.DIFY_API_URL ;
         this.apiKey = process.env.DIFY_API_KEY ;
         this.timeout = 60000; // 60秒超时，云服务可能需要更长时间
+        this.isHealthy = null; // 缓存健康状态
+        this.lastHealthCheck = 0; // 上次健康检查时间
+        this.healthCheckInterval = 30000; // 30秒检查一次
+    }
+
+    // 检查Dify服务健康状态
+    async checkHealth() {
+        const now = Date.now();
+
+        // 如果最近检查过且结果为健康，直接返回
+        if (this.isHealthy && (now - this.lastHealthCheck) < this.healthCheckInterval) {
+            return this.isHealthy;
+        }
+
+        try {
+            console.log('检查Dify服务健康状态...');
+            const response = await axios.get(`${this.baseURL.replace('/v1', '')}/health`, {
+                timeout: 3000,
+                validateStatus: () => true // 接受所有状态码
+            });
+            console.log(`Dify服务健康检查: ${response}`);
+            this.isHealthy = response.status === 200;
+            this.lastHealthCheck = now;
+            console.log(`Dify服务健康检查: ${this.isHealthy}`);
+            console.log(`Dify服务健康检查: ${this.isHealthy ? '✅ 健康' : '❌ 不健康'}`);
+            return this.isHealthy;
+        } catch (error) {
+            console.log(`Dify服务健康检查失败: ${error.message}`);
+            this.isHealthy = false;
+            this.lastHealthCheck = now;
+            return false;
+        }
     }
 
     // 通用的Dify API调用方法
@@ -35,9 +67,9 @@ class DifyService {
             console.log(`调用Dify云服务API: ${config.url}`);
             console.log(`请求数据:`, JSON.stringify(data, null, 2));
 
-            // 实现重试机制
+            // 实现快速重试机制
             let lastError;
-            for (let attempt = 1; attempt <= 3; attempt++) {
+            for (let attempt = 1; attempt <= 2; attempt++) {
                 try {
                     console.log(`尝试第 ${attempt} 次调用...`);
                     const response = await axios(config);
@@ -50,8 +82,14 @@ class DifyService {
                     lastError = error;
                     console.log(`第 ${attempt} 次尝试失败:`, error.message);
 
-                    if (attempt < 3) {
-                        const delay = 1000 * attempt; // 递增延迟
+                    // 如果是连接拒绝错误，立即失败不重试
+                    if (error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+                        console.log('检测到连接错误，跳过重试直接使用模拟数据');
+                        break;
+                    }
+
+                    if (attempt < 2) {
+                        const delay = 500; // 固定500ms延迟
                         console.log(`等待 ${delay}ms 后重试...`);
                         await new Promise(resolve => setTimeout(resolve, delay));
                     }
@@ -886,6 +924,417 @@ ${studyGoals || '提高整体成绩'}
             console.error('Dify课件生成失败:', error);
             throw new Error(`Dify课件生成失败: ${error.message}`);
         }
+    }
+
+    // 生成考核题目
+    async generateAssessment(inputData) {
+        const {
+            subject_name,
+            teacher_name,
+            assessment_title,
+            assessment_description,
+            difficulty,
+            question_count,
+            question_types,
+            duration,
+            focus_areas,
+            courseware_content
+        } = inputData;
+
+        // 构建考核生成的提示词
+        const systemPrompt = `你是一名专业的${subject_name}教师，擅长设计高质量的考核题目。请根据以下要求生成考核内容：
+
+考核要求：
+- 科目：${subject_name}
+- 标题：${assessment_title}
+- 描述：${assessment_description}
+- 难度等级：${difficulty}
+- 题目数量：${question_count}题
+- 题目类型：${question_types.join('、')}
+- 考试时长：${duration}分钟
+- 关注领域：${focus_areas.join('、')}
+
+${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
+
+请生成结构化的考核题目，包含：
+1. 题目内容
+2. 题目类型
+3. 选项（如果是选择题）
+4. 正确答案
+5. 题目解析
+6. 分值分配
+
+请确保题目质量高、难度适中、覆盖面广。`;
+
+        try {
+            console.log('开始调用Dify生成考核题目...');
+
+            // 先检查Dify服务健康状态
+            // const isHealthy = await this.checkHealth();
+            // if (!isHealthy) {
+            //     throw new Error('Dify服务不可用，直接使用模拟数据');
+            // }
+
+            // 使用与课件生成相同的调用方式
+            const response = await this.callDifyAPI('/chat-messages', {
+                inputs: inputData,  // 直接传递原始inputData，与课件生成保持一致
+                query: systemPrompt,
+                response_mode: 'blocking',
+                conversation_id: '',
+                user: teacher_name || 'teacher'
+            });
+
+            console.log('Dify考核生成响应:', response);
+
+            if (response && response.answer) {
+                // 解析Dify返回的考核内容
+                const assessmentContent = this.parseAssessmentContent(response.answer, {
+                    title: assessment_title,
+                    description: assessment_description,
+                    subject: subject_name,
+                    difficulty,
+                    duration,
+                    questionCount: question_count,
+                    questionTypes: question_types,
+                    focusAreas: focus_areas
+                });
+
+                return {
+                    success: true,
+                    data: assessmentContent,
+                    source: 'dify',
+                    conversation_id: response.conversation_id
+                };
+            } else {
+                throw new Error('Dify返回的响应格式不正确');
+            }
+
+        } catch (error) {
+            console.error('Dify考核生成失败:', error);
+
+            // 如果Dify调用失败，返回模拟数据
+            console.log('Dify调用失败，使用本地模拟数据生成考核...');
+
+            const mockAssessment = this.generateMockAssessmentContent({
+                subjectName: subject_name,
+                title: assessment_title,
+                description: assessment_description,
+                difficulty,
+                questionCount: question_count,
+                questionTypes: question_types,
+                duration,
+                focusAreas: focus_areas
+            });
+
+            return {
+                success: true,
+                data: mockAssessment,
+                source: 'mock',
+                note: `Dify服务不可用，使用本地生成: ${error.message}`
+            };
+        }
+    }
+
+    // 解析Dify返回的考核内容
+    parseAssessmentContent(content, metadata) {
+        try {
+            // 尝试解析JSON格式
+            const parsed = JSON.parse(content);
+            if (parsed.questions && Array.isArray(parsed.questions)) {
+                return {
+                    ...metadata,
+                    questions: parsed.questions,
+                    generatedBy: 'Dify AI',
+                    generatedAt: new Date().toISOString()
+                };
+            }
+        } catch (e) {
+            console.log('JSON解析失败，尝试文本解析...');
+        }
+
+        // 改进的文本解析逻辑 - 支持新的Dify格式
+        const questions = [];
+        const lines = content.split('\n').filter(line => line.trim());
+
+        let currentQuestion = null;
+        let questionIndex = 1;
+        let isInQuestionBlock = false;
+        let currentSection = '';
+        let collectingOptions = false;
+
+        lines.forEach(line => {
+            line = line.trim();
+
+            // 识别题目开始 - 支持新格式 ### 题目 1
+            if (line.match(/^###\s*题目\s*\d+/) || line.match(/^\d+[\.、]\s*\*?\*?题目内容[：:]/)) {
+                if (currentQuestion) {
+                    questions.push(currentQuestion);
+                }
+
+                currentQuestion = {
+                    questionNumber: questionIndex++,
+                    type: '选择题', // 默认类型，后续会更新
+                    question: '',
+                    options: [],
+                    correctAnswer: '',
+                    points: 10,
+                    explanation: '',
+                    difficulty: metadata.difficulty
+                };
+                isInQuestionBlock = true;
+                currentSection = 'title';
+                collectingOptions = false;
+            }
+            // 识别题目内容 - 新格式 **内容：**
+            else if (line.match(/\*\*内容[：:]\*\*/)) {
+                if (currentQuestion) {
+                    const questionText = line.replace(/\*\*内容[：:]\*\*\s*/, '');
+                    currentQuestion.question = questionText;
+                }
+                currentSection = 'question';
+            }
+            // 识别旧格式的题目内容
+            else if (line.match(/^\d+[\.、]\s*\*?\*?题目内容[：:]/)) {
+                if (currentQuestion) {
+                    const questionText = line.replace(/^\d+[\.、]\s*\*?\*?题目内容[：:]\s*/, '');
+                    currentQuestion.question = questionText;
+                }
+                currentSection = 'question';
+            }
+            // 识别题目类型
+            else if (line.match(/\*\*题目类型[：:]\*\*/)) {
+                if (currentQuestion) {
+                    const type = line.replace(/\*\*题目类型[：:]\*\*\s*/, '');
+                    currentQuestion.type = type;
+                    currentQuestion.points = this.getPointsByType(type);
+                }
+                currentSection = 'type';
+            }
+            // 识别选项部分 - 新格式
+            else if (line.match(/\*\*选项[：:]\*\*/)) {
+                currentSection = 'options';
+                collectingOptions = true;
+            }
+            // 识别旧格式选项部分
+            else if (line.match(/选项[：:]/)) {
+                currentSection = 'options';
+                collectingOptions = true;
+            }
+            // 识别具体选项 A. B. C. D. 或 A) B) C) D)
+            else if (line.match(/^[A-D][\.)\s]/)) {
+                if (currentQuestion && (currentSection === 'options' || collectingOptions)) {
+                    currentQuestion.options.push(line);
+                }
+            }
+            // 识别正确答案
+            else if (line.match(/\*\*正确答案[：:]\*\*/) || line.match(/正确答案[：:]/)) {
+                if (currentQuestion) {
+                    const answer = line.replace(/\*\*正确答案[：:]\*\*\s*/, '').replace(/正确答案[：:]\s*/, '');
+                    currentQuestion.correctAnswer = answer;
+                }
+                currentSection = 'answer';
+                collectingOptions = false;
+            }
+            // 识别题目解析
+            else if (line.match(/\*\*题目解析[：:]\*\*/) || line.match(/题目解析[：:]/)) {
+                if (currentQuestion) {
+                    const explanation = line.replace(/\*\*题目解析[：:]\*\*\s*/, '').replace(/题目解析[：:]\s*/, '');
+                    currentQuestion.explanation = explanation;
+                }
+                currentSection = 'explanation';
+            }
+            // 识别参考答案（简答题）
+            else if (line.match(/\*\*参考答案/) || line.match(/参考答案[：:]/)) {
+                if (currentQuestion) {
+                    let answer = line.replace(/\*\*参考答案.*[：:]\*\*\s*/, '').replace(/参考答案.*[：:]\s*/, '');
+                    // 如果答案为空，可能在下一行
+                    if (!answer.trim()) {
+                        currentSection = 'collecting_answer';
+                    } else {
+                        currentQuestion.correctAnswer = answer;
+                        currentSection = 'answer';
+                    }
+                }
+            }
+            // 收集多行答案内容
+            else if (currentSection === 'collecting_answer' && currentQuestion && line.length > 0 && !line.match(/^---/) && !line.match(/^\*\*/) && !line.match(/^###/)) {
+                if (currentQuestion.correctAnswer) {
+                    currentQuestion.correctAnswer += ' ' + line;
+                } else {
+                    currentQuestion.correctAnswer = line;
+                }
+            }
+            // 识别分值分配
+            else if (line.match(/分值分配[：:]/)) {
+                if (currentQuestion) {
+                    const pointsMatch = line.match(/(\d+)分/);
+                    if (pointsMatch) {
+                        currentQuestion.points = parseInt(pointsMatch[1]);
+                    }
+                }
+                currentSection = 'points';
+            }
+            // 处理填空题的答案格式
+            else if (line.match(/答案.*示例/)) {
+                if (currentQuestion) {
+                    const answer = line.replace(/.*答案.*[：:]\s*/, '').replace(/\s*\/.*$/, '');
+                    currentQuestion.correctAnswer = answer;
+                }
+            }
+            // 继续收集选项（如果在选项收集模式）
+            else if (collectingOptions && currentQuestion && line.length > 0 && !line.match(/^---/) && !line.match(/^\*\*/)) {
+                // 检查是否是选项格式
+                if (line.match(/^[A-D][\.)\s]/) || (currentQuestion.options.length > 0 && line.length < 100)) {
+                    currentQuestion.options.push(line);
+                }
+            }
+            // 继续解析多行内容
+            else if (isInQuestionBlock && currentSection === 'explanation' && line.length > 0 && !line.match(/^###/) && !line.match(/^\*\*/)) {
+                if (currentQuestion && !line.match(/^---/)) {
+                    currentQuestion.explanation += ' ' + line;
+                }
+            }
+        });
+
+        // 添加最后一个题目
+        if (currentQuestion) {
+            questions.push(currentQuestion);
+        }
+
+        // 如果解析出的题目太少，补充一些基础题目
+        while (questions.length < Math.min(metadata.questionCount, 3)) {
+            questions.push({
+                questionNumber: questions.length + 1,
+                type: metadata.questionTypes[0] || '选择题',
+                question: `关于${metadata.subject}的基础概念，下列说法正确的是？`,
+                options: ['A) 选项A', 'B) 选项B', 'C) 选项C', 'D) 选项D'],
+                correctAnswer: 'A)',
+                points: 10,
+                explanation: '这是基础概念题目的解析。',
+                difficulty: metadata.difficulty
+            });
+        }
+
+        console.log(`Dify文本解析完成，解析出${questions.length}道题目`);
+
+        return {
+            ...metadata,
+            questions: questions,
+            generatedBy: 'Dify AI (文本解析)',
+            generatedAt: new Date().toISOString()
+        };
+    }
+
+    // 检测题目类型
+    detectQuestionType(questionText, availableTypes) {
+        const text = questionText.toLowerCase();
+
+        // 优先检测明确的类型标识
+        if (text.includes('选择题') || text.includes('选择')) {
+            return '选择题';
+        } else if (text.includes('填空题') || text.includes('填空') || text.includes('______')) {
+            return '填空题';
+        } else if (text.includes('简答题') || text.includes('简答')) {
+            return '简答题';
+        } else if (text.includes('编程题') || text.includes('编程')) {
+            return '编程题';
+        } else if (text.includes('实操题') || text.includes('实操')) {
+            return '实操题';
+        }
+
+        // 根据内容特征推断
+        if (questionText.match(/[A-D]\)/)) {
+            return '选择题';
+        } else if (questionText.includes('请填写') || questionText.includes('请用一句话') || questionText.includes('请列举')) {
+            return '填空题';
+        } else if (questionText.includes('简述') || questionText.includes('分析') || questionText.includes('说明') || questionText.includes('描述')) {
+            return '简答题';
+        } else if (questionText.includes('编写') || questionText.includes('代码') || questionText.includes('函数')) {
+            return '编程题';
+        }
+
+        return availableTypes[0] || '选择题';
+    }
+
+    // 根据题目类型获取分值
+    getPointsByType(type) {
+        const pointsMap = {
+            '选择题': 5,
+            '填空题': 8,
+            '简答题': 15,
+            '编程题': 20,
+            '实操题': 25
+        };
+        return pointsMap[type] || 10;
+    }
+
+    // 生成模拟考核内容（作为后备方案）
+    generateMockAssessmentContent(params) {
+        const { subjectName, title, description, difficulty, questionCount, questionTypes, duration, focusAreas } = params;
+
+        // 基础题目模板
+        const questionTemplates = {
+            '数学': {
+                '选择题': [
+                    { question: '下列哪个函数是一次函数？', options: ['y = x²', 'y = 2x + 1', 'y = 1/x', 'y = |x|'], correctAnswer: 'B', explanation: '一次函数的一般形式为y = kx + b，其中k≠0。' },
+                    { question: '若a > b，则下列不等式中正确的是？', options: ['a + 2 > b + 2', 'a - 3 < b - 3', '2a < 2b', '-a > -b'], correctAnswer: 'A', explanation: '不等式两边同时加上相同的数，不等号方向不变。' }
+                ],
+                '填空题': [
+                    { question: '如果x + 3 = 7，那么x = ______', correctAnswer: '4', explanation: '移项得x = 7 - 3 = 4' },
+                    { question: '函数y = 2x - 1中，当x = 3时，y = ______', correctAnswer: '5', explanation: '将x = 3代入得y = 2×3 - 1 = 5' }
+                ],
+                '简答题': [
+                    { question: '解方程：2x + 5 = 13，并验证答案。', correctAnswer: 'x = 4', explanation: '解：2x = 13 - 5 = 8，所以x = 4。验证：2×4 + 5 = 13 ✓' }
+                ]
+            },
+            '语文': {
+                '选择题': [
+                    { question: '下列词语中，字音全部正确的是？', options: ['载(zǎi)重 载(zài)歌载舞', '处(chǔ)理 处(chù)境', '调(tiáo)节 调(diào)料', '以上都正确'], correctAnswer: 'D', explanation: '这些多音字的读音都是正确的。' }
+                ],
+                '填空题': [
+                    { question: '"______，红掌拨清波"', correctAnswer: '白毛浮绿水', explanation: '出自骆宾王的《咏鹅》' }
+                ],
+                '简答题': [
+                    { question: '请分析《春晓》这首诗的意境。', correctAnswer: '描绘春日清晨的美好景象', explanation: '诗人通过"春眠不觉晓"等描写，展现了春日清晨的宁静美好。' }
+                ]
+            }
+        };
+
+        const currentSubjectTemplates = questionTemplates[subjectName] || questionTemplates['数学'];
+        const questions = [];
+        let questionIndex = 1;
+
+        questionTypes.forEach(type => {
+            const typeTemplates = currentSubjectTemplates[type] || currentSubjectTemplates['选择题'];
+            const questionsToAdd = Math.ceil(questionCount / questionTypes.length);
+
+            for (let i = 0; i < questionsToAdd && questions.length < questionCount; i++) {
+                const template = typeTemplates[i % typeTemplates.length];
+                questions.push({
+                    questionNumber: questionIndex++,
+                    type: type,
+                    question: template.question,
+                    options: template.options || [],
+                    correctAnswer: template.correctAnswer,
+                    points: this.getPointsByType(type),
+                    explanation: template.explanation,
+                    difficulty: difficulty
+                });
+            }
+        });
+
+        return {
+            title,
+            description,
+            subject: subjectName,
+            difficulty,
+            duration,
+            totalQuestions: questions.length,
+            questions,
+            focusAreas,
+            generatedBy: 'Local Mock System',
+            generatedAt: new Date().toISOString()
+        };
     }
 
     // 测试Dify云服务连接

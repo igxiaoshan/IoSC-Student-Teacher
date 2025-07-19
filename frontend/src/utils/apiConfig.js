@@ -110,9 +110,14 @@ export const aiAPI = {
     updateCourseware: (id, data) => api.put(`/ai/courseware/${id}`, data),
     deleteCourseware: (id) => api.delete(`/ai/courseware/${id}`),
 
-    // 考核生成
-    generateAssessment: (data) => api.post('/ai/assessment/generate', data),
+    // 考核生成 - 增加超时时间
+    generateAssessment: (data) => api.post('/ai/assessment/generate', data, { timeout: 60000 }),
     getTeacherAssessments: (teacherId) => api.get(`/ai/assessment/teacher/${teacherId}`),
+    getTeacherAssessmentHistory: (teacherId) => api.get(`/ai/assessment/teacher/${teacherId}/history`),
+    updateAssessment: (id, data) => api.put(`/ai/assessment/${id}`, data),
+    deleteAssessment: (id) => api.delete(`/ai/assessment/${id}`),
+
+
 
     // 学情分析
     analyzeSubmission: (submissionId, data) => api.post(`/ai/analysis/submission/${submissionId}`, data),

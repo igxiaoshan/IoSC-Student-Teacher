@@ -31,7 +31,6 @@ import {
     IconButton,
     Tabs,
     Tab,
-    Divider,
     Tooltip
 } from '@mui/material';
 import {
@@ -72,6 +71,7 @@ const EnhancedAIAssessmentGenerator = () => {
     
     // 生成结果
     const [generatedAssessment, setGeneratedAssessment] = useState(null);
+    const [showGeneratedResult, setShowGeneratedResult] = useState(false);
     
     // 历史记录
     const [historyLoading, setHistoryLoading] = useState(false);
@@ -98,12 +98,108 @@ const EnhancedAIAssessmentGenerator = () => {
         '系统设计', '算法思维', '调试能力', '优化技巧'
     ];
 
-    // 获取课件列表
+    // 获取课件列表和自动填写表单
     useEffect(() => {
         if (currentUser?._id) {
             fetchCoursewareList();
+            autoFillForm();
         }
     }, [currentUser]);
+
+    // 自动填写表单
+    const autoFillForm = () => {
+        if (!currentUser) return;
+
+        const subjectName = currentUser.teachSubject?.subName || '未知科目';
+        const teacherName = currentUser.name || '教师';
+
+        // 生成默认标题和描述
+        const defaultTitle = `${subjectName}考核题目`;
+        const defaultDescription = `这是一份由AI智能生成的${subjectName}考核题目，旨在全面评估学生对${subjectName}相关知识点的掌握程度。考核内容涵盖基础概念、实际应用和综合分析等多个方面。`;
+
+        setFormData(prev => ({
+            ...prev,
+            title: defaultTitle,
+            description: defaultDescription,
+            // 根据科目设置默认参数
+            difficulty: '中级',
+            questionCount: getDefaultQuestionCount(subjectName),
+            questionTypes: getDefaultQuestionTypes(subjectName),
+            duration: getDefaultDuration(subjectName),
+            focusAreas: getDefaultFocusAreas(subjectName)
+        }));
+
+        // 显示成功提示
+        setSuccess(`已根据${subjectName}科目自动填写考核信息！`);
+    };
+
+    // 根据科目获取默认题目数量
+    const getDefaultQuestionCount = (subjectName) => {
+        const defaults = {
+            '数学': 15,
+            '语文': 12,
+            '英语': 20,
+            '物理': 12,
+            '化学': 15,
+            '生物': 18,
+            '历史': 10,
+            '地理': 15,
+            '政治': 10,
+            '计算机': 20
+        };
+        return defaults[subjectName] || 10;
+    };
+
+    // 根据科目获取默认题目类型
+    const getDefaultQuestionTypes = (subjectName) => {
+        const defaults = {
+            '数学': ['选择题', '填空题', '简答题'],
+            '语文': ['选择题', '填空题', '简答题'],
+            '英语': ['选择题', '填空题', '简答题'],
+            '物理': ['选择题', '填空题', '简答题'],
+            '化学': ['选择题', '填空题', '简答题'],
+            '生物': ['选择题', '填空题', '简答题'],
+            '历史': ['选择题', '简答题'],
+            '地理': ['选择题', '填空题', '简答题'],
+            '政治': ['选择题', '简答题'],
+            '计算机': ['选择题', '填空题', '编程题']
+        };
+        return defaults[subjectName] || ['选择题'];
+    };
+
+    // 根据科目获取默认考试时长
+    const getDefaultDuration = (subjectName) => {
+        const defaults = {
+            '数学': 90,
+            '语文': 120,
+            '英语': 90,
+            '物理': 90,
+            '化学': 90,
+            '生物': 90,
+            '历史': 90,
+            '地理': 90,
+            '政治': 90,
+            '计算机': 120
+        };
+        return defaults[subjectName] || 60;
+    };
+
+    // 根据科目获取默认关注领域
+    const getDefaultFocusAreas = (subjectName) => {
+        const defaults = {
+            '数学': ['基础概念', '实际应用', '算法思维'],
+            '语文': ['基础概念', '实际应用', '问题分析'],
+            '英语': ['基础概念', '实际应用', '问题分析'],
+            '物理': ['基础概念', '实际应用', '问题分析'],
+            '化学': ['基础概念', '实际应用', '问题分析'],
+            '生物': ['基础概念', '实际应用', '问题分析'],
+            '历史': ['基础概念', '问题分析'],
+            '地理': ['基础概念', '实际应用', '问题分析'],
+            '政治': ['基础概念', '问题分析'],
+            '计算机': ['基础概念', '代码实现', '系统设计', '算法思维']
+        };
+        return defaults[subjectName] || ['基础概念'];
+    };
 
     // 获取历史记录
     const fetchAssessmentHistory = useCallback(async (page = 1) => {
@@ -192,7 +288,8 @@ const EnhancedAIAssessmentGenerator = () => {
 
             if (response.data.success) {
                 setGeneratedAssessment(response.data.assessment);
-                setSuccess('考核题目生成成功！');
+                setShowGeneratedResult(true);
+                setSuccess(`考核题目生成成功！数据源：${response.data.dataSource === 'dify' ? 'Dify AI' : '本地智能生成'}`);
                 // 刷新历史记录
                 if (activeTab === 1) {
                     fetchAssessmentHistory();
@@ -292,7 +389,37 @@ const EnhancedAIAssessmentGenerator = () => {
     // 导出Word
     const exportToWord = async (assessmentId) => {
         try {
-            const response = await aiAPI.get(`/ai/assessment/${assessmentId}/export/word`, {
+            // 如果是刚生成的考核（可能还没有真实ID），使用特殊处理
+            let exportUrl = `/ai/assessment/${assessmentId}/export/word`;
+
+            // 如果assessmentId是模拟ID或者为空，使用POST方式传递考核数据
+            if (!assessmentId || assessmentId.startsWith('mock_')) {
+                // 使用POST方式，直接传递考核数据
+                const response = await aiAPI.post('/ai/assessment/export/word', {
+                    assessment: generatedAssessment
+                }, {
+                    responseType: 'blob'
+                });
+
+                const blob = new Blob([response.data], {
+                    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                });
+
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `考核题目_${generatedAssessment.title}_${Date.now()}.docx`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+
+                setSuccess('Word文档导出成功！');
+                return;
+            }
+
+            // 正常的ID导出流程
+            const response = await aiAPI.get(exportUrl, {
                 responseType: 'blob'
             });
 
@@ -373,6 +500,30 @@ const EnhancedAIAssessmentGenerator = () => {
                 {/* 生成考核标签页 */}
                 {activeTab === 0 && (
                     <Box>
+                        {/* 教师科目信息 */}
+                        <Card sx={{ mb: 3, backgroundColor: '#e3f2fd' }}>
+                            <CardContent>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <AssessmentIcon sx={{ color: 'primary.main', fontSize: 28 }} />
+                                    <Box>
+                                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                                            当前科目：{currentUser?.teachSubject?.subName || '未知科目'}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            教师：{currentUser?.name || '未知教师'} | 系统已智能填写考核参数
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </CardContent>
+                        </Card>
+
+                        {/* 智能填写提示 */}
+                        <Alert severity="info" sx={{ mb: 3 }}>
+                            <Typography variant="body2">
+                                💡 系统已根据您的科目自动填写了考核信息，包括题目数量、题型、时长等参数，您可以直接生成或根据需要进行调整。
+                            </Typography>
+                        </Alert>
+
                         {/* 生成表单内容 */}
                         <Grid container spacing={3}>
                             <Grid item xs={12}>
@@ -493,7 +644,16 @@ const EnhancedAIAssessmentGenerator = () => {
                             </Grid>
                         </Grid>
 
-                        <Box sx={{ mt: 3, textAlign: 'center' }}>
+                        <Box sx={{ mt: 3, textAlign: 'center', display: 'flex', gap: 2, justifyContent: 'center' }}>
+                            <Button
+                                variant="outlined"
+                                size="large"
+                                onClick={autoFillForm}
+                                startIcon={<RefreshIcon />}
+                                sx={{ px: 3, py: 1.5 }}
+                            >
+                                重新填写
+                            </Button>
                             <Button
                                 variant="contained"
                                 size="large"
@@ -502,9 +662,147 @@ const EnhancedAIAssessmentGenerator = () => {
                                 startIcon={loading ? <CircularProgress size={20} /> : <AssessmentIcon />}
                                 sx={{ px: 4, py: 1.5 }}
                             >
-                                {loading ? '生成中...' : '生成考核题目'}
+                                {loading ? '生成中...' : (showGeneratedResult ? '重新生成' : '生成考核题目')}
                             </Button>
+                            {showGeneratedResult && (
+                                <Button
+                                    variant="outlined"
+                                    size="large"
+                                    onClick={() => {
+                                        setShowGeneratedResult(false);
+                                        setGeneratedAssessment(null);
+                                    }}
+                                    sx={{ px: 3, py: 1.5 }}
+                                >
+                                    隐藏结果
+                                </Button>
+                            )}
                         </Box>
+
+                        {/* 生成结果预览 */}
+                        {showGeneratedResult && generatedAssessment && (
+                            <Box sx={{ mt: 4 }}>
+                                <Typography variant="h5" gutterBottom sx={{
+                                    color: 'primary.main',
+                                    fontWeight: 'bold',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1
+                                }}>
+                                    🎯 生成结果预览
+                                    <Chip
+                                        label={`${generatedAssessment.questions?.length || 0}题`}
+                                        color="primary"
+                                        size="small"
+                                    />
+                                </Typography>
+
+                                {/* 考核基本信息 */}
+                                <Card sx={{ mb: 3, borderLeft: 4, borderColor: 'success.main' }}>
+                                    <CardContent>
+                                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                                            {generatedAssessment.title}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" paragraph>
+                                            {generatedAssessment.description}
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                            <Chip label={`难度: ${generatedAssessment.difficulty || '中级'}`} size="small" />
+                                            <Chip label={`时长: ${generatedAssessment.duration}分钟`} size="small" />
+                                            <Chip label={`总分: ${generatedAssessment.totalPoints || 0}分`} size="small" />
+                                            <Chip label={`状态: ${generatedAssessment.status}`} size="small" color="success" />
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+
+                                {/* 题目预览（显示前3题） */}
+                                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                                    📝 题目预览
+                                </Typography>
+                                {generatedAssessment.questions?.slice(0, 3).map((question, index) => (
+                                    <Card key={index} sx={{ mb: 2, backgroundColor: '#f8f9fa' }}>
+                                        <CardContent>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                                                    第{question.questionNumber || index + 1}题
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                                    <Chip label={question.type} size="small" color="primary" />
+                                                    <Chip label={`${question.points}分`} size="small" color="secondary" />
+                                                </Box>
+                                            </Box>
+                                            <Typography variant="body1" paragraph>
+                                                {question.question}
+                                            </Typography>
+                                            {question.options && question.options.length > 0 && (
+                                                <Box sx={{ ml: 2, mb: 1 }}>
+                                                    {question.options.map((option, optIndex) => (
+                                                        <Typography key={optIndex} variant="body2" sx={{ mb: 0.5 }}>
+                                                            {option}
+                                                        </Typography>
+                                                    ))}
+                                                </Box>
+                                            )}
+                                            <Typography variant="body2" sx={{
+                                                color: 'success.main',
+                                                fontWeight: 'bold',
+                                                backgroundColor: '#e8f5e8',
+                                                p: 1,
+                                                borderRadius: 1
+                                            }}>
+                                                答案：{question.correctAnswer}
+                                            </Typography>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+
+                                {/* 显示更多题目提示 */}
+                                {generatedAssessment.questions?.length > 3 && (
+                                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 2 }}>
+                                        还有 {generatedAssessment.questions.length - 3} 道题目，点击"详细预览"查看完整内容
+                                    </Typography>
+                                )}
+
+                                {/* 操作按钮 */}
+                                <Box sx={{
+                                    display: 'flex',
+                                    gap: 2,
+                                    justifyContent: 'center',
+                                    mt: 3,
+                                    p: 2,
+                                    backgroundColor: '#f5f5f5',
+                                    borderRadius: 2
+                                }}>
+                                    <Button
+                                        variant="outlined"
+                                        size="large"
+                                        startIcon={<PreviewIcon />}
+                                        onClick={() => handleDetailPreview(generatedAssessment)}
+                                        sx={{ px: 3 }}
+                                    >
+                                        详细预览
+                                    </Button>
+                                    <Button
+                                        variant="contained"
+                                        size="large"
+                                        startIcon={<WordIcon />}
+                                        onClick={() => exportToWord(generatedAssessment._id)}
+                                        sx={{ px: 3 }}
+                                    >
+                                        下载Word
+                                    </Button>
+                                    <Button
+                                        variant="outlined"
+                                        size="large"
+                                        startIcon={<ShareIcon />}
+                                        onClick={() => generateShareLink(generatedAssessment)}
+                                        sx={{ px: 3 }}
+                                    >
+                                        分享考核
+                                    </Button>
+                                </Box>
+                            </Box>
+                        )}
                     </Box>
                 )}
 

@@ -499,7 +499,7 @@ const EnhancedAICoursewareGenerator = () => {
     return (
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
             <Typography variant="h4" gutterBottom>
-                AI课件生成器
+                AI课件生成器 - 增强版
             </Typography>
             
             <Paper sx={{ p: 3 }}>

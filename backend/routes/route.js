@@ -46,7 +46,18 @@ const {
     generateShareLink,
     downloadByShareLink
 } = require('../controllers/ai-courseware-controller.js');
-const { generateAssessment, getTeacherAssessments, updateAssessment, publishAssessment } = require('../controllers/ai-assessment-controller.js');
+const {
+    generateAssessment,
+    getTeacherAssessments,
+    getTeacherAssessmentHistory,
+    updateAssessment,
+    deleteAssessment,
+    exportAssessmentToWord,
+    exportAssessmentDataToWord,
+    generateAssessmentShareLink,
+    getAssessmentByShareLink,
+    publishAssessment
+} = require('../controllers/ai-assessment-controller.js');
 const { analyzeSubmission, getClassAnalysisReport, batchAnalyzeSubmissions, generatePersonalizedRecommendations } = require('../controllers/ai-analysis-controller.js');
 const { upload, uploadCourseDocument, deleteCourseDocument, getCourseDocuments, downloadCourseDocument } = require('../controllers/file-upload-controller.js');
 const { askLearningAssistant, generatePracticeQuestions, submitPracticeAnswer } = require('../controllers/student-ai-controller.js');
@@ -215,7 +226,13 @@ router.get('/ai/courseware/share/:token', downloadByShareLink);
 // AI考核生成路由
 router.post('/ai/assessment/generate', generateAssessment);
 router.get('/ai/assessment/teacher/:teacherId', getTeacherAssessments);
+router.get('/ai/assessment/teacher/:teacherId/history', getTeacherAssessmentHistory);
 router.put('/ai/assessment/:id', updateAssessment);
+router.delete('/ai/assessment/:id', deleteAssessment);
+router.get('/ai/assessment/:id/export/word', exportAssessmentToWord);
+router.post('/ai/assessment/export/word', exportAssessmentDataToWord);
+router.post('/ai/assessment/:id/share', generateAssessmentShareLink);
+router.get('/ai/assessment/share/:token', getAssessmentByShareLink);
 router.put('/ai/assessment/:id/publish', publishAssessment);
 
 // AI学情分析路由
