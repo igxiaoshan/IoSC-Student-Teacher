@@ -445,7 +445,7 @@ const generateAssessment = async (req, res) => {
                 description,
                 subject: { _id: subjectId, subName: subject.subName },
                 teacher: { _id: teacherId, name: teacher.name },
-                questions: aiGeneratedQuestions.questions || [],
+                questions: convertedQuestions, // 使用转换后的格式保持一致性
                 totalPoints,
                 duration,
                 status: '草稿',

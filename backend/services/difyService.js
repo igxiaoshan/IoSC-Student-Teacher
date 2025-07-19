@@ -966,13 +966,20 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
 
 请确保题目质量高、难度适中、覆盖面广。`;
 
+        // 首先检查基本配置
+        if (!this.baseURL || !this.apiKey) {
+            console.warn('Dify配置不完整，直接使用模拟数据生成');
+            return this.generateMockAssessmentResponse(inputData);
+        }
+
         try {
             console.log('开始调用Dify生成考核题目...');
 
-            // 先检查Dify服务健康状态
+            // // 先检查Dify服务健康状态
             // const isHealthy = await this.checkHealth();
             // if (!isHealthy) {
-            //     throw new Error('Dify服务不可用，直接使用模拟数据');
+            //     console.warn('Dify服务健康检查失败，使用模拟数据');
+            //     return this.generateMockAssessmentResponse(inputData);
             // }
 
             // 使用与课件生成相同的调用方式
@@ -1011,28 +1018,41 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
 
         } catch (error) {
             console.error('Dify考核生成失败:', error);
-
-            // 如果Dify调用失败，返回模拟数据
             console.log('Dify调用失败，使用本地模拟数据生成考核...');
-
-            const mockAssessment = this.generateMockAssessmentContent({
-                subjectName: subject_name,
-                title: assessment_title,
-                description: assessment_description,
-                difficulty,
-                questionCount: question_count,
-                questionTypes: question_types,
-                duration,
-                focusAreas: focus_areas
-            });
-
-            return {
-                success: true,
-                data: mockAssessment,
-                source: 'mock',
-                note: `Dify服务不可用，使用本地生成: ${error.message}`
-            };
+            return this.generateMockAssessmentResponse(inputData);
         }
+    }
+
+    // 生成模拟考核响应的统一方法
+    generateMockAssessmentResponse(inputData) {
+        const {
+            subject_name,
+            assessment_title,
+            assessment_description,
+            difficulty,
+            question_count,
+            question_types,
+            duration,
+            focus_areas
+        } = inputData;
+
+        const mockAssessment = this.generateMockAssessmentContent({
+            subjectName: subject_name,
+            title: assessment_title,
+            description: assessment_description,
+            difficulty,
+            questionCount: question_count,
+            questionTypes: question_types,
+            duration,
+            focusAreas: focus_areas
+        });
+
+        return {
+            success: true,
+            data: mockAssessment,
+            source: 'mock',
+            note: 'Dify服务不可用，使用本地智能生成系统'
+        };
     }
 
     // 解析Dify返回的考核内容
@@ -1052,9 +1072,31 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
             console.log('JSON解析失败，尝试文本解析...');
         }
 
-        // 改进的文本解析逻辑 - 支持新的Dify格式
-        const questions = [];
-        const lines = content.split('\n').filter(line => line.trim());
+        // 首先清理内容，移除<think>标签内容
+        let cleanContent = content;
+        if (content.includes('<think>')) {
+            cleanContent = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+        }
+
+        console.log('开始解析Dify Markdown格式内容...');
+
+        // 专门解析Dify返回的Markdown格式
+        const questions = this.parseDifyMarkdownQuestions(cleanContent, metadata);
+
+        if (questions.length > 0) {
+            console.log(`Dify Markdown解析成功，解析出${questions.length}道题目`);
+            return {
+                ...metadata,
+                questions: questions,
+                generatedBy: 'Dify AI (Markdown解析)',
+                generatedAt: new Date().toISOString()
+            };
+        }
+
+        // 如果Markdown解析失败，尝试旧的文本解析逻辑
+        console.log('Markdown解析失败，尝试通用文本解析...');
+        const fallbackQuestions = [];
+        const lines = cleanContent.split('\n').filter(line => line.trim());
 
         let currentQuestion = null;
         let questionIndex = 1;
@@ -1198,13 +1240,13 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
 
         // 添加最后一个题目
         if (currentQuestion) {
-            questions.push(currentQuestion);
+            fallbackQuestions.push(currentQuestion);
         }
 
         // 如果解析出的题目太少，补充一些基础题目
-        while (questions.length < Math.min(metadata.questionCount, 3)) {
-            questions.push({
-                questionNumber: questions.length + 1,
+        while (fallbackQuestions.length < Math.min(metadata.questionCount, 3)) {
+            fallbackQuestions.push({
+                questionNumber: fallbackQuestions.length + 1,
                 type: metadata.questionTypes[0] || '选择题',
                 question: `关于${metadata.subject}的基础概念，下列说法正确的是？`,
                 options: ['A) 选项A', 'B) 选项B', 'C) 选项C', 'D) 选项D'],
@@ -1215,14 +1257,154 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
             });
         }
 
-        console.log(`Dify文本解析完成，解析出${questions.length}道题目`);
+        console.log(`Dify文本解析完成，解析出${fallbackQuestions.length}道题目`);
 
         return {
             ...metadata,
-            questions: questions,
+            questions: fallbackQuestions,
             generatedBy: 'Dify AI (文本解析)',
             generatedAt: new Date().toISOString()
         };
+    }
+
+    // 专门解析Dify返回的Markdown格式题目
+    parseDifyMarkdownQuestions(content, metadata) {
+        const questions = [];
+
+        try {
+            // 使用正则表达式匹配题目块
+            // 匹配格式：### **问题X: 标题**
+            const questionBlocks = content.split(/###\s*\*\*问题\d+[：:]/);
+
+            for (let i = 1; i < questionBlocks.length; i++) {
+                const block = questionBlocks[i].trim();
+                if (!block) continue;
+
+                const question = this.parseQuestionBlock(block, i, metadata);
+                if (question) {
+                    questions.push(question);
+                }
+            }
+
+            return questions;
+        } catch (error) {
+            console.error('Markdown解析错误:', error);
+            return [];
+        }
+    }
+
+    // 解析单个题目块
+    parseQuestionBlock(block, questionNumber, metadata) {
+        try {
+            const lines = block.split('\n').filter(line => line.trim());
+
+            let questionText = '';
+            let options = [];
+            let correctAnswer = '';
+            let explanation = '';
+            let currentSection = 'question';
+            let collectingExplanation = false;
+
+            for (let line of lines) {
+                line = line.trim();
+
+                // 跳过空行和分隔线
+                if (!line || line.startsWith('---')) continue;
+
+                // 识别正确答案
+                if (line.startsWith('**正确答案：') || line.startsWith('**正确答案:')) {
+                    correctAnswer = line.replace(/\*\*正确答案[：:]\*\*\s*/, '').trim();
+                    currentSection = 'answer';
+                    continue;
+                }
+
+                // 识别题目解析
+                if (line.startsWith('**题目解析：') || line.startsWith('**题目解析:')) {
+                    explanation = line.replace(/\*\*题目解析[：:]\*\*\s*/, '').trim();
+                    currentSection = 'explanation';
+                    collectingExplanation = true;
+                    continue;
+                }
+
+                // 识别选项 (A. B. C. D.)
+                if (line.match(/^[A-D][\.\)]\s+/)) {
+                    options.push(line);
+                    currentSection = 'options';
+                    continue;
+                }
+
+                // 根据当前部分处理内容
+                if (currentSection === 'question') {
+                    // 第一行通常是标题，跳过
+                    if (!questionText && line.includes('**')) {
+                        currentSection = 'question_content';
+                        continue;
+                    }
+                    // 如果没有标题标记，直接作为题目内容
+                    if (!questionText) {
+                        questionText = line;
+                    }
+                } else if (currentSection === 'question_content' && !questionText) {
+                    questionText = line;
+                } else if (currentSection === 'explanation' && collectingExplanation) {
+                    // 继续收集解析内容
+                    if (explanation && !explanation.endsWith('.') && !explanation.endsWith('。')) {
+                        explanation += ' ' + line;
+                    } else if (!explanation) {
+                        explanation = line;
+                    }
+                }
+            }
+
+            // 清理和验证数据
+            questionText = this.cleanQuestionText(questionText);
+            correctAnswer = this.cleanCorrectAnswer(correctAnswer);
+            explanation = explanation || '暂无解析';
+
+            // 验证必要字段
+            if (!questionText || options.length === 0 || !correctAnswer) {
+                console.warn(`题目${questionNumber}解析不完整:`, {
+                    questionText: questionText?.substring(0, 50),
+                    optionsCount: options.length,
+                    correctAnswer
+                });
+                return null;
+            }
+
+            return {
+                questionNumber: questionNumber,
+                type: '选择题', // Dify返回的主要是选择题
+                question: questionText,
+                options: options,
+                correctAnswer: correctAnswer,
+                points: this.getPointsByType('选择题'),
+                explanation: explanation,
+                difficulty: metadata.difficulty,
+                estimatedTime: Math.ceil(metadata.duration / metadata.questionCount)
+            };
+
+        } catch (error) {
+            console.error(`解析题目${questionNumber}时出错:`, error);
+            return null;
+        }
+    }
+
+    // 清理题目文本
+    cleanQuestionText(text) {
+        if (!text) return '';
+        return text
+            .replace(/\*\*.*?\*\*/g, '') // 移除粗体标记
+            .replace(/^[：:]\s*/, '') // 移除开头的冒号
+            .trim();
+    }
+
+    // 清理正确答案
+    cleanCorrectAnswer(answer) {
+        if (!answer) return '';
+        return answer
+            .replace(/\*\*/g, '') // 移除粗体标记
+            .replace(/^正确答案[：:]\s*/, '') // 移除"正确答案："前缀
+            .trim();
     }
 
     // 检测题目类型
@@ -1272,30 +1454,86 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
     generateMockAssessmentContent(params) {
         const { subjectName, title, description, difficulty, questionCount, questionTypes, duration, focusAreas } = params;
 
-        // 基础题目模板
+        // 扩展的题目模板库
         const questionTemplates = {
             '数学': {
                 '选择题': [
                     { question: '下列哪个函数是一次函数？', options: ['y = x²', 'y = 2x + 1', 'y = 1/x', 'y = |x|'], correctAnswer: 'B', explanation: '一次函数的一般形式为y = kx + b，其中k≠0。' },
-                    { question: '若a > b，则下列不等式中正确的是？', options: ['a + 2 > b + 2', 'a - 3 < b - 3', '2a < 2b', '-a > -b'], correctAnswer: 'A', explanation: '不等式两边同时加上相同的数，不等号方向不变。' }
+                    { question: '若a > b，则下列不等式中正确的是？', options: ['a + 2 > b + 2', 'a - 3 < b - 3', '2a < 2b', '-a > -b'], correctAnswer: 'A', explanation: '不等式两边同时加上相同的数，不等号方向不变。' },
+                    { question: '下列哪个数是无理数？', options: ['√4', '√9', '√2', '√16'], correctAnswer: 'C', explanation: '√2是无理数，其他都是有理数。' },
+                    { question: '二次函数y = x² - 4x + 3的对称轴是？', options: ['x = 1', 'x = 2', 'x = 3', 'x = 4'], correctAnswer: 'B', explanation: '对称轴公式为x = -b/2a = 4/2 = 2。' }
                 ],
                 '填空题': [
                     { question: '如果x + 3 = 7，那么x = ______', correctAnswer: '4', explanation: '移项得x = 7 - 3 = 4' },
-                    { question: '函数y = 2x - 1中，当x = 3时，y = ______', correctAnswer: '5', explanation: '将x = 3代入得y = 2×3 - 1 = 5' }
+                    { question: '函数y = 2x - 1中，当x = 3时，y = ______', correctAnswer: '5', explanation: '将x = 3代入得y = 2×3 - 1 = 5' },
+                    { question: '圆的面积公式是S = ______', correctAnswer: 'πr²', explanation: '圆的面积等于π乘以半径的平方。' },
+                    { question: '若3x - 2 = 10，则x = ______', correctAnswer: '4', explanation: '3x = 12，所以x = 4。' }
                 ],
                 '简答题': [
-                    { question: '解方程：2x + 5 = 13，并验证答案。', correctAnswer: 'x = 4', explanation: '解：2x = 13 - 5 = 8，所以x = 4。验证：2×4 + 5 = 13 ✓' }
+                    { question: '解方程：2x + 5 = 13，并验证答案。', correctAnswer: 'x = 4', explanation: '解：2x = 13 - 5 = 8，所以x = 4。验证：2×4 + 5 = 13 ✓' },
+                    { question: '证明：两个奇数的和是偶数。', correctAnswer: '设两个奇数为2m+1和2n+1，它们的和为(2m+1)+(2n+1)=2(m+n+1)，是偶数。', explanation: '利用奇数的一般形式进行代数证明。' }
                 ]
             },
             '语文': {
                 '选择题': [
-                    { question: '下列词语中，字音全部正确的是？', options: ['载(zǎi)重 载(zài)歌载舞', '处(chǔ)理 处(chù)境', '调(tiáo)节 调(diào)料', '以上都正确'], correctAnswer: 'D', explanation: '这些多音字的读音都是正确的。' }
+                    { question: '下列词语中，字音全部正确的是？', options: ['载(zǎi)重 载(zài)歌载舞', '处(chǔ)理 处(chù)境', '调(tiáo)节 调(diào)料', '以上都正确'], correctAnswer: 'D', explanation: '这些多音字的读音都是正确的。' },
+                    { question: '"春蚕到死丝方尽"中的"丝"与下列哪个字谐音？', options: ['思', '死', '私', '司'], correctAnswer: 'A', explanation: '"丝"与"思"谐音，表达思念之情。' }
                 ],
                 '填空题': [
-                    { question: '"______，红掌拨清波"', correctAnswer: '白毛浮绿水', explanation: '出自骆宾王的《咏鹅》' }
+                    { question: '"______，红掌拨清波"', correctAnswer: '白毛浮绿水', explanation: '出自骆宾王的《咏鹅》' },
+                    { question: '"山重水复疑无路，______"', correctAnswer: '柳暗花明又一村', explanation: '出自陆游的《游山西村》' }
                 ],
                 '简答题': [
-                    { question: '请分析《春晓》这首诗的意境。', correctAnswer: '描绘春日清晨的美好景象', explanation: '诗人通过"春眠不觉晓"等描写，展现了春日清晨的宁静美好。' }
+                    { question: '请分析《春晓》这首诗的意境。', correctAnswer: '描绘春日清晨的美好景象', explanation: '诗人通过"春眠不觉晓"等描写，展现了春日清晨的宁静美好。' },
+                    { question: '简述《论语》中"学而时习之"的含义。', correctAnswer: '学习知识后要经常复习实践', explanation: '强调学习与实践相结合的重要性。' }
+                ]
+            },
+            '英语': {
+                '选择题': [
+                    { question: 'Which of the following is correct?', options: ['He go to school', 'He goes to school', 'He going to school', 'He gone to school'], correctAnswer: 'B', explanation: '第三人称单数现在时动词要加s。' },
+                    { question: 'What is the past tense of "run"?', options: ['runned', 'ran', 'runed', 'running'], correctAnswer: 'B', explanation: 'run的过去式是ran，属于不规则动词。' }
+                ],
+                '填空题': [
+                    { question: 'I ______ (be) a student.', correctAnswer: 'am', explanation: '第一人称单数用am。' },
+                    { question: 'She ______ (have) a book.', correctAnswer: 'has', explanation: '第三人称单数用has。' }
+                ],
+                '简答题': [
+                    { question: 'Translate: "我喜欢读书"', correctAnswer: 'I like reading books.', explanation: '注意like后面用动名词形式。' }
+                ]
+            },
+            '计算机科学': {
+                '选择题': [
+                    { question: '下列哪个不是编程语言？', options: ['Python', 'Java', 'HTML', 'C++'], correctAnswer: 'C', explanation: 'HTML是标记语言，不是编程语言。' },
+                    { question: '二进制数1010转换为十进制是？', options: ['8', '10', '12', '14'], correctAnswer: 'B', explanation: '1×8 + 0×4 + 1×2 + 0×1 = 10' }
+                ],
+                '填空题': [
+                    { question: 'Python中定义函数使用关键字______', correctAnswer: 'def', explanation: 'def是Python中定义函数的关键字。' },
+                    { question: 'SQL中查询语句的关键字是______', correctAnswer: 'SELECT', explanation: 'SELECT用于从数据库中查询数据。' }
+                ],
+                '编程题': [
+                    { question: '编写一个Python函数，计算两个数的和。', correctAnswer: 'def add(a, b):\n    return a + b', explanation: '定义函数add，接受两个参数并返回它们的和。' }
+                ]
+            },
+            '物理': {
+                '选择题': [
+                    { question: '光在真空中的传播速度约为？', options: ['3×10⁸ m/s', '3×10⁶ m/s', '3×10¹⁰ m/s', '3×10⁴ m/s'], correctAnswer: 'A', explanation: '光速约为3×10⁸米每秒。' }
+                ],
+                '填空题': [
+                    { question: '牛顿第一定律又称为______定律', correctAnswer: '惯性', explanation: '牛顿第一定律描述了物体的惯性。' }
+                ],
+                '简答题': [
+                    { question: '解释什么是重力加速度。', correctAnswer: '物体在重力作用下的加速度，约为9.8m/s²', explanation: '重力加速度是地球表面附近物体受重力作用产生的加速度。' }
+                ]
+            },
+            '化学': {
+                '选择题': [
+                    { question: '水的化学分子式是？', options: ['H₂O', 'CO₂', 'NaCl', 'CH₄'], correctAnswer: 'A', explanation: '水由两个氢原子和一个氧原子组成。' }
+                ],
+                '填空题': [
+                    { question: '氧气的化学符号是______', correctAnswer: 'O₂', explanation: '氧气分子由两个氧原子组成。' }
+                ],
+                '简答题': [
+                    { question: '简述酸碱中和反应的特点。', correctAnswer: '酸和碱反应生成盐和水', explanation: '酸碱中和是化学中的重要反应类型。' }
                 ]
             }
         };
@@ -1310,15 +1548,23 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
 
             for (let i = 0; i < questionsToAdd && questions.length < questionCount; i++) {
                 const template = typeTemplates[i % typeTemplates.length];
+
+                // 根据难度和焦点领域调整题目
+                let adjustedQuestion = this.adjustQuestionByDifficulty(template.question, difficulty, subjectName);
+                if (focusAreas && focusAreas.length > 0) {
+                    adjustedQuestion = this.adjustQuestionByFocus(adjustedQuestion, focusAreas, subjectName);
+                }
+
                 questions.push({
                     questionNumber: questionIndex++,
                     type: type,
-                    question: template.question,
+                    question: adjustedQuestion,
                     options: template.options || [],
                     correctAnswer: template.correctAnswer,
                     points: this.getPointsByType(type),
                     explanation: template.explanation,
-                    difficulty: difficulty
+                    difficulty: difficulty,
+                    estimatedTime: Math.ceil(duration / questionCount)
                 });
             }
         });
@@ -1335,6 +1581,36 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
             generatedBy: 'Local Mock System',
             generatedAt: new Date().toISOString()
         };
+    }
+
+    // 根据难度调整题目内容
+    adjustQuestionByDifficulty(question, difficulty, subject) {
+        const difficultyPrefixes = {
+            '初级': '【基础】',
+            '中级': '【进阶】',
+            '高级': '【挑战】'
+        };
+
+        const prefix = difficultyPrefixes[difficulty] || '';
+        return prefix + question;
+    }
+
+    // 根据焦点领域调整题目内容
+    adjustQuestionByFocus(question, focusAreas, subject) {
+        // 简单的焦点调整逻辑
+        if (focusAreas.includes('基础概念')) {
+            return question.replace('下列', '关于基础概念，下列');
+        }
+        if (focusAreas.includes('实际应用')) {
+            return question.replace('下列', '在实际应用中，下列');
+        }
+        if (focusAreas.includes('问题分析')) {
+            return question.replace('下列', '分析以下问题，下列');
+        }
+        if (focusAreas.includes('代码实现')) {
+            return question.replace('下列', '在代码实现中，下列');
+        }
+        return question;
     }
 
     // 测试Dify云服务连接

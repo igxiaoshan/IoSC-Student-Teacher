@@ -47,6 +47,17 @@ import { aiAPI } from '../../utils/apiConfig';
 
 const EnhancedAIAssessmentGenerator = () => {
     const { currentUser } = useSelector(state => state.user);
+
+    // 通用的选项文本提取函数
+    const getOptionText = (option) => {
+        if (typeof option === 'string') {
+            return option;
+        }
+        if (typeof option === 'object' && option !== null) {
+            return option.text || option.content || String(option);
+        }
+        return String(option);
+    };
     
     // 基础状态
     const [loading, setLoading] = useState(false);
@@ -289,7 +300,22 @@ const EnhancedAIAssessmentGenerator = () => {
             if (response.data.success) {
                 setGeneratedAssessment(response.data.assessment);
                 setShowGeneratedResult(true);
-                setSuccess(`考核题目生成成功！数据源：${response.data.dataSource === 'dify' ? 'Dify AI' : '本地智能生成'}`);
+
+                // 根据数据源显示不同的成功消息
+                let successMessage = '考核题目生成成功！';
+                if (response.data.dataSource === 'dify') {
+                    successMessage += ' 数据源：Dify AI';
+                } else if (response.data.dataSource === 'mock') {
+                    successMessage += ' 数据源：本地智能生成系统';
+                    if (response.data.note) {
+                        successMessage += `（${response.data.note}）`;
+                    }
+                } else {
+                    successMessage += ' 数据源：本地智能生成';
+                }
+
+                setSuccess(successMessage);
+
                 // 刷新历史记录
                 if (activeTab === 1) {
                     fetchAssessmentHistory();
@@ -738,7 +764,7 @@ const EnhancedAIAssessmentGenerator = () => {
                                                 <Box sx={{ ml: 2, mb: 1 }}>
                                                     {question.options.map((option, optIndex) => (
                                                         <Typography key={optIndex} variant="body2" sx={{ mb: 0.5 }}>
-                                                            {option}
+                                                            {getOptionText(option)}
                                                         </Typography>
                                                     ))}
                                                 </Box>
@@ -936,7 +962,7 @@ const EnhancedAIAssessmentGenerator = () => {
                                             <Box sx={{ ml: 2 }}>
                                                 {question.options.map((option, optIndex) => (
                                                     <Typography key={optIndex} variant="body2">
-                                                        {String.fromCharCode(65 + optIndex)}. {option}
+                                                        {String.fromCharCode(65 + optIndex)}. {getOptionText(option)}
                                                     </Typography>
                                                 ))}
                                             </Box>

@@ -342,7 +342,7 @@ const TeacherAITools = ({ teacherId }) => {
                                                         <Box sx={{ ml: 2 }}>
                                                             {question.options.map((option, optIndex) => (
                                                                 <Typography key={optIndex} variant="body2">
-                                                                    {String.fromCharCode(65 + optIndex)}. {option}
+                                                                    {String.fromCharCode(65 + optIndex)}. {typeof option === 'string' ? option : option.text || option}
                                                                 </Typography>
                                                             ))}
                                                         </Box>

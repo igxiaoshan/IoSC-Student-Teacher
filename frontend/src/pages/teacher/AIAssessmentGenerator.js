@@ -356,12 +356,12 @@ const AIAssessmentGenerator = () => {
                                                 <Box>
                                                     <Typography variant="caption" display="block">选项:</Typography>
                                                     {question.options.map((option, optIndex) => (
-                                                        <Typography 
-                                                            key={optIndex} 
-                                                            variant="body2" 
-                                                            color={option.isCorrect ? 'primary' : 'textSecondary'}
+                                                        <Typography
+                                                            key={optIndex}
+                                                            variant="body2"
+                                                            color={(typeof option === 'object' && option.isCorrect) ? 'primary' : 'textSecondary'}
                                                         >
-                                                            {String.fromCharCode(65 + optIndex)}. {option.text}
+                                                            {String.fromCharCode(65 + optIndex)}. {typeof option === 'string' ? option : option.text || option}
                                                         </Typography>
                                                     ))}
                                                 </Box>
