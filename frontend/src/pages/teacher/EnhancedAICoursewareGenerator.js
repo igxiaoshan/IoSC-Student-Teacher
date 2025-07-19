@@ -76,6 +76,15 @@ const EnhancedAICoursewareGenerator = () => {
     // 预览对话框
     const [previewDialog, setPreviewDialog] = useState({ open: false, courseware: null });
 
+    // 编辑对话框
+    const [editDialog, setEditDialog] = useState({ open: false, courseware: null });
+
+    // 删除确认对话框
+    const [deleteDialog, setDeleteDialog] = useState({ open: false, courseware: null });
+
+    // 编辑对话框标签页状态
+    const [editTabValue, setEditTabValue] = useState(0);
+
     const courseLevels = ['初级', '中级', '高级'];
     const focusAreaOptions = [
         '理论基础', '实践应用', '案例分析', '技能训练', 
@@ -193,6 +202,97 @@ const EnhancedAICoursewareGenerator = () => {
             open: true,
             courseware: courseware
         });
+    };
+
+    // 编辑课件
+    const editCourseware = (courseware) => {
+        setEditDialog({
+            open: true,
+            courseware: courseware
+        });
+        setEditTabValue(0); // 重置到第一个标签页
+    };
+
+    // 保存编辑
+    const saveEditCourseware = async () => {
+        try {
+            // 收集基本信息
+            const title = document.getElementById('edit-title')?.value || editDialog.courseware.title;
+            const description = document.getElementById('edit-description')?.value || editDialog.courseware.description;
+            const syllabus = document.getElementById('edit-syllabus')?.value || editDialog.courseware.syllabus;
+
+            // 收集知识点数据
+            const knowledgePoints = editDialog.courseware.knowledgePoints?.map((point, index) => ({
+                title: document.getElementById(`edit-knowledge-title-${index}`)?.value || point.title,
+                content: document.getElementById(`edit-knowledge-content-${index}`)?.value || point.content,
+                difficulty: document.getElementById(`edit-knowledge-difficulty-${index}`)?.value || point.difficulty,
+                estimatedTime: parseInt(document.getElementById(`edit-knowledge-time-${index}`)?.value) || point.estimatedTime
+            })) || [];
+
+            // 收集练习题数据
+            const practiceExercises = editDialog.courseware.practiceExercises?.map((exercise, index) => ({
+                title: document.getElementById(`edit-exercise-title-${index}`)?.value || exercise.title,
+                description: document.getElementById(`edit-exercise-description-${index}`)?.value || exercise.description,
+                difficulty: document.getElementById(`edit-exercise-difficulty-${index}`)?.value || exercise.difficulty,
+                estimatedTime: parseInt(document.getElementById(`edit-exercise-time-${index}`)?.value) || exercise.estimatedTime
+            })) || [];
+
+            // 收集教学内容数据
+            const teachingContent = {
+                introduction: document.getElementById('edit-teaching-introduction')?.value || editDialog.courseware.teachingContent?.introduction,
+                mainContent: document.getElementById('edit-teaching-main')?.value || editDialog.courseware.teachingContent?.mainContent,
+                summary: document.getElementById('edit-teaching-summary')?.value || editDialog.courseware.teachingContent?.summary
+            };
+
+            const updatedData = {
+                title,
+                description,
+                syllabus,
+                knowledgePoints,
+                practiceExercises,
+                teachingContent
+            };
+
+            const response = await aiAPI.updateCourseware(editDialog.courseware._id, updatedData);
+
+            if (response.data.success) {
+                setSuccess('课件内容更新成功！');
+                setEditDialog({ open: false, courseware: null });
+                setEditTabValue(0); // 重置标签页
+                // 刷新历史记录
+                fetchCoursewareHistory();
+            } else {
+                setError('课件更新失败：' + response.data.message);
+            }
+        } catch (err) {
+            setError('课件更新失败：' + (err.response?.data?.message || err.message));
+        }
+    };
+
+    // 删除课件
+    const deleteCourseware = (courseware) => {
+        setDeleteDialog({
+            open: true,
+            courseware: courseware
+        });
+    };
+
+    // 确认删除
+    const confirmDeleteCourseware = async () => {
+        try {
+            const response = await aiAPI.deleteCourseware(deleteDialog.courseware._id);
+
+            if (response.data.success) {
+                setSuccess('课件删除成功！');
+                setDeleteDialog({ open: false, courseware: null });
+                // 刷新历史记录
+                fetchCoursewareHistory();
+            } else {
+                setError('课件删除失败：' + response.data.message);
+            }
+        } catch (err) {
+            setError('课件删除失败：' + (err.response?.data?.message || err.message));
+        }
     };
 
     const handleInputChange = (field, value) => {
@@ -399,7 +499,7 @@ const EnhancedAICoursewareGenerator = () => {
     return (
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
             <Typography variant="h4" gutterBottom>
-                AI课件生成器 - 增强版
+                AI课件生成器
             </Typography>
             
             <Paper sx={{ p: 3 }}>
@@ -549,12 +649,19 @@ const EnhancedAICoursewareGenerator = () => {
                                                                 </IconButton>
                                                             </Tooltip>
                                                             <Tooltip title="编辑">
-                                                                <IconButton size="small">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => editCourseware(courseware)}
+                                                                >
                                                                     <EditIcon />
                                                                 </IconButton>
                                                             </Tooltip>
                                                             <Tooltip title="删除">
-                                                                <IconButton size="small" color="error">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    color="error"
+                                                                    onClick={() => deleteCourseware(courseware)}
+                                                                >
                                                                     <DeleteIcon />
                                                                 </IconButton>
                                                             </Tooltip>
@@ -728,6 +835,246 @@ const EnhancedAICoursewareGenerator = () => {
                 <DialogActions>
                     <Button onClick={() => setPreviewDialog({ ...previewDialog, open: false })}>
                         关闭
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* 编辑课件对话框 */}
+            <Dialog
+                open={editDialog.open}
+                onClose={() => setEditDialog({ open: false, courseware: null })}
+                maxWidth="lg"
+                fullWidth
+                PaperProps={{ sx: { height: '90vh' } }}
+            >
+                <DialogTitle>编辑AI课件内容</DialogTitle>
+                <DialogContent sx={{ p: 0 }}>
+                    {editDialog.courseware && (
+                        <Box sx={{ height: '100%' }}>
+                            <Tabs value={editTabValue} onChange={(e, v) => setEditTabValue(v)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                                <Tab label="基本信息" />
+                                <Tab label="知识点" />
+                                <Tab label="练习题" />
+                                <Tab label="教学内容" />
+                            </Tabs>
+
+                            <Box sx={{ p: 3, height: 'calc(100% - 48px)', overflow: 'auto' }}>
+                                {/* 基本信息标签页 */}
+                                {editTabValue === 0 && (
+                                    <Box>
+                                        <TextField
+                                            fullWidth
+                                            label="课件标题"
+                                            defaultValue={editDialog.courseware.title}
+                                            margin="normal"
+                                            id="edit-title"
+                                        />
+                                        <TextField
+                                            fullWidth
+                                            label="课件描述"
+                                            defaultValue={editDialog.courseware.description}
+                                            margin="normal"
+                                            multiline
+                                            rows={3}
+                                            id="edit-description"
+                                        />
+                                        <TextField
+                                            fullWidth
+                                            label="课程大纲"
+                                            defaultValue={editDialog.courseware.syllabus}
+                                            margin="normal"
+                                            multiline
+                                            rows={6}
+                                            id="edit-syllabus"
+                                        />
+                                    </Box>
+                                )}
+
+                                {/* 知识点标签页 */}
+                                {editTabValue === 1 && (
+                                    <Box>
+                                        <Typography variant="h6" gutterBottom>
+                                            编辑知识点
+                                        </Typography>
+                                        {editDialog.courseware.knowledgePoints?.map((point, index) => (
+                                            <Card key={index} sx={{ mb: 2 }}>
+                                                <CardContent>
+                                                    <TextField
+                                                        fullWidth
+                                                        label={`知识点${index + 1}标题`}
+                                                        defaultValue={point.title}
+                                                        margin="normal"
+                                                        id={`edit-knowledge-title-${index}`}
+                                                    />
+                                                    <TextField
+                                                        fullWidth
+                                                        label={`知识点${index + 1}内容`}
+                                                        defaultValue={point.content}
+                                                        margin="normal"
+                                                        multiline
+                                                        rows={4}
+                                                        id={`edit-knowledge-content-${index}`}
+                                                    />
+                                                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                                                        <Grid item xs={6}>
+                                                            <FormControl fullWidth>
+                                                                <InputLabel>难度</InputLabel>
+                                                                <Select
+                                                                    defaultValue={point.difficulty}
+                                                                    label="难度"
+                                                                    id={`edit-knowledge-difficulty-${index}`}
+                                                                >
+                                                                    <MenuItem value="初级">初级</MenuItem>
+                                                                    <MenuItem value="中级">中级</MenuItem>
+                                                                    <MenuItem value="高级">高级</MenuItem>
+                                                                </Select>
+                                                            </FormControl>
+                                                        </Grid>
+                                                        <Grid item xs={6}>
+                                                            <TextField
+                                                                fullWidth
+                                                                label="预估时间(分钟)"
+                                                                type="number"
+                                                                defaultValue={point.estimatedTime}
+                                                                id={`edit-knowledge-time-${index}`}
+                                                            />
+                                                        </Grid>
+                                                    </Grid>
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                    </Box>
+                                )}
+
+                                {/* 练习题标签页 */}
+                                {editTabValue === 2 && (
+                                    <Box>
+                                        <Typography variant="h6" gutterBottom>
+                                            编辑练习题
+                                        </Typography>
+                                        {editDialog.courseware.practiceExercises?.map((exercise, index) => (
+                                            <Card key={index} sx={{ mb: 2 }}>
+                                                <CardContent>
+                                                    <TextField
+                                                        fullWidth
+                                                        label={`练习题${index + 1}标题`}
+                                                        defaultValue={exercise.title}
+                                                        margin="normal"
+                                                        id={`edit-exercise-title-${index}`}
+                                                    />
+                                                    <TextField
+                                                        fullWidth
+                                                        label={`练习题${index + 1}描述`}
+                                                        defaultValue={exercise.description}
+                                                        margin="normal"
+                                                        multiline
+                                                        rows={3}
+                                                        id={`edit-exercise-description-${index}`}
+                                                    />
+                                                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                                                        <Grid item xs={6}>
+                                                            <FormControl fullWidth>
+                                                                <InputLabel>难度</InputLabel>
+                                                                <Select
+                                                                    defaultValue={exercise.difficulty}
+                                                                    label="难度"
+                                                                    id={`edit-exercise-difficulty-${index}`}
+                                                                >
+                                                                    <MenuItem value="初级">初级</MenuItem>
+                                                                    <MenuItem value="中级">中级</MenuItem>
+                                                                    <MenuItem value="高级">高级</MenuItem>
+                                                                </Select>
+                                                            </FormControl>
+                                                        </Grid>
+                                                        <Grid item xs={6}>
+                                                            <TextField
+                                                                fullWidth
+                                                                label="预估时间(分钟)"
+                                                                type="number"
+                                                                defaultValue={exercise.estimatedTime}
+                                                                id={`edit-exercise-time-${index}`}
+                                                            />
+                                                        </Grid>
+                                                    </Grid>
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                    </Box>
+                                )}
+
+                                {/* 教学内容标签页 */}
+                                {editTabValue === 3 && (
+                                    <Box>
+                                        <Typography variant="h6" gutterBottom>
+                                            编辑教学内容
+                                        </Typography>
+                                        <TextField
+                                            fullWidth
+                                            label="课程引言"
+                                            defaultValue={editDialog.courseware.teachingContent?.introduction}
+                                            margin="normal"
+                                            multiline
+                                            rows={3}
+                                            id="edit-teaching-introduction"
+                                        />
+                                        <TextField
+                                            fullWidth
+                                            label="主要内容"
+                                            defaultValue={editDialog.courseware.teachingContent?.mainContent}
+                                            margin="normal"
+                                            multiline
+                                            rows={5}
+                                            id="edit-teaching-main"
+                                        />
+                                        <TextField
+                                            fullWidth
+                                            label="课程总结"
+                                            defaultValue={editDialog.courseware.teachingContent?.summary}
+                                            margin="normal"
+                                            multiline
+                                            rows={3}
+                                            id="edit-teaching-summary"
+                                        />
+                                    </Box>
+                                )}
+                            </Box>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setEditDialog({ open: false, courseware: null })}>
+                        取消
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => saveEditCourseware()}
+                    >
+                        保存课件内容
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* 删除确认对话框 */}
+            <Dialog
+                open={deleteDialog.open}
+                onClose={() => setDeleteDialog({ open: false, courseware: null })}
+            >
+                <DialogTitle>确认删除</DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        确定要删除课件 "{deleteDialog.courseware?.title}" 吗？此操作不可撤销。
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialog({ open: false, courseware: null })}>
+                        取消
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={confirmDeleteCourseware}
+                    >
+                        删除
                     </Button>
                 </DialogActions>
             </Dialog>

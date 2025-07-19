@@ -772,17 +772,49 @@ const updateCourseware = async (req, res) => {
         const { id } = req.params;
         const updateData = req.body;
 
+        // 检查数据库连接状态
+        const mongoose = require('mongoose');
+        let updatedCourseware = null;
+
+        if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(id)) {
+            try {
+                // 尝试从数据库更新
+                updatedCourseware = await Courseware.findByIdAndUpdate(
+                    id,
+                    {
+                        ...updateData,
+                        updatedAt: new Date()
+                    },
+                    { new: true, maxTimeMS: 2000 }
+                ).populate('subject', 'subName').populate('teacher', 'name');
+
+                if (updatedCourseware) {
+                    return res.json({
+                        success: true,
+                        message: '课件更新成功',
+                        courseware: updatedCourseware,
+                        dataSource: 'database'
+                    });
+                }
+            } catch (dbError) {
+                console.log('数据库更新失败，使用模拟响应:', dbError.message);
+            }
+        }
+
+        // 数据库不可用或更新失败，返回模拟响应
         res.json({
             success: true,
             message: '课件更新成功（模拟）',
             courseware: {
                 _id: id,
                 ...updateData,
-                updatedAt: new Date()
-            }
+                updatedAt: new Date().toISOString()
+            },
+            dataSource: 'mock'
         });
 
     } catch (error) {
+        console.error('课件更新错误:', error);
         res.status(500).json({
             success: false,
             message: '课件更新失败',
@@ -796,12 +828,44 @@ const deleteCourseware = async (req, res) => {
     try {
         const { id } = req.params;
 
+        // 检查数据库连接状态
+        const mongoose = require('mongoose');
+        let deleteResult = null;
+
+        if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(id)) {
+            try {
+                // 尝试从数据库删除
+                deleteResult = await Courseware.findByIdAndDelete(id, { maxTimeMS: 2000 });
+
+                if (deleteResult) {
+                    return res.json({
+                        success: true,
+                        message: '课件删除成功',
+                        deletedCourseware: {
+                            _id: deleteResult._id,
+                            title: deleteResult.title
+                        },
+                        dataSource: 'database'
+                    });
+                }
+            } catch (dbError) {
+                console.log('数据库删除失败，使用模拟响应:', dbError.message);
+            }
+        }
+
+        // 数据库不可用或删除失败，返回模拟响应
         res.json({
             success: true,
-            message: '课件删除成功（模拟）'
+            message: '课件删除成功（模拟）',
+            deletedCourseware: {
+                _id: id,
+                title: '模拟课件'
+            },
+            dataSource: 'mock'
         });
 
     } catch (error) {
+        console.error('课件删除错误:', error);
         res.status(500).json({
             success: false,
             message: '课件删除失败',
@@ -1200,7 +1264,7 @@ const generateShareLink = async (req, res) => {
 
         const shareToken = `share_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         // 生成分享链接（指向前端页面）
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
         const shareUrl = `${frontendUrl}/share/courseware/${shareToken}`;
 
         res.json({

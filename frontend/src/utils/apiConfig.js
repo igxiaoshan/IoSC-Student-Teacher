@@ -107,6 +107,8 @@ export const aiAPI = {
     generateCourseware: (data) => api.post('/ai/courseware/generate', data),
     getTeacherCourseware: (teacherId) => api.get(`/ai/courseware/teacher/${teacherId}`),
     getTeacherCoursewareHistory: (teacherId) => api.get(`/ai/courseware/teacher/${teacherId}/history`),
+    updateCourseware: (id, data) => api.put(`/ai/courseware/${id}`, data),
+    deleteCourseware: (id) => api.delete(`/ai/courseware/${id}`),
 
     // 考核生成
     generateAssessment: (data) => api.post('/ai/assessment/generate', data),
