@@ -39,6 +39,9 @@ const { analyzeSubmission, getClassAnalysisReport, batchAnalyzeSubmissions, gene
 const { upload, uploadCourseDocument, deleteCourseDocument, getCourseDocuments, downloadCourseDocument } = require('../controllers/file-upload-controller.js');
 const { askLearningAssistant, generatePracticeQuestions, submitPracticeAnswer } = require('../controllers/student-ai-controller.js');
 
+// 仪表盘路由
+const adminDashboardRoutes = require('./adminDashboard.js');
+
 // Admin
 router.post('/AdminReg', adminRegister);
 router.post('/AdminLogin', adminLogIn);
@@ -255,5 +258,8 @@ router.post('/student/ai/ask/stream', streamLearningAssistant);
 router.post('/student/ai/ask', chatLearningAssistant);
 router.get('/student/:studentId/chat/:conversationId/history', getChatHistory);
 router.delete('/student/:studentId/chat/:conversationId/history', clearChatHistory);
+
+// 管理员仪表盘路由
+router.use('/adminDashboard', adminDashboardRoutes);
 
 module.exports = router;

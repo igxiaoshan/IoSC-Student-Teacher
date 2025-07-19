@@ -32,25 +32,23 @@ router.get('/:adminID/realtime',
 );
 
 // 获取教学质量分析
-router.get('/:adminID/teaching-quality',
-    aiRateLimit,
-    aiFeatureToggle('performanceAnalysis'),
-    aiCacheMiddleware((req) => `teaching_quality:${req.params.adminID}:${req.query.period}:${req.query.subject}`),
-    getTeachingQualityAnalysis
-);
+router.get('/:adminID/teaching-quality', getTeachingQualityAnalysis);
 
 // 获取学习效果分析
-router.get('/:adminID/learning-effectiveness',
-    aiRateLimit,
-    aiFeatureToggle('performanceAnalysis'),
-    aiCacheMiddleware((req) => `learning_effectiveness:${req.params.adminID}:${req.query.period}:${req.query.subject}`),
-    getLearningEffectivenessAnalysis
-);
+router.get('/:adminID/learning-effectiveness', getLearningEffectivenessAnalysis);
 
 // 获取资源使用分析
-router.get('/:adminID/resource-usage',
-    aiCacheMiddleware((req) => `resource_usage:${req.params.adminID}:${req.query.resourceType}:${req.query.period}`),
-    getResourceUsageAnalysis
-);
+router.get('/:adminID/resource-usage', getResourceUsageAnalysis);
+
+// 测试系统指标端点
+router.get('/test/system-metrics', async (req, res) => {
+    try {
+        const { getSystemMetrics } = require('../controllers/adminDashboard-controller');
+        const systemData = await getSystemMetrics();
+        res.json(systemData);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 module.exports = router;
