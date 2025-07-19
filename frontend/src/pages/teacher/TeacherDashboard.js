@@ -24,7 +24,7 @@ import TeacherHomePage from './TeacherHomePage';
 import TeacherProfile from './TeacherProfile';
 import TeacherViewStudent from './TeacherViewStudent';
 import StudentExamMarks from '../admin/studentRelated/StudentExamMarks';
-import AICoursewareGenerator from './AICoursewareGenerator';
+import EnhancedAICoursewareGenerator from './EnhancedAICoursewareGenerator';
 import AIAssessmentGenerator from './AIAssessmentGenerator';
 import StudentAnalytics from './StudentAnalytics';
 
@@ -93,7 +93,7 @@ const TeacherDashboard = () => {
                         <Route path="/Teacher/class/student/marks/:studentID/:subjectID" element={<StudentExamMarks situation="Subject" />} />
 
                         {/* AI功能路由 */}
-                        <Route path="/Teacher/ai-courseware" element={<AICoursewareGenerator />} />
+                        <Route path="/Teacher/ai-courseware" element={<EnhancedAICoursewareGenerator />} />
                         <Route path="/Teacher/ai-assessment" element={<AIAssessmentGenerator />} />
                         <Route path="/Teacher/analytics" element={<StudentAnalytics />} />
 

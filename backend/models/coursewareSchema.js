@@ -122,7 +122,30 @@ const coursewareSchema = new mongoose.Schema({
         },
         adjustedAt: { type: Date, default: Date.now },
         reason: String
-    }]
+    }],
+    // 分享功能
+    shareInfo: {
+        token: String, // 分享token
+        expiresAt: Date, // 过期时间
+        createdAt: Date, // 创建时间
+        downloadCount: { type: Number, default: 0 }, // 下载次数
+        isActive: { type: Boolean, default: true } // 是否激活
+    },
+    // 新增字段
+    generationType: {
+        type: String,
+        enum: ['overview', 'detailed'],
+        default: 'overview'
+    },
+    aiProvider: {
+        type: String,
+        enum: ['dify', 'openai', 'mock'],
+        default: 'dify'
+    },
+    generatedAt: {
+        type: Date,
+        default: Date.now
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model("courseware", coursewareSchema);

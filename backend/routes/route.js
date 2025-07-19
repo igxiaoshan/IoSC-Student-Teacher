@@ -33,7 +33,19 @@ const { getStudentSubjects, getAvailableSubjects, selectSubject, unselectSubject
 const { streamLearningAssistant, chatLearningAssistant, getChatHistory, clearChatHistory } = require('../controllers/streamingLearningAssistant-controller.js');
 
 // AI功能控制器
-const { generateCourseware, getTeacherCourseware, updateCourseware, deleteCourseware, publishCourseware, adjustCoursewareContent, exportCourseware } = require('../controllers/ai-courseware-controller.js');
+const {
+    generateCourseware,
+    getTeacherCourseware,
+    getTeacherCoursewareHistory,
+    updateCourseware,
+    deleteCourseware,
+    publishCourseware,
+    adjustCoursewareContent,
+    exportCourseware,
+    exportCoursewareToExcel,
+    generateShareLink,
+    downloadByShareLink
+} = require('../controllers/ai-courseware-controller.js');
 const { generateAssessment, getTeacherAssessments, updateAssessment, publishAssessment } = require('../controllers/ai-assessment-controller.js');
 const { analyzeSubmission, getClassAnalysisReport, batchAnalyzeSubmissions, generatePersonalizedRecommendations } = require('../controllers/ai-analysis-controller.js');
 const { upload, uploadCourseDocument, deleteCourseDocument, getCourseDocuments, downloadCourseDocument } = require('../controllers/file-upload-controller.js');
@@ -190,11 +202,15 @@ router.get('/upload/courseware/:coursewareId/document/:documentId/download', dow
 // AI课件生成路由
 router.post('/ai/courseware/generate', generateCourseware);
 router.get('/ai/courseware/teacher/:teacherId', getTeacherCourseware);
+router.get('/ai/courseware/teacher/:teacherId/history', getTeacherCoursewareHistory);
 router.put('/ai/courseware/:id', updateCourseware);
 router.delete('/ai/courseware/:id', deleteCourseware);
 router.put('/ai/courseware/:id/publish', publishCourseware);
 router.put('/ai/courseware/:id/adjust', adjustCoursewareContent);
 router.get('/ai/courseware/:id/export', exportCourseware);
+router.get('/ai/courseware/:id/export/excel', exportCoursewareToExcel);
+router.post('/ai/courseware/:id/share', generateShareLink);
+router.get('/ai/courseware/share/:token', downloadByShareLink);
 
 // AI考核生成路由
 router.post('/ai/assessment/generate', generateAssessment);

@@ -177,7 +177,7 @@ const AdminHomePage = () => {
         },
         {
             title: '运营费用',
-            value: '$23,000',
+            value: '$10,000',
             change: '-3.2%',
             icon: <AttachMoneyIcon />,
             color: 'warning'
