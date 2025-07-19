@@ -8,24 +8,23 @@ const {
     getResourceUsageAnalysis
 } = require('../controllers/adminDashboard-controller');
 
-const {
-    aiRateLimit,
-    aiCacheMiddleware,
-    aiLoggingMiddleware,
-    aiFeatureToggle,
-    contentFilterMiddleware,
-    generateCacheKey
-} = require('../middleware/aiMiddleware');
+// 移除AI中间件，使用简单的缓存中间件
+const rateLimit = require('express-rate-limit');
 
-// 应用通用中间件
-router.use(aiLoggingMiddleware);
-router.use(contentFilterMiddleware);
+// 基础速率限制
+const basicRateLimit = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15分钟
+    max: 200, // 增加限制，因为不再是AI请求
+    message: {
+        error: 'Too many requests from this IP, please try again later.'
+    }
+});
+
+// 应用基础中间件
+router.use(basicRateLimit);
 
 // 获取管理员仪表板概览
-router.get('/:adminID',
-    aiCacheMiddleware((req) => `admin_dashboard:${req.params.adminID}:${req.query.timeRange || 'month'}`),
-    getAdminDashboard
-);
+router.get('/:adminID', getAdminDashboard);
 
 // 获取实时数据大屏
 router.get('/:adminID/realtime',

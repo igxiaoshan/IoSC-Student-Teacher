@@ -60,12 +60,12 @@ const SideBar = () => {
                             </ListItemIcon>
                             <ListItemText primary={tClass('classList')} />
                         </ListItemButton>
-                        <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/addclass">
+                        {/* <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/addclass">
                             <ListItemIcon>
                                 <ClassOutlinedIcon color={location.pathname === '/Admin/addclass' ? 'primary' : 'inherit'} />
                             </ListItemIcon>
                             <ListItemText primary={tClass('addClass')} />
-                        </ListItemButton>
+                        </ListItemButton> */}
                         <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/classes/enhanced">
                             <ListItemIcon>
                                 <ClassOutlinedIcon color={location.pathname === '/Admin/classes/enhanced' ? 'primary' : 'inherit'} />
@@ -108,12 +108,12 @@ const SideBar = () => {
                             </ListItemIcon>
                             <ListItemText primary={tStudent('studentList')} />
                         </ListItemButton>
-                        <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/addstudents">
+                        {/* <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/addstudents">
                             <ListItemIcon>
                                 <PersonOutlineIcon color={location.pathname === '/Admin/addstudents' ? 'primary' : 'inherit'} />
                             </ListItemIcon>
                             <ListItemText primary={tStudent('addStudent')} />
-                        </ListItemButton>
+                        </ListItemButton> */}
                         <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/students/reassign">
                             <ListItemIcon>
                                 <PersonOutlineIcon color={location.pathname === '/Admin/students/reassign' ? 'primary' : 'inherit'} />

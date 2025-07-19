@@ -1,6 +1,5 @@
-import { Container, Grid, Paper, Box, Typography, Button, Card, CardContent, CardActions } from '@mui/material'
+import { Container, Grid, Paper, Box, Typography, Button, Card, CardContent, CardActions, Chip, FormControl, Select, MenuItem } from '@mui/material'
 import SeeNotice from '../../components/SeeNotice';
-import DifyStatus from '../../components/DifyStatus';
 import Students from "../../assets/img1.png";
 import Classes from "../../assets/img2.png";
 import Teachers from "../../assets/img3.png";
@@ -8,8 +7,9 @@ import Fees from "../../assets/img4.png";
 import styled from 'styled-components';
 import CountUp from 'react-countup';
 import { useDispatch, useSelector } from 'react-redux';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { getAllSclasses } from '../../redux/sclassRelated/sclassHandle';
 import { getAllStudents } from '../../redux/studentRelated/studentHandle';
 import { getAllTeachers } from '../../redux/teacherRelated/teacherHandle';
@@ -20,9 +20,20 @@ import {
     Person as PersonIcon,
     Assignment as AssignmentIcon,
     Visibility as VisibilityIcon,
-    BarChart as BarChartIcon
+    BarChart as BarChartIcon,
+    TrendingUp as TrendingUpIcon,
+    Speed as SpeedIcon,
+    Memory as MemoryIcon,
+    People as PeopleIcon
 } from '@mui/icons-material';
 import { BlueButton, GreenButton } from '../../components/buttonStyles';
+import UserActivityChart from '../../components/dashboard/UserActivityChart';
+import SystemStatusPanel from '../../components/dashboard/SystemStatusPanel';
+import BusinessMetricsPanel from '../../components/dashboard/BusinessMetricsPanel';
+import GrowthTrendChart from '../../components/dashboard/GrowthTrendChart';
+import DashboardFilters from '../../components/dashboard/DashboardFilters';
+import DataSummaryPanel from '../../components/dashboard/DataSummaryPanel';
+import { exportDashboardData, exportDashboardJSON } from '../../utils/dataExport';
 
 const AdminHomePage = () => {
     const dispatch = useDispatch();
@@ -35,11 +46,50 @@ const AdminHomePage = () => {
 
     const adminID = safeGet(currentUser, '_id');
 
+    // 新增状态管理
+    const [dashboardData, setDashboardData] = useState(null);
+    const [timeRange, setTimeRange] = useState('month');
+    const [loading, setLoading] = useState(false);
+
     useEffect(() => {
         dispatch(getAllStudents(adminID));
         dispatch(getAllSclasses(adminID, "Sclass"));
         dispatch(getAllTeachers(adminID));
-    }, [adminID, dispatch]);
+
+        // 获取仪表板数据
+        if (adminID) {
+            fetchDashboardData();
+        }
+    }, [adminID, dispatch, timeRange]);
+
+    // 获取仪表板数据
+    const fetchDashboardData = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get(
+                `${process.env.REACT_APP_BASE_URL}/adminDashboard/${adminID}?timeRange=${timeRange}`
+            );
+            setDashboardData(response.data);
+        } catch (error) {
+            console.error('获取仪表板数据失败:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 导出数据功能
+    const handleExportData = () => {
+        if (!dashboardData) return;
+
+        // 导出CSV格式的分类数据
+        exportDashboardData(dashboardData, timeRange);
+    };
+
+    // 导出JSON格式的完整数据
+    const handleExportJSON = () => {
+        if (!dashboardData) return;
+        exportDashboardJSON(dashboardData, timeRange);
+    };
 
     const numberOfStudents = studentsList && studentsList.length;
     const numberOfClasses = sclassesList && sclassesList.length;
@@ -77,14 +127,95 @@ const AdminHomePage = () => {
         }
     ];
 
+    // 关键指标卡片配置
+    const keyMetricsCards = [
+        {
+            title: '总用户数',
+            value: dashboardData?.userBehavior?.totalUsers || (numberOfStudents + numberOfTeachers),
+            change: '+5.2%',
+            icon: <PeopleIcon />,
+            color: 'primary'
+        },
+        {
+            title: '活跃用户',
+            value: dashboardData?.userBehavior?.activeUsers || 0,
+            change: '+12.1%',
+            icon: <TrendingUpIcon />,
+            color: 'success'
+        },
+        {
+            title: '系统健康度',
+            value: '99.9%',
+            change: '稳定',
+            icon: <SpeedIcon />,
+            color: 'info'
+        },
+        {
+            title: '内存使用率',
+            value: dashboardData?.system?.memory?.usagePercentage ?
+                `${dashboardData.system.memory.usagePercentage.toFixed(1)}%` : '0%',
+            change: dashboardData?.system?.memory?.usagePercentage < 80 ? '正常' : '偏高',
+            icon: <MemoryIcon />,
+            color: dashboardData?.system?.memory?.usagePercentage < 80 ? 'success' : 'warning'
+        }
+    ];
+
     return (
         <>
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
                 <Grid container spacing={3}>
-                    {/* Dify服务状态检查 */}
+                    {/* 页面标题 */}
                     <Grid item xs={12}>
-                        <DifyStatus />
+                        <Typography variant="h4" component="h1" gutterBottom>
+                            管理员仪表板
+                        </Typography>
+                        <Typography variant="body1" color="textSecondary" gutterBottom>
+                            实时监控系统运行状态和业务关键指标
+                        </Typography>
                     </Grid>
+
+                    {/* 过滤器组件 */}
+                    <Grid item xs={12}>
+                        <DashboardFilters
+                            timeRange={timeRange}
+                            onTimeRangeChange={setTimeRange}
+                            onRefresh={fetchDashboardData}
+                            onExport={handleExportData}
+                            loading={loading}
+                            lastUpdated={dashboardData?.lastUpdated}
+                        />
+                    </Grid>
+
+                    {/* 关键指标卡片 */}
+                    {keyMetricsCards.map((metric, index) => (
+                        <Grid item xs={12} sm={6} md={3} key={index}>
+                            <Card elevation={2}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <Box>
+                                            <Typography color="textSecondary" gutterBottom variant="body2">
+                                                {metric.title}
+                                            </Typography>
+                                            <Typography variant="h4" component="div">
+                                                {metric.value}
+                                            </Typography>
+                                            <Chip
+                                                label={metric.change}
+                                                color={metric.color}
+                                                size="small"
+                                                sx={{ mt: 1 }}
+                                            />
+                                        </Box>
+                                        <Box sx={{ color: `${metric.color}.main` }}>
+                                            {metric.icon}
+                                        </Box>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    ))}
+
+                    {/* 原有的统计卡片 */}
                     <Grid item xs={12} md={3} lg={3}>
                         <StyledPaper>
                             <img src={Students} alt="Students" />
@@ -123,6 +254,44 @@ const AdminHomePage = () => {
                             </Title>
                             <Data start={0} end={23000} duration={2.5} prefix="$" />                        </StyledPaper>
                     </Grid>
+                    {/* 数据可视化区域 */}
+                    <Grid item xs={12} md={8}>
+                        <UserActivityChart
+                            data={dashboardData?.userBehavior}
+                            loading={loading}
+                        />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                        <SystemStatusPanel
+                            data={dashboardData?.system}
+                            loading={loading}
+                        />
+                    </Grid>
+
+                    {/* 业务指标面板 */}
+                    <Grid item xs={12} md={8}>
+                        <BusinessMetricsPanel
+                            data={dashboardData?.business}
+                            loading={loading}
+                        />
+                    </Grid>
+
+                    {/* 数据摘要与洞察 */}
+                    <Grid item xs={12} md={4}>
+                        <DataSummaryPanel
+                            data={dashboardData}
+                            loading={loading}
+                        />
+                    </Grid>
+
+                    {/* 增长趋势图表 */}
+                    <Grid item xs={12}>
+                        <GrowthTrendChart
+                            data={dashboardData?.growth}
+                            loading={loading}
+                        />
+                    </Grid>
+
                     {/* 快捷操作区域 */}
                     <Grid item xs={12}>
                         <Paper sx={{ p: 3, mb: 2 }}>

@@ -21,13 +21,17 @@ const getAdminDashboard = async (req, res) => {
         // 计算时间范围
         const timeRanges = calculateTimeRanges(timeRange);
 
-        // 并行获取各种统计数据
+        // 并行获取各种统计数据 (新增业务指标和增长趋势)
         const [
             overviewStats,
             teachingStats,
             learningStats,
             resourceStats,
             performanceStats,
+            userBehaviorStats,
+            systemMetrics,
+            businessMetrics,
+            growthMetrics,
             trendAnalysis,
             alerts
         ] = await Promise.all([
@@ -36,24 +40,24 @@ const getAdminDashboard = async (req, res) => {
             getLearningStatistics(adminID, timeRanges),
             getResourceStatistics(adminID, timeRanges),
             getPerformanceStatistics(adminID, timeRanges),
+            getUserBehaviorStatistics(adminID, timeRanges),
+            getSystemMetrics(),
+            getBusinessMetrics(adminID, timeRanges),
+            getGrowthMetrics(adminID, timeRanges),
             getTrendAnalysis(adminID, timeRanges),
             getSystemAlerts(adminID)
         ]);
 
-        // 生成AI洞察
-        const aiInsights = await generateAdminInsights(adminID, {
-            overviewStats,
-            teachingStats,
-            learningStats,
-            performanceStats
-        });
-
-        // 计算关键指标
+        // 计算关键指标 (包含所有新增指标)
         const keyMetrics = calculateKeyMetrics({
             overviewStats,
             teachingStats,
             learningStats,
-            performanceStats
+            performanceStats,
+            userBehaviorStats,
+            systemMetrics,
+            businessMetrics,
+            growthMetrics
         });
 
         res.json({
@@ -65,9 +69,12 @@ const getAdminDashboard = async (req, res) => {
             learning: learningStats,
             resources: resourceStats,
             performance: performanceStats,
+            userBehavior: userBehaviorStats,
+            system: systemMetrics,
+            business: businessMetrics,
+            growth: growthMetrics,
             trends: trendAnalysis,
             keyMetrics: keyMetrics,
-            insights: aiInsights,
             alerts: alerts,
             lastUpdated: new Date()
         });
@@ -134,13 +141,7 @@ const getTeachingQualityAnalysis = async (req, res) => {
             teacher
         });
 
-        // AI分析教学质量
-        const aiAnalysis = await analyzeTeachingQuality(qualityData);
-
-        // 生成改进建议
-        const improvements = await generateImprovementSuggestions(qualityData, aiAnalysis);
-
-        // 对比分析
+        // 生成统计对比分析 (移除AI分析)
         const comparison = await generateQualityComparison(adminID, qualityData, period);
 
         res.json({
@@ -149,8 +150,6 @@ const getTeachingQualityAnalysis = async (req, res) => {
             subject,
             teacher,
             qualityData: qualityData,
-            analysis: aiAnalysis,
-            improvements: improvements,
             comparison: comparison,
             generatedAt: new Date()
         });
@@ -179,14 +178,8 @@ const getLearningEffectivenessAnalysis = async (req, res) => {
             grade
         });
 
-        // AI分析学习效果
-        const aiAnalysis = await analyzeLearningEffectiveness(effectivenessData);
-
-        // 识别学习模式
+        // 识别学习模式 (移除AI分析)
         const learningPatterns = await identifyLearningPatterns(effectivenessData);
-
-        // 生成优化建议
-        const optimizations = await generateLearningOptimizations(effectivenessData, aiAnalysis);
 
         res.json({
             adminID,
@@ -194,9 +187,7 @@ const getLearningEffectivenessAnalysis = async (req, res) => {
             subject,
             grade,
             effectivenessData: effectivenessData,
-            analysis: aiAnalysis,
             patterns: learningPatterns,
-            optimizations: optimizations,
             generatedAt: new Date()
         });
 
@@ -739,6 +730,486 @@ const getRecentEvents = async (adminID, limit) => {
             user: '李老师'
         }
     ].slice(0, limit);
+};
+
+/**
+ * 获取用户行为统计
+ */
+const getUserBehaviorStatistics = async (adminID, timeRanges) => {
+    const { startDate, endDate } = timeRanges;
+
+    try {
+        // 获取用户活跃度数据
+        const Student = require('../models/studentSchema');
+        const Teacher = require('../models/teacherSchema');
+
+        // 计算日活跃用户
+        const dailyActiveUsers = await Student.aggregate([
+            {
+                $match: {
+                    school: adminID,
+                    lastLogin: { $gte: startDate, $lte: endDate }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        date: { $dateToString: { format: "%Y-%m-%d", date: "$lastLogin" } }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { "_id.date": 1 } }
+        ]);
+
+        // 计算总用户数
+        const totalStudents = await Student.countDocuments({ school: adminID });
+        const totalTeachers = await Teacher.countDocuments({ school: adminID });
+
+        // 计算活跃用户数
+        const activeStudents = await Student.countDocuments({
+            school: adminID,
+            lastLogin: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+        });
+
+        const activeTeachers = await Teacher.countDocuments({
+            school: adminID,
+            lastLogin: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+        });
+
+        return {
+            totalUsers: totalStudents + totalTeachers,
+            totalStudents,
+            totalTeachers,
+            activeUsers: activeStudents + activeTeachers,
+            activeStudents,
+            activeTeachers,
+            dailyActiveUsers: dailyActiveUsers,
+            userActivityRate: totalStudents > 0 ? (activeStudents / totalStudents) * 100 : 0,
+            teacherActivityRate: totalTeachers > 0 ? (activeTeachers / totalTeachers) * 100 : 0
+        };
+    } catch (error) {
+        console.error('获取用户行为统计错误:', error);
+        return {
+            totalUsers: 0,
+            totalStudents: 0,
+            totalTeachers: 0,
+            activeUsers: 0,
+            activeStudents: 0,
+            activeTeachers: 0,
+            dailyActiveUsers: [],
+            userActivityRate: 0,
+            teacherActivityRate: 0
+        };
+    }
+};
+
+/**
+ * 获取系统性能指标
+ */
+const getSystemMetrics = async () => {
+    try {
+        const os = require('os');
+
+        // 获取系统基本信息
+        const totalMemory = os.totalmem();
+        const freeMemory = os.freemem();
+        const usedMemory = totalMemory - freeMemory;
+
+        // 获取CPU使用率 (简化实现)
+        const cpuUsage = await getCPUUsage();
+
+        return {
+            uptime: process.uptime(),
+            memory: {
+                total: totalMemory,
+                used: usedMemory,
+                free: freeMemory,
+                usagePercentage: (usedMemory / totalMemory) * 100
+            },
+            cpu: {
+                usage: cpuUsage,
+                cores: os.cpus().length
+            },
+            system: {
+                platform: os.platform(),
+                arch: os.arch(),
+                nodeVersion: process.version
+            },
+            performance: {
+                responseTime: 150, // 这里应该从实际监控系统获取
+                errorRate: 0.1,
+                throughput: 1000
+            }
+        };
+    } catch (error) {
+        console.error('获取系统指标错误:', error);
+        return {
+            uptime: 0,
+            memory: { total: 0, used: 0, free: 0, usagePercentage: 0 },
+            cpu: { usage: 0, cores: 0 },
+            system: { platform: 'unknown', arch: 'unknown', nodeVersion: 'unknown' },
+            performance: { responseTime: 0, errorRate: 0, throughput: 0 }
+        };
+    }
+};
+
+/**
+ * 获取CPU使用率
+ */
+const getCPUUsage = async () => {
+    return new Promise((resolve) => {
+        const os = require('os');
+        const cpus = os.cpus();
+
+        let totalIdle = 0;
+        let totalTick = 0;
+
+        cpus.forEach(cpu => {
+            for (let type in cpu.times) {
+                totalTick += cpu.times[type];
+            }
+            totalIdle += cpu.times.idle;
+        });
+
+        setTimeout(() => {
+            const cpus2 = os.cpus();
+            let totalIdle2 = 0;
+            let totalTick2 = 0;
+
+            cpus2.forEach(cpu => {
+                for (let type in cpu.times) {
+                    totalTick2 += cpu.times[type];
+                }
+                totalIdle2 += cpu.times.idle;
+            });
+
+            const idle = totalIdle2 - totalIdle;
+            const total = totalTick2 - totalTick;
+            const usage = 100 - ~~(100 * idle / total);
+
+            resolve(usage);
+        }, 100);
+    });
+};
+
+/**
+ * 获取业务关键指标
+ */
+const getBusinessMetrics = async (adminID, timeRanges) => {
+    const { startDate, endDate } = timeRanges;
+
+    try {
+        const Student = require('../models/studentSchema');
+        const Teacher = require('../models/teacherSchema');
+        const Subject = require('../models/subjectSchema');
+
+        // 考试完成率统计
+        const examStats = await Student.aggregate([
+            {
+                $match: {
+                    school: adminID,
+                    examResult: { $exists: true, $ne: [] }
+                }
+            },
+            {
+                $unwind: '$examResult'
+            },
+            {
+                $match: {
+                    'examResult.date': { $gte: startDate, $lte: endDate }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalExams: { $sum: 1 },
+                    completedExams: {
+                        $sum: {
+                            $cond: [{ $ne: ['$examResult.marksObtained', null] }, 1, 0]
+                        }
+                    },
+                    averageScore: { $avg: '$examResult.marksObtained' },
+                    passCount: {
+                        $sum: {
+                            $cond: [{ $gte: ['$examResult.marksObtained', 60] }, 1, 0]
+                        }
+                    }
+                }
+            }
+        ]);
+
+        // 科目受欢迎程度
+        const subjectPopularity = await Subject.aggregate([
+            {
+                $match: { school: adminID }
+            },
+            {
+                $lookup: {
+                    from: 'students',
+                    localField: 'sclassName',
+                    foreignField: 'sclassName',
+                    as: 'students'
+                }
+            },
+            {
+                $project: {
+                    subName: 1,
+                    studentCount: { $size: '$students' },
+                    sessions: { $ifNull: ['$sessions', 0] }
+                }
+            },
+            {
+                $sort: { studentCount: -1 }
+            }
+        ]);
+
+        // 教师工作负载
+        const teacherWorkload = await Teacher.aggregate([
+            {
+                $match: { school: adminID }
+            },
+            {
+                $lookup: {
+                    from: 'students',
+                    localField: 'teachSclass',
+                    foreignField: 'sclassName',
+                    as: 'students'
+                }
+            },
+            {
+                $project: {
+                    name: 1,
+                    teachSubject: 1,
+                    studentCount: { $size: '$students' },
+                    workloadScore: {
+                        $multiply: [{ $size: '$students' }, 1.5]
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    averageWorkload: { $avg: '$workloadScore' },
+                    maxWorkload: { $max: '$workloadScore' },
+                    minWorkload: { $min: '$workloadScore' },
+                    totalTeachers: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const examData = examStats[0] || {};
+        const workloadData = teacherWorkload[0] || {};
+
+        return {
+            examCompletionRate: examData.totalExams > 0 ?
+                (examData.completedExams / examData.totalExams) * 100 : 0,
+            averageExamScore: examData.averageScore || 0,
+            examPassRate: examData.completedExams > 0 ?
+                (examData.passCount / examData.completedExams) * 100 : 0,
+            totalExams: examData.totalExams || 0,
+            subjectPopularity: subjectPopularity.slice(0, 5),
+            teacherWorkload: {
+                average: workloadData.averageWorkload || 0,
+                max: workloadData.maxWorkload || 0,
+                min: workloadData.minWorkload || 0,
+                totalTeachers: workloadData.totalTeachers || 0
+            },
+            gradeDistribution: await getGradeDistribution(adminID, timeRanges)
+        };
+    } catch (error) {
+        console.error('获取业务指标错误:', error);
+        return {
+            examCompletionRate: 0,
+            averageExamScore: 0,
+            examPassRate: 0,
+            totalExams: 0,
+            subjectPopularity: [],
+            teacherWorkload: { average: 0, max: 0, min: 0, totalTeachers: 0 },
+            gradeDistribution: []
+        };
+    }
+};
+
+/**
+ * 获取增长趋势指标
+ */
+const getGrowthMetrics = async (adminID, timeRanges) => {
+    const { startDate, endDate } = timeRanges;
+
+    try {
+        const Student = require('../models/studentSchema');
+        const Teacher = require('../models/teacherSchema');
+
+        // 用户增长趋势
+        const userGrowthTrend = await Student.aggregate([
+            {
+                $match: {
+                    school: adminID,
+                    createdAt: { $gte: startDate, $lte: endDate }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+                    },
+                    newStudents: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { "_id.date": 1 }
+            }
+        ]);
+
+        // 教师增长趋势
+        const teacherGrowthTrend = await Teacher.aggregate([
+            {
+                $match: {
+                    school: adminID,
+                    createdAt: { $gte: startDate, $lte: endDate }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+                    },
+                    newTeachers: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { "_id.date": 1 }
+            }
+        ]);
+
+        // 参与度趋势 (基于登录活动)
+        const engagementTrend = await Student.aggregate([
+            {
+                $match: {
+                    school: adminID,
+                    lastLogin: { $gte: startDate, $lte: endDate }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        date: { $dateToString: { format: "%Y-%m-%d", date: "$lastLogin" } }
+                    },
+                    activeUsers: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { "_id.date": 1 }
+            }
+        ]);
+
+        return {
+            userGrowthTrend: userGrowthTrend,
+            teacherGrowthTrend: teacherGrowthTrend,
+            engagementTrend: engagementTrend,
+            totalGrowthRate: calculateGrowthRate(userGrowthTrend),
+            weeklyGrowthRate: calculateWeeklyGrowthRate(userGrowthTrend),
+            monthlyGrowthRate: calculateMonthlyGrowthRate(userGrowthTrend)
+        };
+    } catch (error) {
+        console.error('获取增长指标错误:', error);
+        return {
+            userGrowthTrend: [],
+            teacherGrowthTrend: [],
+            engagementTrend: [],
+            totalGrowthRate: 0,
+            weeklyGrowthRate: 0,
+            monthlyGrowthRate: 0
+        };
+    }
+};
+
+/**
+ * 获取成绩分布
+ */
+const getGradeDistribution = async (adminID, timeRanges) => {
+    try {
+        const Student = require('../models/studentSchema');
+
+        const gradeDistribution = await Student.aggregate([
+            {
+                $match: {
+                    school: adminID,
+                    examResult: { $exists: true, $ne: [] }
+                }
+            },
+            {
+                $unwind: '$examResult'
+            },
+            {
+                $bucket: {
+                    groupBy: '$examResult.marksObtained',
+                    boundaries: [0, 60, 70, 80, 90, 100],
+                    default: 'other',
+                    output: {
+                        count: { $sum: 1 },
+                        range: { $first: '$examResult.marksObtained' }
+                    }
+                }
+            }
+        ]);
+
+        return gradeDistribution.map(item => ({
+            range: getGradeRange(item._id),
+            count: item.count,
+            percentage: 0 // 这里需要计算总数后再计算百分比
+        }));
+    } catch (error) {
+        console.error('获取成绩分布错误:', error);
+        return [];
+    }
+};
+
+/**
+ * 获取成绩范围标签
+ */
+const getGradeRange = (boundary) => {
+    switch (boundary) {
+        case 0: return '0-59分';
+        case 60: return '60-69分';
+        case 70: return '70-79分';
+        case 80: return '80-89分';
+        case 90: return '90-100分';
+        default: return '其他';
+    }
+};
+
+/**
+ * 计算周增长率
+ */
+const calculateWeeklyGrowthRate = (data) => {
+    if (data.length < 7) return 0;
+
+    const lastWeek = data.slice(-7);
+    const previousWeek = data.slice(-14, -7);
+
+    const lastWeekTotal = lastWeek.reduce((sum, item) => sum + item.newStudents, 0);
+    const previousWeekTotal = previousWeek.reduce((sum, item) => sum + item.newStudents, 0);
+
+    if (previousWeekTotal === 0) return 0;
+    return ((lastWeekTotal - previousWeekTotal) / previousWeekTotal) * 100;
+};
+
+/**
+ * 计算月增长率
+ */
+const calculateMonthlyGrowthRate = (data) => {
+    if (data.length < 30) return 0;
+
+    const lastMonth = data.slice(-30);
+    const previousMonth = data.slice(-60, -30);
+
+    const lastMonthTotal = lastMonth.reduce((sum, item) => sum + item.newStudents, 0);
+    const previousMonthTotal = previousMonth.reduce((sum, item) => sum + item.newStudents, 0);
+
+    if (previousMonthTotal === 0) return 0;
+    return ((lastMonthTotal - previousMonthTotal) / previousMonthTotal) * 100;
 };
 
 module.exports = {

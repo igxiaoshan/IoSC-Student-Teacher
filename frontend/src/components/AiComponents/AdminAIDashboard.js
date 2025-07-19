@@ -367,19 +367,14 @@ const AdminAIDashboard = ({ adminId }) => {
                     variant="fullWidth"
                     sx={{ borderBottom: 1, borderColor: 'divider' }}
                 >
-                    <Tab 
-                        icon={<AnalyticsIcon />} 
-                        label="数据分析" 
+                    <Tab
+                        icon={<AnalyticsIcon />}
+                        label="数据分析"
                         iconPosition="start"
                     />
-                    <Tab 
-                        icon={<AssessmentIcon />} 
-                        label="质量监控" 
-                        iconPosition="start"
-                    />
-                    <Tab 
-                        icon={<InsightsIcon />} 
-                        label="决策支持" 
+                    <Tab
+                        icon={<AssessmentIcon />}
+                        label="统计报告"
                         iconPosition="start"
                     />
                 </Tabs>
@@ -389,16 +384,17 @@ const AdminAIDashboard = ({ adminId }) => {
                         数据分析大屏
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        这里可以添加更详细的数据可视化图表
+                        这里显示详细的数据可视化图表和统计信息
                     </Typography>
                 </TabPanel>
 
                 <TabPanel value={tabValue} index={1}>
-                    {renderQualityMonitor()}
-                </TabPanel>
-
-                <TabPanel value={tabValue} index={2}>
-                    {renderDecisionSupport()}
+                    <Typography variant="h6" gutterBottom>
+                        统计报告
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        这里显示各类统计报告和数据摘要
+                    </Typography>
                 </TabPanel>
             </Paper>
         </Box>
