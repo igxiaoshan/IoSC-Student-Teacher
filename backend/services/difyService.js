@@ -801,6 +801,93 @@ ${studyGoals || '提高整体成绩'}
         }
     }
 
+    // 生成教学计划/课件内容
+    async generateLessonPlan(inputData) {
+        const {
+            subject_name,
+            teacher_name,
+            course_title,
+            course_description,
+            course_syllabus,
+            course_level,
+            student_count,
+            duration,
+            focus_areas
+        } = inputData;
+
+        const systemPrompt = `你是一名专业的教学设计专家，负责根据提供的信息生成详细的课件内容。
+
+课程信息：
+- 科目：${subject_name}
+- 教师：${teacher_name}
+- 课程标题：${course_title}
+- 课程描述：${course_description}
+- 课程大纲：${course_syllabus}
+- 课程级别：${course_level}
+- 学生人数：${student_count}
+- 课程时长：${duration}分钟
+- 重点领域：${focus_areas}
+
+请生成一个完整的课件内容，包括：
+1. 课程介绍
+2. 学习目标
+3. 知识点详解
+4. 教学活动设计
+5. 练习题目
+6. 课程总结
+
+请以JSON格式返回，包含以下字段：
+{
+    "title": "课程标题",
+    "introduction": "课程介绍",
+    "objectives": ["学习目标1", "学习目标2"],
+    "knowledgePoints": [
+        {
+            "title": "知识点标题",
+            "content": "详细内容",
+            "difficulty": "难度级别",
+            "estimatedTime": 时间(分钟)
+        }
+    ],
+    "teachingActivities": [
+        {
+            "activity": "活动名称",
+            "description": "活动描述",
+            "duration": 时间(分钟)
+        }
+    ],
+    "practiceExercises": [
+        {
+            "title": "练习标题",
+            "description": "练习描述",
+            "difficulty": "难度级别",
+            "estimatedTime": 时间(分钟)
+        }
+    ],
+    "summary": "课程总结"
+}`;
+
+        try {
+            // 使用Dify API生成课件内容
+            const response = await this.callDifyAPI('/chat-messages', {
+                inputs: inputData,
+                query: systemPrompt,
+                response_mode: 'blocking',
+                conversation_id: '',
+                user: teacher_name || 'teacher'
+            });
+
+            return {
+                success: true,
+                answer: response.answer || response.data || '',
+                data: response
+            };
+        } catch (error) {
+            console.error('Dify课件生成失败:', error);
+            throw new Error(`Dify课件生成失败: ${error.message}`);
+        }
+    }
+
     // 测试Dify云服务连接
     async testConnection() {
         try {

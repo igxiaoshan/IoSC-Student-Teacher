@@ -36,7 +36,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
 import EditIcon from '@mui/icons-material/Edit';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
+import { aiAPI } from '../../utils/apiConfig';
 
 const AICoursewareGenerator = () => {
     const { currentUser } = useSelector(state => state.user);
@@ -202,7 +202,7 @@ const AICoursewareGenerator = () => {
         setError('');
         
         try {
-            const response = await axios.post('/api/ai/courseware/generate', {
+            const response = await aiAPI.generateCourseware({
                 ...formData,
                 subjectId: currentUser.teachSubject._id,
                 teacherId: currentUser._id

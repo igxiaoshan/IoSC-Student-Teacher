@@ -42,7 +42,7 @@ const {
     publishCourseware,
     adjustCoursewareContent,
     exportCourseware,
-    exportCoursewareToExcel,
+    exportCoursewareToWord,
     generateShareLink,
     downloadByShareLink
 } = require('../controllers/ai-courseware-controller.js');
@@ -208,7 +208,7 @@ router.delete('/ai/courseware/:id', deleteCourseware);
 router.put('/ai/courseware/:id/publish', publishCourseware);
 router.put('/ai/courseware/:id/adjust', adjustCoursewareContent);
 router.get('/ai/courseware/:id/export', exportCourseware);
-router.get('/ai/courseware/:id/export/excel', exportCoursewareToExcel);
+router.get('/ai/courseware/:id/export/word', exportCoursewareToWord);
 router.post('/ai/courseware/:id/share', generateShareLink);
 router.get('/ai/courseware/share/:token', downloadByShareLink);
 

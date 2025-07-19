@@ -3,6 +3,7 @@ const Subject = require('../models/subjectSchema');
 const Teacher = require('../models/teacherSchema');
 const difyService = require('../services/difyService');
 const ExcelJS = require('exceljs');
+const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, UnderlineType } = require('docx');
 const crypto = require('crypto');
 
 // AI课件生成服务 - 优化版本，使用Dify API
@@ -219,7 +220,7 @@ const parseTextContent = (content, subjectName) => {
             {
                 title: `${subjectName}基础概念`,
                 content: lines.slice(0, 3).join('\n'),
-                difficulty: '基础',
+                difficulty: '初级',
                 estimatedTime: 15
             },
             {
@@ -237,39 +238,125 @@ const parseTextContent = (content, subjectName) => {
     };
 };
 
+// 解析详细文本内容为结构化数据
+const parseDetailedTextContent = (content, title) => {
+    const lines = content.split('\n').filter(line => line.trim());
+
+    // 尝试从文本中提取结构化信息
+    const sections = {
+        introduction: [],
+        objectives: [],
+        knowledgePoints: [],
+        teachingActivities: [],
+        practiceExercises: [],
+        summary: []
+    };
+
+    let currentSection = 'introduction';
+
+    for (const line of lines) {
+        const lowerLine = line.toLowerCase();
+
+        if (lowerLine.includes('目标') || lowerLine.includes('objective')) {
+            currentSection = 'objectives';
+        } else if (lowerLine.includes('知识点') || lowerLine.includes('knowledge')) {
+            currentSection = 'knowledgePoints';
+        } else if (lowerLine.includes('活动') || lowerLine.includes('activity')) {
+            currentSection = 'teachingActivities';
+        } else if (lowerLine.includes('练习') || lowerLine.includes('exercise')) {
+            currentSection = 'practiceExercises';
+        } else if (lowerLine.includes('总结') || lowerLine.includes('summary')) {
+            currentSection = 'summary';
+        } else {
+            sections[currentSection].push(line);
+        }
+    }
+
+    return {
+        title: title || '详细课件',
+        introduction: sections.introduction.join('\n') || '课程介绍内容',
+        objectives: sections.objectives.length > 0 ? sections.objectives : [
+            '掌握基本概念和原理',
+            '理解核心理论体系',
+            '能够解决实际问题'
+        ],
+        knowledgePoints: sections.knowledgePoints.length > 0 ?
+            sections.knowledgePoints.map((point, index) => ({
+                title: `知识点 ${index + 1}`,
+                content: point,
+                difficulty: index === 0 ? '初级' : index === 1 ? '中级' : '高级',
+                estimatedTime: 15 + index * 5
+            })) : [
+                {
+                    title: '基础概念',
+                    content: '基本概念和原理介绍',
+                    difficulty: '初级',
+                    estimatedTime: 15
+                }
+            ],
+        teachingActivities: sections.teachingActivities.length > 0 ?
+            sections.teachingActivities.map((activity, index) => ({
+                activity: `教学活动 ${index + 1}`,
+                description: activity,
+                duration: 10 + index * 5
+            })) : [
+                {
+                    activity: '概念讲解',
+                    description: '通过讲解介绍基本概念',
+                    duration: 15
+                }
+            ],
+        practiceExercises: sections.practiceExercises.length > 0 ?
+            sections.practiceExercises.map((exercise, index) => ({
+                title: `练习 ${index + 1}`,
+                description: exercise,
+                difficulty: index === 0 ? '初级' : '中级',
+                estimatedTime: 10 + index * 5
+            })) : [
+                {
+                    title: '基础练习',
+                    description: '基本概念练习题',
+                    difficulty: '初级',
+                    estimatedTime: 10
+                }
+            ],
+        summary: sections.summary.join('\n') || '课程总结内容'
+    };
+};
+
 // 生成基于科目的默认内容
 const generateSubjectBasedContent = (subjectName, params) => {
     const subjectTemplates = {
         '数学': {
             knowledgePoints: [
-                { title: '数学基础概念', content: '数学基本概念和定理的学习', difficulty: '基础', estimatedTime: 15 },
+                { title: '数学基础概念', content: '数学基本概念和定理的学习', difficulty: '初级', estimatedTime: 15 },
                 { title: '数学运算方法', content: '各种数学运算技巧和方法', difficulty: '中级', estimatedTime: 20 },
                 { title: '数学应用实践', content: '数学在实际问题中的应用', difficulty: '高级', estimatedTime: 25 }
             ],
             practiceExercises: [
-                { title: '基础计算练习', description: '基本运算能力训练', difficulty: '基础', estimatedTime: 10 },
+                { title: '基础计算练习', description: '基本运算能力训练', difficulty: '初级', estimatedTime: 10 },
                 { title: '应用题练习', description: '数学应用能力培养', difficulty: '中级', estimatedTime: 15 }
             ]
         },
         '英语': {
             knowledgePoints: [
-                { title: '英语语法基础', content: '基本语法规则和句型结构', difficulty: '基础', estimatedTime: 15 },
+                { title: '英语语法基础', content: '基本语法规则和句型结构', difficulty: '初级', estimatedTime: 15 },
                 { title: '词汇积累', content: '常用词汇和短语学习', difficulty: '中级', estimatedTime: 20 },
                 { title: '听说读写综合', content: '英语四项技能综合训练', difficulty: '高级', estimatedTime: 25 }
             ],
             practiceExercises: [
-                { title: '语法练习', description: '语法规则应用练习', difficulty: '基础', estimatedTime: 10 },
+                { title: '语法练习', description: '语法规则应用练习', difficulty: '初级', estimatedTime: 10 },
                 { title: '口语对话', description: '日常对话练习', difficulty: '中级', estimatedTime: 15 }
             ]
         },
         '物理': {
             knowledgePoints: [
-                { title: '物理基本概念', content: '物理学基础概念和原理', difficulty: '基础', estimatedTime: 15 },
+                { title: '物理基本概念', content: '物理学基础概念和原理', difficulty: '初级', estimatedTime: 15 },
                 { title: '物理定律应用', content: '重要物理定律的理解和应用', difficulty: '中级', estimatedTime: 20 },
                 { title: '实验设计', content: '物理实验的设计和分析', difficulty: '高级', estimatedTime: 25 }
             ],
             practiceExercises: [
-                { title: '概念理解练习', description: '物理概念理解训练', difficulty: '基础', estimatedTime: 10 },
+                { title: '概念理解练习', description: '物理概念理解训练', difficulty: '初级', estimatedTime: 10 },
                 { title: '实验操作', description: '物理实验操作练习', difficulty: '中级', estimatedTime: 20 }
             ]
         }
@@ -302,7 +389,7 @@ const generateDefaultKnowledgePoints = (subjectName) => {
         {
             title: `${subjectName}基础概念`,
             content: `${subjectName}学科的基本概念和原理介绍`,
-            difficulty: '基础',
+            difficulty: '初级',
             estimatedTime: 15
         },
         {
@@ -333,7 +420,7 @@ const generateDefaultExercises = (subjectName) => {
         {
             title: `${subjectName}基础练习`,
             description: `${subjectName}基本概念和原理的练习题`,
-            difficulty: '基础',
+            difficulty: '初级',
             estimatedTime: 10
         },
         {
@@ -415,6 +502,86 @@ const generateMockCourseware = async (params) => {
     };
 
     return mockCourseware;
+};
+
+// 生成详细模拟课件内容
+const generateDetailedMockContent = (subjectName, params) => {
+    const { title, description, courseLevel, studentCount, duration, focusAreas } = params;
+
+    return {
+        title: title || `${subjectName}详细课件`,
+        introduction: `欢迎学习${subjectName}课程，本课程将帮助您系统掌握${subjectName}的核心知识。`,
+        objectives: [
+            `掌握${subjectName}的基本概念和原理`,
+            `理解${subjectName}的核心理论体系`,
+            `能够运用${subjectName}知识解决实际问题`,
+            `培养${subjectName}思维和分析能力`
+        ],
+        knowledgePoints: [
+            {
+                title: `${subjectName}基础概念`,
+                content: `${subjectName}学科的基本概念和原理介绍，包括核心定义、基本术语和基础理论框架。`,
+                difficulty: '初级',
+                estimatedTime: 15
+            },
+            {
+                title: `${subjectName}核心理论`,
+                content: `${subjectName}学科的核心理论和重要定律，深入理解学科的理论基础和发展脉络。`,
+                difficulty: '中级',
+                estimatedTime: 20
+            },
+            {
+                title: `${subjectName}实践应用`,
+                content: `${subjectName}理论在实际中的应用和案例分析，培养解决实际问题的能力。`,
+                difficulty: '高级',
+                estimatedTime: 25
+            }
+        ],
+        teachingActivities: [
+            {
+                activity: '概念讲解',
+                description: `通过PPT和板书讲解${subjectName}的基本概念`,
+                duration: 15
+            },
+            {
+                activity: '案例分析',
+                description: `分析${subjectName}在实际中的应用案例`,
+                duration: 20
+            },
+            {
+                activity: '互动讨论',
+                description: `学生分组讨论${subjectName}相关问题`,
+                duration: 10
+            }
+        ],
+        practiceExercises: [
+            {
+                title: `${subjectName}基础练习`,
+                description: `${subjectName}基本概念和原理的练习题`,
+                difficulty: '初级',
+                estimatedTime: 10
+            },
+            {
+                title: `${subjectName}应用练习`,
+                description: `${subjectName}实际应用的练习题`,
+                difficulty: '中级',
+                estimatedTime: 15
+            },
+            {
+                title: `${subjectName}综合练习`,
+                description: `${subjectName}综合知识的练习题`,
+                difficulty: '高级',
+                estimatedTime: 20
+            }
+        ],
+        summary: `通过本课程的学习，您已经掌握了${subjectName}的基本知识和技能，可以在实际中灵活运用。`,
+        generationParams: {
+            courseLevel: courseLevel || '中级',
+            studentCount: studentCount || 30,
+            duration: duration || 90,
+            focusAreas: focusAreas || ['理论基础', '实践应用']
+        }
+    };
 };
 
 // 获取教师课件列表
@@ -654,22 +821,248 @@ const exportCourseware = async (req, res) => {
     }
 };
 
-// Excel导出功能（简化版）
-const exportCoursewareToExcel = async (req, res) => {
+// Word文档导出功能
+const exportCoursewareToWord = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // 模拟Excel导出
-        res.json({
-            success: true,
-            message: 'Excel导出功能开发中',
-            downloadUrl: `/api/ai/courseware/${id}/download.xlsx`
+        // 模拟获取课件数据（实际应该从数据库获取）
+        const coursewareData = {
+            title: '课件标题示例',
+            description: '这是一个AI生成的课件，包含完整的教学内容和练习题。',
+            subject: '数学',
+            teacher: '张老师',
+            generatedAt: new Date().toLocaleString(),
+            knowledgePoints: [
+                {
+                    title: '基础概念',
+                    content: '数学基础概念的详细介绍，包括基本定义、性质和应用场景。通过系统学习，学生能够掌握数学的基本思维方法。',
+                    difficulty: '初级',
+                    estimatedTime: 15
+                },
+                {
+                    title: '核心理论',
+                    content: '数学核心理论的深入讲解，涵盖重要定理、公式推导和理论应用。帮助学生建立完整的知识体系。',
+                    difficulty: '中级',
+                    estimatedTime: 20
+                },
+                {
+                    title: '实践应用',
+                    content: '数学理论在实际问题中的应用，通过案例分析培养学生的问题解决能力和创新思维。',
+                    difficulty: '高级',
+                    estimatedTime: 25
+                }
+            ],
+            practiceExercises: [
+                {
+                    title: '基础练习',
+                    description: '针对基础概念的练习题，帮助学生巩固基本知识点。',
+                    difficulty: '初级',
+                    estimatedTime: 10
+                },
+                {
+                    title: '应用练习',
+                    description: '结合实际应用的练习题，提升学生的综合运用能力。',
+                    difficulty: '中级',
+                    estimatedTime: 15
+                }
+            ]
+        };
+
+        // 创建Word文档
+        const doc = new Document({
+            sections: [{
+                properties: {},
+                children: [
+                    // 标题
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: coursewareData.title,
+                                bold: true,
+                                size: 32,
+                                color: "2E74B5"
+                            })
+                        ],
+                        heading: HeadingLevel.TITLE,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 400 }
+                    }),
+
+                    // 基本信息
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: "课件基本信息",
+                                bold: true,
+                                size: 24,
+                                underline: { type: UnderlineType.SINGLE }
+                            })
+                        ],
+                        heading: HeadingLevel.HEADING_1,
+                        spacing: { before: 200, after: 200 }
+                    }),
+
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: "科目：", bold: true }),
+                            new TextRun({ text: coursewareData.subject })
+                        ],
+                        spacing: { after: 100 }
+                    }),
+
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: "教师：", bold: true }),
+                            new TextRun({ text: coursewareData.teacher })
+                        ],
+                        spacing: { after: 100 }
+                    }),
+
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: "生成时间：", bold: true }),
+                            new TextRun({ text: coursewareData.generatedAt })
+                        ],
+                        spacing: { after: 100 }
+                    }),
+
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: "课件描述：", bold: true }),
+                            new TextRun({ text: coursewareData.description })
+                        ],
+                        spacing: { after: 300 }
+                    }),
+
+                    // 知识点部分
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: "知识点详解",
+                                bold: true,
+                                size: 24,
+                                underline: { type: UnderlineType.SINGLE }
+                            })
+                        ],
+                        heading: HeadingLevel.HEADING_1,
+                        spacing: { before: 200, after: 200 }
+                    }),
+
+                    // 动态添加知识点
+                    ...coursewareData.knowledgePoints.map((point, index) => [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: `${index + 1}. ${point.title}`,
+                                    bold: true,
+                                    size: 20,
+                                    color: "1F4E79"
+                                })
+                            ],
+                            heading: HeadingLevel.HEADING_2,
+                            spacing: { before: 200, after: 100 }
+                        }),
+
+                        new Paragraph({
+                            children: [
+                                new TextRun({ text: "内容：", bold: true }),
+                                new TextRun({ text: point.content })
+                            ],
+                            spacing: { after: 100 }
+                        }),
+
+                        new Paragraph({
+                            children: [
+                                new TextRun({ text: "难度级别：", bold: true }),
+                                new TextRun({ text: point.difficulty }),
+                                new TextRun({ text: "　　预计时长：", bold: true }),
+                                new TextRun({ text: `${point.estimatedTime}分钟` })
+                            ],
+                            spacing: { after: 200 }
+                        })
+                    ]).flat(),
+
+                    // 练习题部分
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: "练习题目",
+                                bold: true,
+                                size: 24,
+                                underline: { type: UnderlineType.SINGLE }
+                            })
+                        ],
+                        heading: HeadingLevel.HEADING_1,
+                        spacing: { before: 300, after: 200 }
+                    }),
+
+                    // 动态添加练习题
+                    ...coursewareData.practiceExercises.map((exercise, index) => [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: `${index + 1}. ${exercise.title}`,
+                                    bold: true,
+                                    size: 20,
+                                    color: "1F4E79"
+                                })
+                            ],
+                            heading: HeadingLevel.HEADING_2,
+                            spacing: { before: 200, after: 100 }
+                        }),
+
+                        new Paragraph({
+                            children: [
+                                new TextRun({ text: "描述：", bold: true }),
+                                new TextRun({ text: exercise.description })
+                            ],
+                            spacing: { after: 100 }
+                        }),
+
+                        new Paragraph({
+                            children: [
+                                new TextRun({ text: "难度级别：", bold: true }),
+                                new TextRun({ text: exercise.difficulty }),
+                                new TextRun({ text: "　　预计时长：", bold: true }),
+                                new TextRun({ text: `${exercise.estimatedTime}分钟` })
+                            ],
+                            spacing: { after: 200 }
+                        })
+                    ]).flat(),
+
+                    // 页脚信息
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: "本课件由AI智能生成，仅供教学参考使用。",
+                                italics: true,
+                                size: 18,
+                                color: "666666"
+                            })
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 400 }
+                    })
+                ]
+            }]
         });
 
+        // 生成Word文档
+        const buffer = await Packer.toBuffer(doc);
+
+        // 设置响应头
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.setHeader('Content-Disposition', `attachment; filename="courseware_${id}_${Date.now()}.docx"`);
+
+        // 发送文件
+        res.send(buffer);
+
     } catch (error) {
+        console.error('Word导出错误:', error);
         res.status(500).json({
             success: false,
-            message: 'Excel导出失败',
+            message: 'Word文档导出失败',
             error: error.message
         });
     }
@@ -682,7 +1075,9 @@ const generateShareLink = async (req, res) => {
         const { expiresIn = 7 } = req.body;
 
         const shareToken = `share_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const shareUrl = `${req.protocol}://${req.get('host')}/api/ai/courseware/share/${shareToken}`;
+        // 生成分享链接（指向前端页面）
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const shareUrl = `${frontendUrl}/share/courseware/${shareToken}`;
 
         res.json({
             success: true,
@@ -735,7 +1130,7 @@ module.exports = {
     publishCourseware,
     adjustCoursewareContent,
     exportCourseware,
-    exportCoursewareToExcel,
+    exportCoursewareToWord,
     generateShareLink,
     downloadByShareLink
 };

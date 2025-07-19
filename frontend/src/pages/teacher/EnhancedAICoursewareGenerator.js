@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import {
     Container,
@@ -29,22 +29,19 @@ import {
     Tabs,
     Tab,
     Divider,
-    Tooltip,
-    Pagination
+    Tooltip
 } from '@mui/material';
 import {
     AutoFixHigh as AIIcon,
-    Download as DownloadIcon,
     Share as ShareIcon,
     History as HistoryIcon,
     Visibility as PreviewIcon,
     Edit as EditIcon,
     Delete as DeleteIcon,
-    FileDownload as ExcelIcon,
-    Link as LinkIcon,
+    Description as WordIcon,
     Refresh as RefreshIcon
 } from '@mui/icons-material';
-import axios from 'axios';
+import { aiAPI } from '../../utils/apiConfig';
 
 const EnhancedAICoursewareGenerator = () => {
     const { currentUser } = useSelector(state => state.user);
@@ -76,25 +73,20 @@ const EnhancedAICoursewareGenerator = () => {
     // 分享对话框
     const [shareDialog, setShareDialog] = useState({ open: false, courseware: null, shareUrl: '' });
 
+    // 预览对话框
+    const [previewDialog, setPreviewDialog] = useState({ open: false, courseware: null });
+
     const courseLevels = ['初级', '中级', '高级'];
     const focusAreaOptions = [
         '理论基础', '实践应用', '案例分析', '技能训练', 
         '创新思维', '团队协作', '问题解决', '项目实战'
     ];
 
-    useEffect(() => {
-        if (activeTab === 1) {
-            fetchCoursewareHistory();
-        }
-    }, [activeTab]);
-
     // 获取课件历史记录
-    const fetchCoursewareHistory = async (page = 1) => {
+    const fetchCoursewareHistory = useCallback(async (page = 1) => {
         setHistoryLoading(true);
         try {
-            const response = await axios.get(`/ai/courseware/teacher/${currentUser._id}/history`, {
-                params: { page, limit: pagination.pageSize }
-            });
+            const response = await aiAPI.getTeacherCoursewareHistory(currentUser._id);
 
             if (response.data.success) {
                 setCoursewareHistory(response.data.data.coursewareList);
@@ -105,7 +97,13 @@ const EnhancedAICoursewareGenerator = () => {
         } finally {
             setHistoryLoading(false);
         }
-    };
+    }, [currentUser._id]);
+
+    useEffect(() => {
+        if (activeTab === 1) {
+            fetchCoursewareHistory();
+        }
+    }, [activeTab, fetchCoursewareHistory]);
 
     // 生成课件
     const generateCourseware = async () => {
@@ -114,7 +112,7 @@ const EnhancedAICoursewareGenerator = () => {
         setSuccess('');
         
         try {
-            const response = await axios.post('/ai/courseware/generate', {
+            const response = await aiAPI.generateCourseware({
                 ...formData,
                 teacherId: currentUser._id
             });
@@ -137,27 +135,27 @@ const EnhancedAICoursewareGenerator = () => {
         }
     };
 
-    // 导出Excel
-    const exportToExcel = async (coursewareId) => {
+    // 导出Word文档
+    const exportToWord = async (coursewareId) => {
         try {
-            const response = await axios.get(`/ai/courseware/${coursewareId}/export/excel`, {
+            const response = await aiAPI.get(`/ai/courseware/${coursewareId}/export/word`, {
                 responseType: 'blob'
             });
 
             const blob = new Blob([response.data], {
-                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
             });
 
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `课件_${Date.now()}.xlsx`;
+            link.download = `课件详情_${Date.now()}.docx`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
 
-            setSuccess('Excel文件导出成功！');
+            setSuccess('Word文档导出成功！');
         } catch (err) {
             setError('导出失败：' + (err.response?.data?.message || err.message));
         }
@@ -166,7 +164,7 @@ const EnhancedAICoursewareGenerator = () => {
     // 生成分享链接
     const generateShareLink = async (courseware) => {
         try {
-            const response = await axios.post(`/ai/courseware/${courseware._id}/share`, {
+            const response = await aiAPI.post(`/ai/courseware/${courseware._id}/share`, {
                 expiresIn: 7 // 7天过期
             });
 
@@ -187,6 +185,14 @@ const EnhancedAICoursewareGenerator = () => {
         navigator.clipboard.writeText(shareDialog.shareUrl);
         setSuccess('分享链接已复制到剪贴板！');
         setShareDialog({ ...shareDialog, open: false });
+    };
+
+    // 详细预览
+    const handleDetailPreview = (courseware) => {
+        setPreviewDialog({
+            open: true,
+            courseware: courseware
+        });
     };
 
     const handleInputChange = (field, value) => {
@@ -364,10 +370,10 @@ const EnhancedAICoursewareGenerator = () => {
                         <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                             <Button
                                 variant="outlined"
-                                startIcon={<ExcelIcon />}
-                                onClick={() => exportToExcel(generatedCourseware._id)}
+                                startIcon={<WordIcon />}
+                                onClick={() => exportToWord(generatedCourseware._id)}
                             >
-                                导出Excel
+                                导出Word
                             </Button>
                             <Button
                                 variant="outlined"
@@ -379,6 +385,7 @@ const EnhancedAICoursewareGenerator = () => {
                             <Button
                                 variant="outlined"
                                 startIcon={<PreviewIcon />}
+                                onClick={() => handleDetailPreview(generatedCourseware)}
                             >
                                 详细预览
                             </Button>
@@ -518,16 +525,19 @@ const EnhancedAICoursewareGenerator = () => {
                                                     <ListItemSecondaryAction>
                                                         <Box sx={{ display: 'flex', gap: 1 }}>
                                                             <Tooltip title="预览">
-                                                                <IconButton size="small">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => handleDetailPreview(courseware)}
+                                                                >
                                                                     <PreviewIcon />
                                                                 </IconButton>
                                                             </Tooltip>
-                                                            <Tooltip title="导出Excel">
+                                                            <Tooltip title="导出Word">
                                                                 <IconButton
                                                                     size="small"
-                                                                    onClick={() => exportToExcel(courseware._id)}
+                                                                    onClick={() => exportToWord(courseware._id)}
                                                                 >
-                                                                    <ExcelIcon />
+                                                                    <WordIcon />
                                                                 </IconButton>
                                                             </Tooltip>
                                                             <Tooltip title="分享">
@@ -607,6 +617,117 @@ const EnhancedAICoursewareGenerator = () => {
                     </Button>
                     <Button onClick={copyShareLink} variant="contained">
                         复制链接
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* 详细预览对话框 */}
+            <Dialog
+                open={previewDialog.open}
+                onClose={() => setPreviewDialog({ ...previewDialog, open: false })}
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle>
+                    课件详细预览
+                </DialogTitle>
+                <DialogContent>
+                    {previewDialog.courseware && (
+                        <Box>
+                            <Typography variant="h6" gutterBottom>
+                                {previewDialog.courseware.title}
+                            </Typography>
+                            <Typography variant="body1" paragraph>
+                                <strong>描述：</strong>{previewDialog.courseware.description}
+                            </Typography>
+
+                            {/* 知识点列表 */}
+                            {previewDialog.courseware.knowledgePoints && (
+                                <>
+                                    <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
+                                        知识点
+                                    </Typography>
+                                    {previewDialog.courseware.knowledgePoints.map((point, index) => (
+                                        <Card key={index} sx={{ mb: 2 }}>
+                                            <CardContent>
+                                                <Typography variant="subtitle1" gutterBottom>
+                                                    {point.title}
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary" paragraph>
+                                                    {point.content}
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', gap: 2 }}>
+                                                    <Chip
+                                                        label={`难度: ${point.difficulty}`}
+                                                        size="small"
+                                                        color="primary"
+                                                        variant="outlined"
+                                                    />
+                                                    <Chip
+                                                        label={`时长: ${point.estimatedTime}分钟`}
+                                                        size="small"
+                                                        color="secondary"
+                                                        variant="outlined"
+                                                    />
+                                                </Box>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </>
+                            )}
+
+                            {/* 练习题列表 */}
+                            {previewDialog.courseware.practiceExercises && (
+                                <>
+                                    <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
+                                        练习题
+                                    </Typography>
+                                    {previewDialog.courseware.practiceExercises.map((exercise, index) => (
+                                        <Card key={index} sx={{ mb: 2 }}>
+                                            <CardContent>
+                                                <Typography variant="subtitle1" gutterBottom>
+                                                    {exercise.title}
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary" paragraph>
+                                                    {exercise.description}
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', gap: 2 }}>
+                                                    <Chip
+                                                        label={`难度: ${exercise.difficulty}`}
+                                                        size="small"
+                                                        color="primary"
+                                                        variant="outlined"
+                                                    />
+                                                    <Chip
+                                                        label={`时长: ${exercise.estimatedTime}分钟`}
+                                                        size="small"
+                                                        color="secondary"
+                                                        variant="outlined"
+                                                    />
+                                                </Box>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </>
+                            )}
+
+                            {/* 生成信息 */}
+                            <Divider sx={{ my: 3 }} />
+                            <Typography variant="body2" color="text.secondary">
+                                生成时间：{new Date(previewDialog.courseware.generatedAt).toLocaleString()}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                生成类型：{previewDialog.courseware.generationType === 'overview' ? '概览' : '详细'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                AI提供商：{previewDialog.courseware.aiProvider}
+                            </Typography>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setPreviewDialog({ ...previewDialog, open: false })}>
+                        关闭
                     </Button>
                 </DialogActions>
             </Dialog>

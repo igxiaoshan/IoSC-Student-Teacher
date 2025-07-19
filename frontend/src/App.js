@@ -8,46 +8,41 @@ import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import LoginPage from './pages/LoginPage';
 import AdminRegisterPage from './pages/admin/AdminRegisterPage';
 import ChooseUser from './pages/ChooseUser';
+import CoursewareShareView from './pages/shared/CoursewareShareView';
 
 const App = () => {
   const { currentRole } = useSelector(state => state.user);
 
   return (
     <Router>
-      {currentRole === null &&
-        <Routes>
-          <Route path="/" element={<Homepage />} />
-          <Route path="/choose" element={<ChooseUser visitor="normal" />} />
-          <Route path="/chooseasguest" element={<ChooseUser visitor="guest" />} />
+      <Routes>
+        {/* 公开的分享链接路由 - 任何人都可以访问 */}
+        <Route path="/share/courseware/:token" element={<CoursewareShareView />} />
 
-          <Route path="/Adminlogin" element={<LoginPage role="Admin" />} />
-          <Route path="/Studentlogin" element={<LoginPage role="Student" />} />
-          <Route path="/Teacherlogin" element={<LoginPage role="Teacher" />} />
+        {/* 未登录用户的路由 */}
+        {currentRole === null && (
+          <>
+            <Route path="/" element={<Homepage />} />
+            <Route path="/choose" element={<ChooseUser visitor="normal" />} />
+            <Route path="/chooseasguest" element={<ChooseUser visitor="guest" />} />
 
-          <Route path="/Adminregister" element={<AdminRegisterPage />} />
+            <Route path="/Adminlogin" element={<LoginPage role="Admin" />} />
+            <Route path="/Studentlogin" element={<LoginPage role="Student" />} />
+            <Route path="/Teacherlogin" element={<LoginPage role="Teacher" />} />
 
-          <Route path='*' element={<Navigate to="/" />} />
-        </Routes>}
+            <Route path="/Adminregister" element={<AdminRegisterPage />} />
 
-      {currentRole === "Admin" &&
-        <>
-          <AdminDashboard />
-        </>
-      }
+            <Route path='*' element={<Navigate to="/" />} />
+          </>
+        )}
 
-      {currentRole === "Student" &&
-        <>
-          <StudentDashboard />
-        </>
-      }
-
-      {currentRole === "Teacher" &&
-        <>
-          <TeacherDashboard />
-        </>
-      }
+        {/* 已登录用户的路由 */}
+        {currentRole === "Admin" && <AdminDashboard />}
+        {currentRole === "Student" && <StudentDashboard />}
+        {currentRole === "Teacher" && <TeacherDashboard />}
+      </Routes>
     </Router>
-  )
-}
+  );
+};
 
 export default App
