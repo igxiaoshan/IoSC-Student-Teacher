@@ -48,12 +48,12 @@ const SideBar = () => {
                 </ListItemButton>
                 <Collapse in={classMenuOpen} timeout="auto" unmountOnExit>
                     <List component="div" disablePadding>
-                        <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/class-management">
+                        {/* <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/class-management">
                             <ListItemIcon>
                                 <ClassOutlinedIcon color={location.pathname === '/Admin/class-management' ? 'primary' : 'inherit'} />
                             </ListItemIcon>
                             <ListItemText primary={tClass('classManagement')} />
-                        </ListItemButton>
+                        </ListItemButton> */}
                         <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/classes">
                             <ListItemIcon>
                                 <ClassOutlinedIcon color={location.pathname === '/Admin/classes' ? 'primary' : 'inherit'} />
@@ -66,12 +66,12 @@ const SideBar = () => {
                             </ListItemIcon>
                             <ListItemText primary={tClass('addClass')} />
                         </ListItemButton> */}
-                        <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/classes/enhanced">
+                        {/* <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/classes/enhanced">
                             <ListItemIcon>
                                 <ClassOutlinedIcon color={location.pathname === '/Admin/classes/enhanced' ? 'primary' : 'inherit'} />
                             </ListItemIcon>
                             <ListItemText primary={tAdmin('advancedSettings')} />
-                        </ListItemButton>
+                        </ListItemButton> */}
                         <ListItemButton sx={{ pl: 4 }} component={Link} to="/Admin/classes/statistics">
                             <ListItemIcon>
                                 <ClassOutlinedIcon color={location.pathname === '/Admin/classes/statistics' ? 'primary' : 'inherit'} />

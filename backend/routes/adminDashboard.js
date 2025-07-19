@@ -51,4 +51,19 @@ router.get('/test/system-metrics', async (req, res) => {
     }
 });
 
+// 测试业务指标端点
+router.get('/test/business-metrics', async (req, res) => {
+    try {
+        const { getBusinessMetrics } = require('../controllers/adminDashboard-controller');
+        const timeRanges = {
+            startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30天前
+            endDate: new Date()
+        };
+        const businessData = await getBusinessMetrics('test', timeRanges);
+        res.json(businessData);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;
