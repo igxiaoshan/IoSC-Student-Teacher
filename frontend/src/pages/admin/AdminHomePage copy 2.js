@@ -263,7 +263,6 @@ const AdminHomePage = () => {
                         <SystemStatusPanel
                             data={dashboardData?.system}
                             loading={loading}
-                            onRefresh={fetchDashboardData}
                         />
                     </Grid>
 

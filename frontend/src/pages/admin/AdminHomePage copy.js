@@ -9,6 +9,8 @@ import { getAllStudents } from '../../redux/studentRelated/studentHandle';
 import { getAllTeachers } from '../../redux/teacherRelated/teacherHandle';
 import { safeGet } from '../../utils/safeAccess';
 import {
+    Add as AddIcon,
+    Class as ClassIcon,
     Person as PersonIcon,
     Assignment as AssignmentIcon,
     Visibility as VisibilityIcon,
@@ -93,6 +95,20 @@ const AdminHomePage = () => {
 
     // 快捷操作配置
     const quickActions = [
+        {
+            title: '创建班级',
+            description: '添加新的班级到系统中',
+            icon: <AddIcon />,
+            color: 'success',
+            action: () => navigate('/Admin/addclass')
+        },
+        {
+            title: '管理班级',
+            description: '查看和管理所有班级',
+            icon: <ClassIcon />,
+            color: 'primary',
+            action: () => navigate('/Admin/classes')
+        },
         {
             title: '添加学生',
             description: '为班级添加新学生',
@@ -263,7 +279,6 @@ const AdminHomePage = () => {
                         <SystemStatusPanel
                             data={dashboardData?.system}
                             loading={loading}
-                            onRefresh={fetchDashboardData}
                         />
                     </Grid>
 
@@ -310,6 +325,65 @@ const AdminHomePage = () => {
                                         </Card>
                                     </Grid>
                                 ))}
+                            </Grid>
+                        </Paper>
+                    </Grid>
+
+                    {/* 班级管理快捷入口 */}
+                    <Grid item xs={12}>
+                        <Paper sx={{ p: 3, mb: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                <Typography variant="h6">
+                                    班级管理
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 2 }}>
+                                    <GreenButton
+                                        variant="contained"
+                                        startIcon={<AddIcon />}
+                                        onClick={() => navigate('/Admin/addclass')}
+                                    >
+                                        创建班级
+                                    </GreenButton>
+                                    <BlueButton
+                                        variant="outlined"
+                                        startIcon={<VisibilityIcon />}
+                                        onClick={() => navigate('/Admin/classes')}
+                                    >
+                                        查看所有班级
+                                    </BlueButton>
+                                </Box>
+                            </Box>
+                            <Grid container spacing={2}>
+                                <Grid item xs={12} sm={4}>
+                                    <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'success.light', borderRadius: 1 }}>
+                                        <Typography variant="h4" color="success.contrastText">
+                                            {numberOfClasses || 0}
+                                        </Typography>
+                                        <Typography variant="body2" color="success.contrastText">
+                                            总班级数
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={12} sm={4}>
+                                    <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'primary.light', borderRadius: 1 }}>
+                                        <Typography variant="h4" color="primary.contrastText">
+                                            {numberOfStudents || 0}
+                                        </Typography>
+                                        <Typography variant="body2" color="primary.contrastText">
+                                            总学生数
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={12} sm={4}>
+                                    <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'warning.light', borderRadius: 1 }}>
+                                        <Typography variant="h4" color="warning.contrastText">
+                                            {numberOfTeachers || 0}
+                                        </Typography>
+                                        <Typography variant="body2" color="warning.contrastText">
+                                            总教师数
+                                        </Typography>
+                                    </Box>
+                                </Grid>
                             </Grid>
                         </Paper>
                     </Grid>
