@@ -10,6 +10,7 @@ import AnnouncementOutlinedIcon from '@mui/icons-material/AnnouncementOutlined';
 import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import SchoolIcon from '@mui/icons-material/School';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import QuizIcon from '@mui/icons-material/Quiz';
 
@@ -42,6 +43,12 @@ const StudentSideBar = () => {
                         <ClassOutlinedIcon color={location.pathname.startsWith("/Student/attendance") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
                     <ListItemText primary={tStudent('myAttendance')} />
+                </ListItemButton>
+                <ListItemButton component={Link} to="/Student/calendar">
+                    <ListItemIcon>
+                        <CalendarTodayIcon color={location.pathname.startsWith("/Student/calendar") ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary="课程日历" />
                 </ListItemButton>
                 {/* <ListItemButton component={Link} to="/Student/complain">
                     <ListItemIcon>

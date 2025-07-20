@@ -19,6 +19,7 @@ import StudentSubjects from './StudentSubjects';
 import SubjectSelection from './SubjectSelection';
 import ViewStdAttendance from './ViewStdAttendance';
 import StudentComplain from './StudentComplain';
+import StudentCalendar from './StudentCalendar';
 import LearningAssistant from './LearningAssistant';
 import PracticeAssistant from './PracticeAssistant';
 import Logout from '../Logout'
@@ -84,6 +85,7 @@ const StudentDashboard = () => {
                         <Route path="/Student/subjects" element={<StudentSubjects />} />
                         <Route path="/Student/subject-selection" element={<SubjectSelection />} />
                         <Route path="/Student/attendance" element={<ViewStdAttendance />} />
+                        <Route path="/Student/calendar" element={<StudentCalendar />} />
                         <Route path="/Student/complain" element={<StudentComplain />} />
 
                         {/* AI学习助手路由 */}

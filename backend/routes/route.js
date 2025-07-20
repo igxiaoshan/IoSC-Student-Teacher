@@ -32,6 +32,9 @@ const { getStudentSubjects, getAvailableSubjects, selectSubject, unselectSubject
 // 流式学习助手控制器
 const { streamLearningAssistant, chatLearningAssistant, getChatHistory, clearChatHistory } = require('../controllers/streamingLearningAssistant-controller.js');
 
+// 学生日历控制器
+const { getStudentCalendar, syncCoursesToCalendar, syncExamsToCalendar, addPersonalEvent, updateEventStatus, getCalendarStatistics, generateAIStudyPlan } = require('../controllers/studentCalendar-controller.js');
+
 // AI功能控制器
 const {
     generateCourseware,
@@ -294,6 +297,15 @@ router.post('/student/ai/ask/stream', streamLearningAssistant);
 router.post('/student/ai/ask', chatLearningAssistant);
 router.get('/student/:studentId/chat/:conversationId/history', getChatHistory);
 router.delete('/student/:studentId/chat/:conversationId/history', clearChatHistory);
+
+// 学生日历路由
+router.get('/student/:studentId/calendar', getStudentCalendar);
+router.post('/student/:studentId/calendar/sync/courses', syncCoursesToCalendar);
+router.post('/student/:studentId/calendar/sync/exams', syncExamsToCalendar);
+router.post('/student/:studentId/calendar/events', addPersonalEvent);
+router.put('/student/:studentId/calendar/events/:eventId/status', updateEventStatus);
+router.get('/student/:studentId/calendar/statistics', getCalendarStatistics);
+router.post('/student/:studentId/calendar/ai/study-plan', generateAIStudyPlan);
 
 // 管理员仪表盘路由
 router.use('/adminDashboard', adminDashboardRoutes);
