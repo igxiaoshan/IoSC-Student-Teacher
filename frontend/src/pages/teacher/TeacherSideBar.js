@@ -9,7 +9,7 @@ import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined
 
 import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import QuizIcon from '@mui/icons-material/Quiz';
+import BuildIcon from '@mui/icons-material/Build';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import { useSelector } from 'react-redux';
 import { getSafeClassName } from '../../utils/safeAccess';
@@ -53,11 +53,11 @@ const TeacherSideBar = () => {
                     </ListItemIcon>
                     <ListItemText primary={tTeacher('aiCourseware')} />
                 </ListItemButton>
-                <ListItemButton component={Link} to="/Teacher/ai-assessment">
+                <ListItemButton component={Link} to="/Teacher/practical-exercise">
                     <ListItemIcon>
-                        <QuizIcon color={location.pathname.startsWith("/Teacher/ai-assessment") ? 'primary' : 'inherit'} />
+                        <BuildIcon color={location.pathname.startsWith("/Teacher/practical-exercise") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary={tTeacher('aiAssessment')} />
+                    <ListItemText primary="实训练习生成" />
                 </ListItemButton>
                 <ListItemButton component={Link} to="/Teacher/analytics">
                     <ListItemIcon>

@@ -117,6 +117,16 @@ export const aiAPI = {
     updateAssessment: (id, data) => api.put(`/ai/assessment/${id}`, data),
     deleteAssessment: (id) => api.delete(`/ai/assessment/${id}`),
 
+    // 实训练习生成 - 增加超时时间
+    generatePracticalExercise: (teacherId, data) => api.post(`/ai/practical-exercise/generate/${teacherId}`, data, { timeout: 60000 }),
+    getTeacherPracticalExercises: (teacherId) => api.get(`/ai/practical-exercise/teacher/${teacherId}`),
+    getPracticalExerciseById: (exerciseId) => api.get(`/ai/practical-exercise/${exerciseId}`),
+    updatePracticalExercise: (exerciseId, data) => api.put(`/ai/practical-exercise/${exerciseId}`, data),
+    deletePracticalExercise: (exerciseId) => api.delete(`/ai/practical-exercise/${exerciseId}`),
+    exportPracticalExerciseToWord: (exercise) => api.post('/ai/practical-exercise/export/word', { exercise }, { responseType: 'blob' }),
+    publishPracticalExercise: (exerciseId) => api.put(`/ai/practical-exercise/${exerciseId}/publish`),
+    sharePracticalExercise: (exerciseId, data) => api.post(`/ai/practical-exercise/${exerciseId}/share`, data),
+
 
 
     // 学情分析

@@ -235,6 +235,9 @@ router.post('/ai/assessment/:id/share', generateAssessmentShareLink);
 router.get('/ai/assessment/share/:token', getAssessmentByShareLink);
 router.put('/ai/assessment/:id/publish', publishAssessment);
 
+// AI实训练习路由
+router.use('/ai/practical-exercise', require('./practicalExercise'));
+
 // AI学情分析路由
 router.post('/ai/analysis/submission/:submissionId', analyzeSubmission);
 router.get('/ai/analysis/class/:teacherId/:subjectId/:assessmentId', getClassAnalysisReport);

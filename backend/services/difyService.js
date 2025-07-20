@@ -5,9 +5,14 @@ class DifyService {
         this.baseURL = process.env.DIFY_API_URL ;
         this.apiKey = process.env.DIFY_API_KEY ;
         this.timeout = 60000; // 60秒超时，云服务可能需要更长时间
+        this.practicalExerciseTimeout = 180000; // 实训练习生成需要更长时间：180秒（3分钟）
+        this.maxRetries = 2; // 最大重试次数
+        this.retryDelay = 5000; // 重试延迟：5秒
         this.isHealthy = null; // 缓存健康状态
         this.lastHealthCheck = 0; // 上次健康检查时间
         this.healthCheckInterval = 30000; // 30秒检查一次
+        this.consecutiveFailures = 0; // 连续失败次数
+        this.maxConsecutiveFailures = 3; // 最大连续失败次数
     }
 
     // 检查Dify服务健康状态
@@ -19,23 +24,65 @@ class DifyService {
             return this.isHealthy;
         }
 
+        // 检查基本配置
+        if (!this.baseURL || !this.apiKey) {
+            console.log('Dify配置不完整，标记为不健康');
+            this.isHealthy = false;
+            this.lastHealthCheck = now;
+            return false;
+        }
+
         try {
             console.log('检查Dify服务健康状态...');
-            const response = await axios.get(`${this.baseURL.replace('/v1', '')}/health`, {
-                timeout: 3000,
-                validateStatus: () => true // 接受所有状态码
+
+            // 使用一个轻量级的测试请求来检查服务可用性
+            // 发送一个简单的请求到chat-messages端点
+            const testResponse = await axios.post(`${this.baseURL}/chat-messages`, {
+                inputs: {},
+                query: "health check",
+                response_mode: 'blocking',
+                user: 'health_check'
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 5000,
+                validateStatus: (status) => {
+                    // 接受200-299和400-499状态码（400可能是请求格式问题，但服务是可用的）
+                    return (status >= 200 && status < 300) || (status >= 400 && status < 500);
+                }
             });
-            console.log(`Dify服务健康检查: ${response}`);
-            this.isHealthy = response.status === 200;
+
+            // 如果能收到响应（即使是错误响应），说明服务是可用的
+            this.isHealthy = testResponse.status < 500;
             this.lastHealthCheck = now;
-            console.log(`Dify服务健康检查: ${this.isHealthy}`);
-            console.log(`Dify服务健康检查: ${this.isHealthy ? '✅ 健康' : '❌ 不健康'}`);
+
+            console.log(`Dify服务健康检查: ${this.isHealthy ? '✅ 健康' : '❌ 不健康'} (状态码: ${testResponse.status})`);
             return this.isHealthy;
+
         } catch (error) {
             console.log(`Dify服务健康检查失败: ${error.message}`);
             this.isHealthy = false;
             this.lastHealthCheck = now;
             return false;
+        }
+    }
+
+    // 分析错误类型
+    analyzeError(error) {
+        if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
+            return 'timeout';
+        } else if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ECONNRESET') {
+            return 'connection';
+        } else if (error.response?.status === 401 || error.response?.status === 403) {
+            return 'auth';
+        } else if (error.response?.status >= 400 && error.response?.status < 500) {
+            return 'client';
+        } else if (error.response?.status >= 500) {
+            return 'server';
+        } else {
+            return 'unknown';
         }
     }
 
@@ -82,10 +129,20 @@ class DifyService {
                     lastError = error;
                     console.log(`第 ${attempt} 次尝试失败:`, error.message);
 
-                    // 如果是连接拒绝错误，立即失败不重试
-                    if (error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+                    // 分析错误类型
+                    const errorType = this.analyzeError(error);
+                    console.log(`错误类型: ${errorType}`);
+
+                    // 如果是连接错误，立即失败不重试
+                    if (errorType === 'connection') {
                         console.log('检测到连接错误，跳过重试直接使用模拟数据');
                         break;
+                    }
+
+                    // 如果是超时错误且是实训练习生成，给出特殊提示
+                    if (errorType === 'timeout' && endpoint === '/chat-messages') {
+                        console.log('检测到Dify服务超时，可能是后端模型响应缓慢');
+                        console.log('建议: 检查Ollama服务状态或使用云端API');
                     }
 
                     if (attempt < 2) {
@@ -975,12 +1032,12 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
         try {
             console.log('开始调用Dify生成考核题目...');
 
-            // // 先检查Dify服务健康状态
-            // const isHealthy = await this.checkHealth();
-            // if (!isHealthy) {
-            //     console.warn('Dify服务健康检查失败，使用模拟数据');
-            //     return this.generateMockAssessmentResponse(inputData);
-            // }
+            // 先检查Dify服务健康状态
+            const isHealthy = await this.checkHealth();
+            if (!isHealthy) {
+                console.warn('Dify服务健康检查失败，使用模拟数据');
+                return this.generateMockAssessmentResponse(inputData);
+            }
 
             // 使用与课件生成相同的调用方式
             const response = await this.callDifyAPI('/chat-messages', {
@@ -1653,6 +1710,484 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
             apiKey: this.apiKey ? `${this.apiKey.substring(0, 10)}...` : '未配置',
             timeout: this.timeout,
             status: this.apiKey ? '已配置' : '未配置'
+        };
+    }
+
+    // 生成实训练习
+    async generatePracticalExercise(inputData) {
+        const {
+            subject_name,
+            teacher_name,
+            exercise_title,
+            exercise_description,
+            courseware_title,
+            courseware_content,
+            difficulty,
+            question_count,
+            question_types,
+            duration,
+            focus_areas,
+            target_skills,
+            exercise_type
+        } = inputData;
+
+        // 构建实训练习生成的提示词
+        const systemPrompt = `你是一名专业的${subject_name}实训指导教师，擅长设计高质量的实训练习。请根据以下要求生成实训练习内容：
+
+课件信息：
+- 课件标题：${courseware_title}
+- 课件内容：${courseware_content}
+
+实训要求：
+- 练习标题：${exercise_title}
+- 练习描述：${exercise_description}
+- 难度等级：${difficulty}
+- 题目数量：${question_count}题
+- 题目类型：${question_types.join('、')}
+- 练习时长：${duration}分钟
+- 关注领域：${focus_areas.join('、')}
+- 目标技能：${target_skills.join('、')}
+- 实训类型：${exercise_type}
+
+请生成结构化的实训练习，包含：
+1. 题目描述和要求
+2. 实训步骤和预期输出
+3. 参考答案和实现方案
+4. 评分标准
+5. 知识点说明
+6. 环境要求
+7. 代码模板（如果是编程题）
+
+请确保实训内容贴近实际应用，具有较强的实践性和操作性。`;
+
+        // 首先检查基本配置
+        if (!this.baseURL || !this.apiKey) {
+            console.warn('Dify配置不完整，直接使用模拟数据生成');
+            return this.generateMockPracticalExerciseResponse(inputData);
+        }
+
+        try {
+            console.log('开始调用Dify生成实训练习...');
+
+            // 直接尝试调用API，不依赖健康检查
+            // 因为课件生成是成功的，说明Dify服务实际上是可用的
+
+            // 调用Dify API，使用更长的超时时间
+            const originalTimeout = this.timeout;
+            this.timeout = this.practicalExerciseTimeout; // 使用120秒超时
+
+            try {
+                console.log('准备调用Dify API生成实训练习...');
+                console.log(`API URL: ${this.baseURL}/chat-messages`);
+                console.log(`超时设置: ${this.timeout}ms`);
+
+                const response = await this.callDifyAPI('/chat-messages', {
+                    inputs: inputData,
+                    query: systemPrompt,
+                    response_mode: 'blocking',
+                    conversation_id: '',
+                    user: teacher_name || 'teacher'
+                });
+
+                // 恢复原始超时设置
+                this.timeout = originalTimeout;
+
+                console.log('Dify实训练习生成响应:', response);
+
+            if (response && response.answer) {
+                // 解析Dify返回的实训练习内容
+                const exerciseContent = this.parsePracticalExerciseContent(response.answer, {
+                    title: exercise_title,
+                    description: exercise_description,
+                    subject: subject_name,
+                    difficulty,
+                    duration,
+                    questionCount: question_count,
+                    questionTypes: question_types,
+                    focusAreas: focus_areas,
+                    targetSkills: target_skills,
+                    exerciseType: exercise_type
+                });
+
+                return {
+                    success: true,
+                    data: exerciseContent,
+                    source: 'dify',
+                    conversation_id: response.conversation_id
+                };
+            } else {
+                throw new Error('Dify返回的响应格式不正确');
+            }
+
+            } catch (apiError) {
+                // 恢复原始超时设置
+                this.timeout = originalTimeout;
+                throw apiError;
+            }
+
+        } catch (error) {
+            console.error('Dify实训练习生成失败:', error);
+            console.log('Dify调用失败，使用本地模拟数据生成实训练习...');
+            return this.generateMockPracticalExerciseResponse(inputData);
+        }
+    }
+
+    // 生成模拟实训练习响应的统一方法
+    generateMockPracticalExerciseResponse(inputData) {
+        const {
+            subject_name,
+            exercise_title,
+            exercise_description,
+            difficulty,
+            question_count,
+            question_types,
+            duration,
+            focus_areas,
+            target_skills,
+            exercise_type
+        } = inputData;
+
+        const mockExercise = this.generateMockPracticalExerciseContent({
+            subjectName: subject_name,
+            title: exercise_title,
+            description: exercise_description,
+            difficulty,
+            questionCount: question_count,
+            questionTypes: question_types,
+            duration,
+            focusAreas: focus_areas,
+            targetSkills: target_skills,
+            exerciseType: exercise_type
+        });
+
+        return {
+            success: true,
+            data: mockExercise,
+            source: 'mock',
+            note: 'Dify服务不可用，使用本地智能生成系统'
+        };
+    }
+
+    // 解析Dify返回的实训练习内容
+    parsePracticalExerciseContent(content, metadata) {
+        try {
+            // 尝试解析JSON格式
+            console.log('尝试解析JSON格式的实训练习内容...');
+            const parsed = JSON.parse(content);
+
+            // 支持多种JSON结构
+            let questions = null;
+            let exerciseInfo = {};
+
+            // 结构1: 直接的questions数组
+            if (parsed.questions && Array.isArray(parsed.questions)) {
+                questions = parsed.questions;
+            }
+            // 结构2: Dify返回的嵌套结构 {"实训练习": {"题目列表": [...]}}
+            else if (parsed.实训练习 && parsed.实训练习.题目列表 && Array.isArray(parsed.实训练习.题目列表)) {
+                questions = parsed.实训练习.题目列表;
+                exerciseInfo = parsed.实训练习.练习信息 || {};
+                console.log('检测到Dify嵌套JSON结构，成功提取题目列表');
+            }
+            // 结构3: 其他可能的结构
+            else if (parsed.题目列表 && Array.isArray(parsed.题目列表)) {
+                questions = parsed.题目列表;
+            }
+
+            if (questions && questions.length > 0) {
+                // 转换Dify格式的题目到标准格式
+                const convertedQuestions = questions.map((q, index) => {
+                    return {
+                        questionNumber: q.题号 || index + 1,
+                        questionType: '实操题', // 默认类型
+                        questionText: q.题目描述和要求 || q.questionText || '',
+                        requirements: Array.isArray(q.实训步骤和预期输出) ?
+                            q.实训步骤和预期输出.map((step, i) => ({
+                                step: i + 1,
+                                description: step,
+                                expectedOutput: ''
+                            })) : [],
+                        referenceAnswer: q.参考答案和实现方案 || q.referenceAnswer || '',
+                        codeTemplate: {
+                            language: 'python',
+                            template: q.代码模板 || q.codeTemplate || '',
+                            testCases: []
+                        },
+                        gradingCriteria: q.评分标准 ? Object.entries(q.评分标准).map(([criterion, points]) => ({
+                            criterion,
+                            points: typeof points === 'number' ? points : 10,
+                            description: `${criterion}评分标准`
+                        })) : [],
+                        explanation: q.解析说明 || q.explanation || '',
+                        points: q.分值 || 20,
+                        estimatedTime: q.预计时间 || 30,
+                        knowledgePoints: q.知识点说明 || q.knowledgePoints || [],
+                        environmentRequirements: {
+                            software: q.环境要求 || q.environmentRequirements || 'Python 3.7+',
+                            hardware: '标准计算机配置',
+                            network: '无特殊要求'
+                        }
+                    };
+                });
+
+                console.log(`JSON解析成功，转换了${convertedQuestions.length}道题目`);
+                return {
+                    ...metadata,
+                    title: exerciseInfo.练习标题 || metadata.title,
+                    description: exerciseInfo.练习描述 || metadata.description,
+                    questions: convertedQuestions,
+                    generatedBy: 'Dify AI (JSON解析)',
+                    generatedAt: new Date().toISOString()
+                };
+            }
+        } catch (e) {
+            console.log('JSON解析失败，尝试文本解析...', e.message);
+        }
+
+        // 清理内容，移除<think>标签
+        let cleanContent = content;
+        if (content.includes('<think>')) {
+            cleanContent = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+        }
+
+        console.log('开始解析Dify实训练习Markdown格式内容...');
+
+        // 解析实训练习题目
+        const questions = this.parsePracticalExerciseQuestions(cleanContent, metadata);
+
+        if (questions.length > 0) {
+            console.log(`Dify实训练习解析成功，解析出${questions.length}道题目`);
+            return {
+                ...metadata,
+                questions: questions,
+                generatedBy: 'Dify AI (实训练习解析)',
+                generatedAt: new Date().toISOString()
+            };
+        }
+
+        // 如果解析失败，使用模拟数据
+        console.log('实训练习解析失败，使用模拟数据...');
+        return this.generateMockPracticalExerciseContent({
+            subjectName: metadata.subject,
+            title: metadata.title,
+            description: metadata.description,
+            difficulty: metadata.difficulty,
+            questionCount: metadata.questionCount,
+            questionTypes: metadata.questionTypes,
+            duration: metadata.duration,
+            focusAreas: metadata.focusAreas,
+            targetSkills: metadata.targetSkills,
+            exerciseType: metadata.exerciseType
+        });
+    }
+
+    // 解析实训练习题目
+    parsePracticalExerciseQuestions(content, metadata) {
+        const questions = [];
+
+        try {
+            // 使用正则表达式匹配实训题目块
+            const questionBlocks = content.split(/###\s*(?:实训题目|练习题目|题目)\s*\d+[：:]/);
+
+            for (let i = 1; i < questionBlocks.length; i++) {
+                const block = questionBlocks[i].trim();
+                if (!block) continue;
+
+                const question = this.parsePracticalQuestionBlock(block, i, metadata);
+                if (question) {
+                    questions.push(question);
+                }
+            }
+
+            return questions;
+        } catch (error) {
+            console.error('实训练习Markdown解析错误:', error);
+            return [];
+        }
+    }
+
+    // 解析单个实训题目块
+    parsePracticalQuestionBlock(block, questionNumber, metadata) {
+        try {
+            const lines = block.split('\n').filter(line => line.trim());
+
+            let questionText = '';
+            let requirements = [];
+            let referenceAnswer = '';
+            let explanation = '';
+            let codeTemplate = null;
+            let gradingCriteria = [];
+            let environmentRequirements = {};
+
+            let currentSection = 'question';
+
+            for (let line of lines) {
+                line = line.trim();
+
+                if (!line || line.startsWith('---')) continue;
+
+                // 识别不同部分
+                if (line.includes('实训要求') || line.includes('操作步骤')) {
+                    currentSection = 'requirements';
+                    continue;
+                } else if (line.includes('参考答案') || line.includes('实现方案')) {
+                    currentSection = 'answer';
+                    continue;
+                } else if (line.includes('评分标准')) {
+                    currentSection = 'grading';
+                    continue;
+                } else if (line.includes('代码模板')) {
+                    currentSection = 'code';
+                    continue;
+                } else if (line.includes('环境要求')) {
+                    currentSection = 'environment';
+                    continue;
+                } else if (line.includes('解析') || line.includes('说明')) {
+                    currentSection = 'explanation';
+                    continue;
+                }
+
+                // 根据当前部分处理内容
+                switch (currentSection) {
+                    case 'question':
+                        if (!questionText) questionText = line;
+                        break;
+                    case 'requirements':
+                        if (line.match(/^\d+[\.\)]/)) {
+                            requirements.push({
+                                step: requirements.length + 1,
+                                description: line.replace(/^\d+[\.\)]\s*/, ''),
+                                expectedOutput: ''
+                            });
+                        }
+                        break;
+                    case 'answer':
+                        referenceAnswer += (referenceAnswer ? '\n' : '') + line;
+                        break;
+                    case 'explanation':
+                        explanation += (explanation ? '\n' : '') + line;
+                        break;
+                }
+            }
+
+            // 验证必要字段
+            if (!questionText) {
+                console.warn(`实训题目${questionNumber}解析不完整`);
+                return null;
+            }
+
+            return {
+                questionNumber: questionNumber,
+                type: metadata.questionTypes[0] || '实操题',
+                question: questionText,
+                requirements: requirements,
+                referenceAnswer: referenceAnswer || '请根据实训要求完成相应操作',
+                codeTemplate: codeTemplate,
+                gradingCriteria: gradingCriteria,
+                explanation: explanation || '本题考查实际操作能力和问题解决能力',
+                difficulty: metadata.difficulty,
+                points: 20,
+                estimatedTime: Math.ceil(metadata.duration / metadata.questionCount),
+                knowledgePoints: metadata.focusAreas || [],
+                environmentRequirements: environmentRequirements
+            };
+
+        } catch (error) {
+            console.error(`解析实训题目${questionNumber}时出错:`, error);
+            return null;
+        }
+    }
+
+    // 生成模拟实训练习内容
+    generateMockPracticalExerciseContent(params) {
+        const { subjectName, title, description, difficulty, questionCount, questionTypes, duration, targetSkills } = params;
+
+        // 确保description不为空
+        const safeDescription = description && description.trim() !== ''
+            ? description
+            : `这是一个${difficulty}级别的${subjectName}实训练习，包含${questionCount}道${questionTypes.join('、')}题目，预计完成时间${duration}分钟。通过本次实训，学生将掌握${targetSkills ? targetSkills.join('、') : '相关技能'}。`;
+
+        // 实训题目模板
+        const practicalTemplates = {
+            '计算机科学': {
+                '实操题': [
+                    {
+                        question: '设计并实现一个简单的学生信息管理系统界面',
+                        requirements: [
+                            { step: 1, description: '创建学生信息录入表单', expectedOutput: '包含姓名、学号、专业等字段的表单' },
+                            { step: 2, description: '实现数据验证功能', expectedOutput: '输入格式验证和错误提示' },
+                            { step: 3, description: '添加学生信息显示列表', expectedOutput: '以表格形式显示学生信息' }
+                        ],
+                        referenceAnswer: '完整的学生信息管理界面，包含表单录入、数据验证和信息展示功能',
+                        explanation: '本题考查前端界面设计、表单处理和数据展示的综合能力'
+                    }
+                ],
+                '编程题': [
+                    {
+                        question: '实现一个图书管理系统的核心功能模块',
+                        requirements: [
+                            { step: 1, description: '设计图书类和借阅记录类', expectedOutput: '完整的类结构定义' },
+                            { step: 2, description: '实现图书的增删改查功能', expectedOutput: '基本的CRUD操作' },
+                            { step: 3, description: '实现借阅和归还功能', expectedOutput: '借阅状态管理' }
+                        ],
+                        codeTemplate: {
+                            language: 'python',
+                            template: 'class Book:\n    def __init__(self, isbn, title, author):\n        # TODO: 实现图书类初始化\n        pass\n\nclass Library:\n    def __init__(self):\n        # TODO: 实现图书馆类初始化\n        pass',
+                            testCases: [
+                                { input: 'Book("978-0134685991", "Effective Java", "Joshua Bloch")', expectedOutput: '图书对象创建成功', description: '测试图书对象创建' }
+                            ]
+                        },
+                        referenceAnswer: '完整的图书管理系统实现，包含图书管理和借阅管理功能',
+                        explanation: '本题考查面向对象设计、数据结构应用和业务逻辑实现能力'
+                    }
+                ],
+                '项目实战': [
+                    {
+                        question: '开发一个简单的在线购物车功能',
+                        requirements: [
+                            { step: 1, description: '设计商品展示页面', expectedOutput: '商品列表和详情展示' },
+                            { step: 2, description: '实现购物车添加/删除功能', expectedOutput: '购物车状态管理' },
+                            { step: 3, description: '实现订单结算功能', expectedOutput: '价格计算和订单生成' }
+                        ],
+                        referenceAnswer: '完整的购物车系统，包含商品管理、购物车操作和订单处理',
+                        explanation: '本题考查Web开发的综合应用能力，包括前后端交互和业务流程设计'
+                    }
+                ]
+            }
+        };
+
+        const templates = practicalTemplates[subjectName] || practicalTemplates['计算机科学'];
+        const questions = [];
+
+        questionTypes.forEach(type => {
+            const typeTemplates = templates[type] || templates['实操题'];
+            const questionsToAdd = Math.ceil(questionCount / questionTypes.length);
+
+            for (let i = 0; i < questionsToAdd && questions.length < questionCount; i++) {
+                const template = typeTemplates[i % typeTemplates.length];
+                questions.push({
+                    ...template,
+                    type: type,
+                    difficulty: difficulty,
+                    points: type === '编程题' ? 30 : (type === '项目实战' ? 40 : 20),
+                    estimatedTime: Math.ceil(duration / questionCount),
+                    knowledgePoints: targetSkills || ['实践操作'],
+                    environmentRequirements: {
+                        software: type === '编程题' ? ['Python 3.8+', 'IDE'] : ['浏览器', '开发环境'],
+                        hardware: ['计算机'],
+                        platforms: ['Windows/Mac/Linux']
+                    }
+                });
+            }
+        });
+
+        return {
+            title,
+            description: safeDescription,
+            questions,
+            totalQuestions: questions.length,
+            generatedBy: 'Local Mock System',
+            generatedAt: new Date().toISOString()
         };
     }
 }
