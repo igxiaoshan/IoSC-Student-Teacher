@@ -492,7 +492,7 @@ const PracticalExerciseGenerator = () => {
     return (
         <Box sx={{ p: 3 }}>
             <Typography variant="h4" gutterBottom>
-                AI实训练习生成器
+                实训练习生成器
             </Typography>
             
             {error && (

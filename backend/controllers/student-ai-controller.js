@@ -462,10 +462,14 @@ const submitPracticeAnswer = async (req, res) => {
         }
 
         // 调用AI评估答案
-        const context = { studentId, subjectId };
+        const context = {
+            studentId,
+            subjectId,
+            questionCount: practice.questions.length // 传递题目总数用于计分
+        };
         const evaluationResponse = await difyService.evaluateStudentAnswer(
-            question, 
-            studentAnswer, 
+            question,
+            studentAnswer,
             context
         );
 
@@ -476,6 +480,13 @@ const submitPracticeAnswer = async (req, res) => {
             question.timeTaken = timeTaken || 0;
             question.evaluation = evaluationResponse.evaluation;
 
+            console.log('题目评估结果:', {
+                questionId: question.questionId,
+                studentAnswer,
+                evaluation: evaluationResponse.evaluation,
+                timeTaken
+            });
+
             // 更新知识点掌握情况
             if (question.knowledgePoints && question.knowledgePoints.length > 0) {
                 question.knowledgePoints.forEach(kp => {
@@ -484,17 +495,31 @@ const submitPracticeAnswer = async (req, res) => {
             }
 
             // 更新练习统计
-            const answeredQuestions = practice.questions.filter(q => q.studentAnswer);
-            practice.practiceStats.correctAnswers = answeredQuestions.filter(q => 
-                q.evaluation?.isCorrect
-            ).length;
-            practice.practiceStats.totalScore = answeredQuestions.reduce((sum, q) => 
+            const answeredQuestions = practice.questions.filter(q => q.studentAnswer !== undefined && q.studentAnswer !== null);
+            const correctQuestions = answeredQuestions.filter(q => q.evaluation?.isCorrect === true);
+
+            practice.practiceStats.correctAnswers = correctQuestions.length;
+            practice.practiceStats.totalScore = answeredQuestions.reduce((sum, q) =>
                 sum + (q.evaluation?.score || 0), 0
             );
-            practice.practiceStats.accuracy = answeredQuestions.length > 0 ? 
-                (practice.practiceStats.correctAnswers / answeredQuestions.length) * 100 : 0;
-            practice.practiceStats.completionRate = 
+            practice.practiceStats.accuracy = answeredQuestions.length > 0 ?
+                (correctQuestions.length / answeredQuestions.length) * 100 : 0;
+            practice.practiceStats.completionRate =
                 (answeredQuestions.length / practice.questions.length) * 100;
+
+            // 计算平均用时
+            const totalTime = answeredQuestions.reduce((sum, q) => sum + (q.timeTaken || 0), 0);
+            practice.practiceStats.averageTime = answeredQuestions.length > 0 ?
+                totalTime / answeredQuestions.length : 0;
+            practice.practiceStats.totalTime = totalTime;
+
+            console.log('更新练习统计:', {
+                answeredCount: answeredQuestions.length,
+                correctCount: correctQuestions.length,
+                totalScore: practice.practiceStats.totalScore,
+                accuracy: practice.practiceStats.accuracy,
+                averageTime: practice.practiceStats.averageTime
+            });
 
             // 如果练习完成，更新整体统计
             if (practice.practiceStats.completionRate === 100) {

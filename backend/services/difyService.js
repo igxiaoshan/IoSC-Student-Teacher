@@ -469,18 +469,29 @@ ${studentHistory || '暂无历史记录'}
       "questionText": "题目内容",
       "questionType": "选择题",
       "options": [
-        {"text": "选项A内容", "isCorrect": false},
-        {"text": "选项B内容", "isCorrect": true},
-        {"text": "选项C内容", "isCorrect": false},
-        {"text": "选项D内容", "isCorrect": false}
+        {"text": "选项A内容", "label": "A", "isCorrect": false},
+        {"text": "选项B内容", "label": "B", "isCorrect": true},
+        {"text": "选项C内容", "label": "C", "isCorrect": false},
+        {"text": "选项D内容", "label": "D", "isCorrect": false}
       ],
-      "correctAnswer": "选项B内容",
+      "correctAnswer": "B",
+      "correctAnswerText": "选项B内容",
       "explanation": "详细解析",
       "difficulty": "简单",
-      "points": 10
+      "points": 10,
+      "knowledgePoints": ["相关知识点"]
     }
   ]
 }
+
+**关键要求：**
+1. 每道题目必须有明确的正确答案
+2. 选择题的options数组中，只有一个选项的isCorrect为true
+3. correctAnswer字段必须是选项标签（A、B、C、D）
+4. correctAnswerText字段必须是完整的正确答案内容
+5. 正确答案要随机分布，不要总是A选项
+6. 每个选项必须有label字段（A、B、C、D）
+7. 题目要有实际意义，答案要准确无误
 
 请严格按照上述JSON格式返回，确保JSON格式正确，可以被程序解析。`;
 
@@ -531,19 +542,61 @@ ${studentHistory || '暂无历史记录'}
                 }
 
                 if (jsonData && jsonData.questions && Array.isArray(jsonData.questions)) {
-                    questions = jsonData.questions.map((q, index) => ({
-                        id: q.id || q.questionId || `ai_${index}_${Date.now()}`,
-                        questionId: q.questionId || q.id || `ai_${index}_${Date.now()}`,
-                        questionText: q.questionText || q.question || `题目 ${index + 1}`,
-                        question: q.question || q.questionText || `题目 ${index + 1}`,
-                        questionType: q.questionType || q.type || '选择题',
-                        options: this.normalizeOptions(q.options),
-                        correctAnswer: q.correctAnswer || q.answer || '',
-                        answer: q.answer || q.correctAnswer || '',
-                        explanation: q.explanation || q.解析 || '',
-                        difficulty: q.difficulty || q.难度 || '中等',
-                        points: q.points || q.分值 || 10
-                    }));
+                    questions = jsonData.questions.map((q, index) => {
+                        // 处理选项并确保正确答案标记
+                        const normalizedOptions = this.normalizeOptions(q.options);
+
+                        // 智能确定正确答案
+                        let correctAnswer = q.correctAnswer || q.answer || '';
+                        let correctAnswerText = q.correctAnswerText || '';
+
+                        // 如果有选项，尝试从选项中找到正确答案
+                        if (normalizedOptions && normalizedOptions.length > 0) {
+                            const correctOption = normalizedOptions.find(opt => opt.isCorrect);
+                            if (correctOption) {
+                                correctAnswer = correctOption.label || correctAnswer;
+                                correctAnswerText = correctOption.text || correctAnswerText;
+                            } else if (correctAnswer) {
+                                // 如果没有标记正确选项，尝试根据correctAnswer找到对应选项
+                                const matchedOption = normalizedOptions.find(opt =>
+                                    opt.label === correctAnswer ||
+                                    opt.text === correctAnswer ||
+                                    opt.text.includes(correctAnswer)
+                                );
+                                if (matchedOption) {
+                                    matchedOption.isCorrect = true;
+                                    correctAnswerText = matchedOption.text;
+                                }
+                            }
+                        }
+
+                        return {
+                            id: q.id || q.questionId || `ai_${index}_${Date.now()}`,
+                            questionId: q.questionId || q.id || `ai_${index}_${Date.now()}`,
+                            questionText: q.questionText || q.question || `题目 ${index + 1}`,
+                            question: q.question || q.questionText || `题目 ${index + 1}`,
+                            questionType: q.questionType || q.type || '选择题',
+                            options: normalizedOptions,
+                            correctAnswer: correctAnswer,
+                            correctAnswerText: correctAnswerText,
+                            answer: correctAnswerText || correctAnswer, // 兼容字段
+                            explanation: q.explanation || q.解析 || '',
+                            difficulty: q.difficulty || q.难度 || '中等',
+                            points: q.points || q.分值 || 10,
+                            knowledgePoints: q.knowledgePoints || q.知识点 || []
+                        };
+                    });
+
+                    console.log('解析后的题目数量:', questions.length);
+                    questions.forEach((q, index) => {
+                        console.log(`题目${index + 1}:`, {
+                            questionText: q.questionText,
+                            correctAnswer: q.correctAnswer,
+                            correctAnswerText: q.correctAnswerText,
+                            optionsCount: q.options?.length || 0,
+                            correctOptionMarked: q.options?.some(opt => opt.isCorrect) || false
+                        });
+                    });
                 } else {
                     console.warn('AI响应不是JSON格式，尝试解析文本格式');
                     // 尝试解析文本格式的题目
@@ -614,13 +667,22 @@ ${studentHistory || '暂无历史记录'}
             let evaluation = {};
             try {
                 const answerText = response.answer || response.data?.answer || '';
+                console.log('Dify评估原始响应:', answerText);
+
+                // 尝试解析JSON格式
                 const jsonMatch = answerText.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
                     evaluation = JSON.parse(jsonMatch[0]);
+                    console.log('JSON解析成功:', evaluation);
+                } else {
+                    // 如果不是JSON格式，进行智能文本解析
+                    evaluation = this.parseTextEvaluation(answerText, question, studentAnswer, context);
+                    console.log('文本解析结果:', evaluation);
                 }
             } catch (parseError) {
+                console.log('解析失败，使用默认评估:', parseError.message);
                 // 如果解析失败，创建默认评估
-                evaluation = this.createDefaultEvaluation(question, studentAnswer);
+                evaluation = this.createDefaultEvaluation(question, studentAnswer, context);
             }
 
             return {
@@ -633,7 +695,7 @@ ${studentHistory || '暂无历史记录'}
             return {
                 success: false,
                 error: error.message,
-                evaluation: this.createDefaultEvaluation(question, studentAnswer)
+                evaluation: this.createDefaultEvaluation(question, studentAnswer, context)
             };
         }
     }
@@ -641,30 +703,174 @@ ${studentHistory || '暂无历史记录'}
     // 创建默认题目（当AI生成失败时）
     createDefaultQuestions(context) {
         const { subjectName = '通用', questionCount = 3 } = context;
-        
+
+        // 根据学科创建更真实的题目模板
+        const questionTemplates = this.getSubjectSpecificTemplates(subjectName);
+
         const defaultQuestions = [];
         for (let i = 1; i <= questionCount; i++) {
+            // 循环使用模板，确保正确答案分布在不同选项
+            const template = questionTemplates[(i - 1) % questionTemplates.length];
+
             defaultQuestions.push({
                 id: `default_${i}`,
-                questionId: `default_${i}`, // 添加questionId字段
-                questionText: `${subjectName}练习题 ${i}`,
-                question: `${subjectName}练习题 ${i}`, // 兼容字段
+                questionId: `default_${i}`,
+                questionText: `${template.questionText} ${i}`,
+                question: `${template.questionText} ${i}`, // 兼容字段
                 questionType: '选择题',
-                options: [
-                    { text: '选项A', isCorrect: true },
-                    { text: '选项B', isCorrect: false },
-                    { text: '选项C', isCorrect: false },
-                    { text: '选项D', isCorrect: false }
-                ],
-                correctAnswer: '选项A',
-                answer: '选项A', // 兼容字段
-                explanation: '这是一道基础练习题，请根据所学知识选择正确答案。',
+                options: template.options.map(opt => ({
+                    text: `${opt.text}${i}`,
+                    label: opt.label,
+                    isCorrect: opt.isCorrect
+                })),
+                correctAnswer: template.correctAnswer,
+                correctAnswerText: template.correctAnswerText + i,
+                answer: template.correctAnswerText + i, // 兼容字段
+                explanation: `这是一道${subjectName}基础练习题，正确答案是${template.correctAnswer}选项。请根据所学知识选择正确答案。`,
                 difficulty: '基础',
-                points: 10
+                points: 10,
+                knowledgePoints: [subjectName + '基础知识']
             });
         }
-        
+
         return defaultQuestions;
+    }
+
+    // 获取学科特定的题目模板
+    getSubjectSpecificTemplates(subjectName) {
+        const lowerSubject = subjectName.toLowerCase();
+
+        // TensorFlow/深度学习相关题目
+        if (lowerSubject.includes('tensorflow') || lowerSubject.includes('深度学习') || lowerSubject.includes('机器学习')) {
+            return [
+                {
+                    questionText: '下面哪个语言是TensorFlow的主要编程接口？',
+                    options: [
+                        { text: 'C++', label: 'A', isCorrect: false },
+                        { text: 'Python', label: 'B', isCorrect: true },
+                        { text: 'Java', label: 'C', isCorrect: false },
+                        { text: 'Ruby', label: 'D', isCorrect: false }
+                    ],
+                    correctAnswer: 'B',
+                    correctAnswerText: 'Python'
+                },
+                {
+                    questionText: 'TensorFlow中用于构建神经网络的高级API是什么？',
+                    options: [
+                        { text: 'TensorBoard', label: 'A', isCorrect: false },
+                        { text: 'TensorFlow Lite', label: 'B', isCorrect: false },
+                        { text: 'Keras', label: 'C', isCorrect: true },
+                        { text: 'TensorFlow Serving', label: 'D', isCorrect: false }
+                    ],
+                    correctAnswer: 'C',
+                    correctAnswerText: 'Keras'
+                },
+                {
+                    questionText: 'TensorFlow的计算图执行模式在2.x版本中默认是什么？',
+                    options: [
+                        { text: 'Eager Execution', label: 'A', isCorrect: true },
+                        { text: 'Graph Execution', label: 'B', isCorrect: false },
+                        { text: 'Static Execution', label: 'C', isCorrect: false },
+                        { text: 'Lazy Execution', label: 'D', isCorrect: false }
+                    ],
+                    correctAnswer: 'A',
+                    correctAnswerText: 'Eager Execution'
+                }
+            ];
+        }
+
+        // Python相关题目
+        if (lowerSubject.includes('python') || lowerSubject.includes('编程')) {
+            return [
+                {
+                    questionText: 'Python中哪个关键字用于定义函数？',
+                    options: [
+                        { text: 'function', label: 'A', isCorrect: false },
+                        { text: 'def', label: 'B', isCorrect: true },
+                        { text: 'func', label: 'C', isCorrect: false },
+                        { text: 'define', label: 'D', isCorrect: false }
+                    ],
+                    correctAnswer: 'B',
+                    correctAnswerText: 'def'
+                },
+                {
+                    questionText: 'Python中哪个数据类型是可变的？',
+                    options: [
+                        { text: 'tuple', label: 'A', isCorrect: false },
+                        { text: 'string', label: 'B', isCorrect: false },
+                        { text: 'list', label: 'C', isCorrect: true },
+                        { text: 'int', label: 'D', isCorrect: false }
+                    ],
+                    correctAnswer: 'C',
+                    correctAnswerText: 'list'
+                }
+            ];
+        }
+
+        // 数学相关题目
+        if (lowerSubject.includes('数学') || lowerSubject.includes('math')) {
+            return [
+                {
+                    questionText: '下列哪个是质数？',
+                    options: [
+                        { text: '4', label: 'A', isCorrect: false },
+                        { text: '7', label: 'B', isCorrect: true },
+                        { text: '8', label: 'C', isCorrect: false },
+                        { text: '9', label: 'D', isCorrect: false }
+                    ],
+                    correctAnswer: 'B',
+                    correctAnswerText: '7'
+                },
+                {
+                    questionText: '圆的面积公式是什么？',
+                    options: [
+                        { text: '2πr', label: 'A', isCorrect: false },
+                        { text: 'πr²', label: 'B', isCorrect: true },
+                        { text: 'πd', label: 'C', isCorrect: false },
+                        { text: 'r²', label: 'D', isCorrect: false }
+                    ],
+                    correctAnswer: 'B',
+                    correctAnswerText: 'πr²'
+                }
+            ];
+        }
+
+        // 通用题目模板（作为后备）
+        return [
+            {
+                questionText: `${subjectName}基础概念题`,
+                options: [
+                    { text: '错误选项1', label: 'A', isCorrect: false },
+                    { text: '正确答案', label: 'B', isCorrect: true },
+                    { text: '错误选项2', label: 'C', isCorrect: false },
+                    { text: '错误选项3', label: 'D', isCorrect: false }
+                ],
+                correctAnswer: 'B',
+                correctAnswerText: '正确答案'
+            },
+            {
+                questionText: `${subjectName}应用题`,
+                options: [
+                    { text: '错误选项1', label: 'A', isCorrect: false },
+                    { text: '错误选项2', label: 'B', isCorrect: false },
+                    { text: '正确答案', label: 'C', isCorrect: true },
+                    { text: '错误选项3', label: 'D', isCorrect: false }
+                ],
+                correctAnswer: 'C',
+                correctAnswerText: '正确答案'
+            },
+            {
+                questionText: `${subjectName}理解题`,
+                options: [
+                    { text: '正确答案', label: 'A', isCorrect: true },
+                    { text: '错误选项1', label: 'B', isCorrect: false },
+                    { text: '错误选项2', label: 'C', isCorrect: false },
+                    { text: '错误选项3', label: 'D', isCorrect: false }
+                ],
+                correctAnswer: 'A',
+                correctAnswerText: '正确答案'
+            }
+        ];
     }
 
     // 解析文本格式的题目
@@ -798,8 +1004,9 @@ ${studentHistory || '暂无历史记录'}
 
         // 如果已经是正确格式的对象数组
         if (Array.isArray(options) && options.length > 0 && typeof options[0] === 'object' && options[0].text !== undefined) {
-            return options.map(opt => ({
+            return options.map((opt, index) => ({
                 text: String(opt.text || ''),
+                label: opt.label || String.fromCharCode(65 + index), // A, B, C, D
                 isCorrect: Boolean(opt.isCorrect)
             }));
         }
@@ -808,7 +1015,8 @@ ${studentHistory || '暂无历史记录'}
         if (Array.isArray(options) && options.length > 0 && typeof options[0] === 'string') {
             return options.map((optText, index) => ({
                 text: String(optText),
-                isCorrect: index === 0 // 默认第一个为正确答案
+                label: String.fromCharCode(65 + index), // A, B, C, D
+                isCorrect: false // 不默认任何选项为正确，需要AI明确指定
             }));
         }
 
@@ -816,6 +1024,7 @@ ${studentHistory || '暂无历史记录'}
         if (typeof options === 'string') {
             return [{
                 text: String(options),
+                label: 'A',
                 isCorrect: true
             }];
         }
@@ -825,6 +1034,7 @@ ${studentHistory || '暂无历史记录'}
             // 可能是单个选项对象
             return [{
                 text: String(options.text || options.toString()),
+                label: options.label || 'A',
                 isCorrect: Boolean(options.isCorrect)
             }];
         }
@@ -833,20 +1043,454 @@ ${studentHistory || '暂无历史记录'}
         return [];
     }
 
-    // 创建默认评估（当AI评估失败时）
-    createDefaultEvaluation(question, studentAnswer) {
-        const isCorrect = studentAnswer === question.correctAnswer;
-        
+    // 解析文本格式的评估结果
+    parseTextEvaluation(answerText, question, studentAnswer, context = {}) {
+        console.log('开始解析文本评估:', answerText);
+
+        // 智能判断答案正确性
+        let isCorrect = false;
+        let score = 0;
+        let feedback = answerText || '评估完成';
+
+        // 计算单题分数（总分100分平均分配）
+        const questionCount = context.questionCount || 5; // 默认5道题
+        const pointsPerQuestion = Math.round(100 / questionCount); // 每题分数
+
+        console.log(`计分逻辑: 总题数=${questionCount}, 每题分数=${pointsPerQuestion}`);
+
+        // 检查文本中的关键词来判断正确性
+        const correctKeywords = ['正确', '对', '答案正确', '回答正确', '正确答案', 'correct', 'right'];
+        const incorrectKeywords = ['错误', '不正确', '错', '答案错误', '回答错误', 'incorrect', 'wrong'];
+
+        const lowerText = answerText.toLowerCase();
+        const hasCorrectKeyword = correctKeywords.some(keyword =>
+            lowerText.includes(keyword.toLowerCase()) || lowerText.includes(keyword)
+        );
+        const hasIncorrectKeyword = incorrectKeywords.some(keyword =>
+            lowerText.includes(keyword.toLowerCase()) || lowerText.includes(keyword)
+        );
+
+        // 如果有明确的正确/错误关键词
+        if (hasCorrectKeyword && !hasIncorrectKeyword) {
+            isCorrect = true;
+            score = pointsPerQuestion;
+        } else if (hasIncorrectKeyword && !hasCorrectKeyword) {
+            isCorrect = false;
+            score = 0;
+        } else {
+            // 如果没有明确关键词，使用智能匹配
+            isCorrect = this.smartAnswerMatch(question, studentAnswer);
+            score = isCorrect ? pointsPerQuestion : 0;
+        }
+
+        console.log('文本解析结果:', { isCorrect, score, hasCorrectKeyword, hasIncorrectKeyword });
+
         return {
             isCorrect,
-            score: isCorrect ? 100 : 0,
-            feedback: isCorrect ? '答案正确！' : '答案不正确，请重新思考。',
+            score,
+            feedback: feedback,
+            explanation: answerText,
+            errorAnalysis: isCorrect ? null : {
+                errorType: '答案不正确',
+                suggestion: '请重新思考题目要求，参考正确答案进行学习。',
+                correctAnswer: question.correctAnswer || question.correctAnswerText || question.answer
+            }
+        };
+    }
+
+    // 智能答案匹配
+    smartAnswerMatch(question, studentAnswer) {
+        if (!studentAnswer || !question) return false;
+
+        const correctAnswer = question.correctAnswer || question.correctAnswerText || question.answer || '';
+
+        // 处理选择题
+        if (question.questionType === '选择题' && question.options) {
+            const correctOption = question.options.find(opt => opt.isCorrect);
+            if (correctOption) {
+                // 支持多种答案格式匹配
+                const correctAnswers = [
+                    correctOption.text,
+                    correctOption.label,
+                    correctAnswer
+                ].filter(ans => ans);
+
+                return correctAnswers.some(ans =>
+                    ans && studentAnswer &&
+                    ans.toLowerCase().trim() === studentAnswer.toLowerCase().trim()
+                );
+            }
+        }
+
+        // 处理其他题型
+        if (correctAnswer) {
+            return studentAnswer && correctAnswer &&
+                   studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+        }
+
+        return false;
+    }
+
+    // 创建默认评估（当AI评估失败时）
+    createDefaultEvaluation(question, studentAnswer, context = {}) {
+        // 智能判断答案正确性
+        let isCorrect = false;
+
+        // 处理选择题
+        if (question.questionType === '选择题' && question.options) {
+            const correctOption = question.options.find(opt => opt.isCorrect);
+            if (correctOption) {
+                // 支持多种答案格式：A、选项A、选项内容
+                const correctAnswers = [
+                    correctOption.text,
+                    correctOption.label,
+                    String.fromCharCode(65 + question.options.indexOf(correctOption)), // A, B, C, D
+                    `选项${String.fromCharCode(65 + question.options.indexOf(correctOption))}`
+                ];
+                isCorrect = correctAnswers.some(ans =>
+                    ans && studentAnswer && ans.toLowerCase().trim() === studentAnswer.toLowerCase().trim()
+                );
+            }
+        } else {
+            // 处理其他题型
+            const correctAnswer = question.correctAnswer || question.answer;
+            if (correctAnswer) {
+                isCorrect = studentAnswer && correctAnswer &&
+                           studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+            }
+        }
+
+        // 计算分数（总分100分平均分配）
+        const questionCount = context.questionCount || 5; // 默认5道题
+        const pointsPerQuestion = Math.round(100 / questionCount); // 每题分数
+
+        let score = 0;
+        if (isCorrect) {
+            score = pointsPerQuestion;
+        } else if (studentAnswer && typeof studentAnswer === 'string' && studentAnswer.trim().length > 0) {
+            // 给予部分分数（有答案但不正确）
+            score = Math.round(pointsPerQuestion * 0.2); // 20%的部分分数
+        }
+
+        console.log(`默认评估计分: 总题数=${questionCount}, 每题分数=${pointsPerQuestion}, 实际得分=${score}`);
+
+        return {
+            isCorrect,
+            score,
+            feedback: isCorrect ?
+                '答案正确！继续保持！' :
+                '答案不正确，请仔细思考后重新作答。',
             errorAnalysis: isCorrect ? null : {
                 errorType: '答案错误',
-                suggestion: '请仔细阅读题目，回顾相关知识点。'
+                suggestion: '建议重新阅读题目，理解题意后再作答。可以回顾相关知识点。',
+                correctAnswer: question.correctAnswer || question.answer || '请参考标准答案'
             },
-            explanation: question.explanation || '请参考教学内容进行学习。'
+            explanation: question.explanation || question.解析 || '请参考教学内容进行学习。',
+            knowledgePoints: question.knowledgePoints || []
         };
+    }
+
+    // 学情数据分析
+    async analyzeStudentPerformance(analysisData) {
+        const {
+            teacherId,
+            questions = [],
+            studentAnswers = [],
+            correctAnswers = [],
+            classStats = {},
+            subject = '通用',
+            analysisType = 'comprehensive'
+        } = analysisData;
+
+        const systemPrompt = `你是一名专业的教育数据分析专家，负责分析学生的学习表现并提供教学建议。
+
+分析数据：
+- 科目：${subject}
+- 分析类型：${analysisType}
+- 题目数量：${questions.length}
+- 学生答题数量：${studentAnswers.length}
+- 班级统计：${JSON.stringify(classStats)}
+
+题目信息：
+${questions.map((q, index) => `
+题目${index + 1}：${q.questionText || q.question || '题目内容'}
+知识点：${q.knowledgePoints?.join(', ') || '未标注'}
+难度：${q.difficulty || '中等'}
+正确答案：${correctAnswers[index] || q.correctAnswer || '未提供'}
+`).join('\n')}
+
+学生答题情况：
+${studentAnswers.map((answer, index) => `
+学生${index + 1}：
+- 姓名：${answer.studentName || `学生${index + 1}`}
+- 答案：${JSON.stringify(answer.answers || answer)}
+- 得分：${answer.score || '未计分'}
+- 用时：${answer.timeTaken || '未记录'}分钟
+`).join('\n')}
+
+请提供详细的学情分析报告，包括：
+
+1. **整体表现分析**
+   - 班级平均分和分布情况
+   - 及格率和优秀率
+   - 与历史数据对比
+
+2. **知识点掌握分析**
+   - 各知识点的掌握情况统计
+   - 薄弱知识点识别
+   - 知识点关联性分析
+
+3. **学生个体分析**
+   - 每个学生的表现特点
+   - 学习能力评估
+   - 个性化学习建议
+
+4. **教学效果评估**
+   - 教学目标达成度
+   - 教学方法有效性
+   - 课程难度适配性
+
+5. **改进建议**
+   - 教学内容调整建议
+   - 教学方法优化建议
+   - 个别辅导建议
+
+请以结构化的JSON格式返回分析结果。`;
+
+        try {
+            const response = await this.callDifyAPI('/chat-messages', {
+                inputs: {
+                    analysis_type: 'student_performance',
+                    subject: subject,
+                    teacher_id: teacherId,
+                    question_count: questions.length,
+                    student_count: studentAnswers.length,
+                    class_stats: JSON.stringify(classStats),
+                    system_prompt: systemPrompt
+                },
+                query: `请对${subject}科目的学生学习表现进行深度分析，共${questions.length}道题目，${studentAnswers.length}名学生参与。请提供详细的教学建议和改进方案。`,
+                response_mode: 'blocking',
+                user: `teacher_${teacherId}`,
+                auto_generate_name: false
+            });
+
+            console.log('Dify学情分析响应:', response.answer?.substring(0, 500) + '...');
+
+            // 解析分析结果
+            let analysisResult = {};
+            try {
+                const answerText = response.answer || '';
+
+                // 尝试解析JSON格式
+                const jsonMatch = answerText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    analysisResult = JSON.parse(jsonMatch[0]);
+                } else {
+                    // 如果不是JSON格式，进行智能文本解析
+                    analysisResult = this.parsePerformanceAnalysisText(answerText, analysisData);
+                }
+            } catch (parseError) {
+                console.log('解析学情分析失败，使用默认分析:', parseError.message);
+                analysisResult = this.createDefaultPerformanceAnalysis(analysisData);
+            }
+
+            return {
+                success: true,
+                analysis: analysisResult,
+                rawResponse: response.answer,
+                conversation_id: response.conversation_id,
+                generatedAt: new Date().toISOString()
+            };
+
+        } catch (error) {
+            console.error('Dify学情分析错误:', error);
+            return {
+                success: false,
+                error: error.message,
+                analysis: this.createDefaultPerformanceAnalysis(analysisData)
+            };
+        }
+    }
+
+    // 解析学情分析文本
+    parsePerformanceAnalysisText(text, analysisData) {
+        const { questions = [], studentAnswers = [], classStats = {} } = analysisData;
+
+        // 计算基础统计
+        const totalStudents = studentAnswers.length;
+        const totalQuestions = questions.length;
+
+        // 计算平均分
+        const scores = studentAnswers.map(s => s.score || 0);
+        const averageScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+
+        // 计算及格率（假设60分及格）
+        const passCount = scores.filter(score => score >= 60).length;
+        const passRate = totalStudents > 0 ? (passCount / totalStudents) * 100 : 0;
+
+        return {
+            overallPerformance: {
+                totalStudents,
+                averageScore: Math.round(averageScore * 100) / 100,
+                passRate: Math.round(passRate * 100) / 100,
+                scoreDistribution: this.calculateScoreDistribution(scores),
+                performanceTrend: '稳定' // 默认值，实际应该基于历史数据
+            },
+            knowledgePointAnalysis: this.analyzeKnowledgePoints(questions, studentAnswers),
+            studentIndividualAnalysis: this.analyzeIndividualStudents(studentAnswers),
+            teachingEffectiveness: {
+                goalAchievement: passRate > 80 ? '良好' : passRate > 60 ? '一般' : '需改进',
+                methodEffectiveness: '有效',
+                difficultyAlignment: '适中'
+            },
+            recommendations: {
+                teachingAdjustments: this.generateTeachingRecommendations(text, averageScore, passRate),
+                individualGuidance: this.generateIndividualGuidance(studentAnswers),
+                focusAreas: this.identifyFocusAreas(questions, studentAnswers)
+            },
+            aiInsights: {
+                keyFindings: this.extractKeyFindings(text),
+                predictiveAnalysis: this.generatePredictiveAnalysis(scores),
+                actionItems: this.generateActionItems(averageScore, passRate)
+            }
+        };
+    }
+
+    // 创建默认学情分析
+    createDefaultPerformanceAnalysis(analysisData) {
+        const { questions = [], studentAnswers = [], subject = '通用' } = analysisData;
+
+        const totalStudents = studentAnswers.length;
+        const totalQuestions = questions.length;
+
+        // 计算基础统计
+        const scores = studentAnswers.map(s => s.score || 0);
+        const averageScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+        const passCount = scores.filter(score => score >= 60).length;
+        const passRate = totalStudents > 0 ? (passCount / totalStudents) * 100 : 0;
+
+        return {
+            overallPerformance: {
+                totalStudents,
+                averageScore: Math.round(averageScore * 100) / 100,
+                passRate: Math.round(passRate * 100) / 100,
+                scoreDistribution: this.calculateScoreDistribution(scores),
+                performanceTrend: '稳定'
+            },
+            knowledgePointAnalysis: this.analyzeKnowledgePoints(questions, studentAnswers),
+            studentIndividualAnalysis: this.analyzeIndividualStudents(studentAnswers),
+            teachingEffectiveness: {
+                goalAchievement: passRate > 80 ? '良好' : passRate > 60 ? '一般' : '需改进',
+                methodEffectiveness: '有效',
+                difficultyAlignment: '适中'
+            },
+            recommendations: {
+                teachingAdjustments: [
+                    '根据学生表现调整教学节奏',
+                    '加强薄弱知识点的讲解',
+                    '增加互动式教学环节'
+                ],
+                individualGuidance: this.generateIndividualGuidance(studentAnswers),
+                focusAreas: this.identifyFocusAreas(questions, studentAnswers)
+            },
+            aiInsights: {
+                keyFindings: [
+                    `班级平均分为${averageScore.toFixed(1)}分`,
+                    `及格率为${passRate.toFixed(1)}%`,
+                    `共有${totalStudents}名学生参与测评`
+                ],
+                predictiveAnalysis: this.generatePredictiveAnalysis(scores),
+                actionItems: this.generateActionItems(averageScore, passRate)
+            }
+        };
+    }
+
+    // 计算分数分布
+    calculateScoreDistribution(scores) {
+        const ranges = [
+            { range: '90-100', min: 90, max: 100, count: 0 },
+            { range: '80-89', min: 80, max: 89, count: 0 },
+            { range: '70-79', min: 70, max: 79, count: 0 },
+            { range: '60-69', min: 60, max: 69, count: 0 },
+            { range: '0-59', min: 0, max: 59, count: 0 }
+        ];
+
+        scores.forEach(score => {
+            const range = ranges.find(r => score >= r.min && score <= r.max);
+            if (range) range.count++;
+        });
+
+        return ranges;
+    }
+
+    // 分析知识点掌握情况
+    analyzeKnowledgePoints(questions, studentAnswers) {
+        const knowledgePointStats = {};
+
+        questions.forEach((question, qIndex) => {
+            const knowledgePoints = question.knowledgePoints || ['未分类'];
+
+            knowledgePoints.forEach(kp => {
+                if (!knowledgePointStats[kp]) {
+                    knowledgePointStats[kp] = {
+                        total: 0,
+                        correct: 0,
+                        mastered: 0,
+                        partiallyMastered: 0,
+                        notMastered: 0
+                    };
+                }
+
+                knowledgePointStats[kp].total += studentAnswers.length;
+
+                studentAnswers.forEach(student => {
+                    const answer = student.answers?.[qIndex];
+                    const isCorrect = answer?.isCorrect || false;
+
+                    if (isCorrect) {
+                        knowledgePointStats[kp].correct++;
+                        knowledgePointStats[kp].mastered++;
+                    } else {
+                        knowledgePointStats[kp].notMastered++;
+                    }
+                });
+            });
+        });
+
+        return knowledgePointStats;
+    }
+
+    // 分析个体学生表现
+    analyzeIndividualStudents(studentAnswers) {
+        return studentAnswers.map((student, index) => {
+            const score = student.score || 0;
+            const timeTaken = student.timeTaken || 0;
+
+            let performance = '需要提高';
+            if (score >= 90) performance = '优秀';
+            else if (score >= 80) performance = '良好';
+            else if (score >= 70) performance = '中等';
+            else if (score >= 60) performance = '及格';
+
+            let trend = '稳定';
+            if (student.previousScore) {
+                const improvement = score - student.previousScore;
+                if (improvement > 5) trend = '上升';
+                else if (improvement < -5) trend = '下降';
+            }
+
+            return {
+                studentId: student.studentId || `student_${index + 1}`,
+                studentName: student.studentName || `学生${index + 1}`,
+                score,
+                performance,
+                trend,
+                timeTaken,
+                strengths: this.identifyStudentStrengths(student),
+                weaknesses: this.identifyStudentWeaknesses(student),
+                recommendations: this.generateStudentRecommendations(student, score)
+            };
+        });
     }
 
     // 获取学习建议
@@ -2223,6 +2867,202 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
             generatedBy: 'Local Mock System',
             generatedAt: new Date().toISOString()
         };
+    }
+
+    // 识别学生优势
+    identifyStudentStrengths(student) {
+        const strengths = [];
+        const answers = student.answers || [];
+
+        // 基于答题情况识别优势
+        if (student.score >= 80) {
+            strengths.push('整体表现优秀');
+        }
+
+        if (student.timeTaken && student.timeTaken < 30) {
+            strengths.push('答题速度快');
+        }
+
+        // 分析答对的题目类型
+        answers.forEach((answer, index) => {
+            if (answer.isCorrect) {
+                if (answer.difficulty === 'hard') {
+                    strengths.push('能够解决难题');
+                }
+            }
+        });
+
+        return strengths.length > 0 ? strengths : ['基础扎实'];
+    }
+
+    // 识别学生薄弱点
+    identifyStudentWeaknesses(student) {
+        const weaknesses = [];
+        const answers = student.answers || [];
+
+        if (student.score < 60) {
+            weaknesses.push('基础知识需要加强');
+        }
+
+        if (student.timeTaken && student.timeTaken > 60) {
+            weaknesses.push('答题速度需要提升');
+        }
+
+        // 分析答错的题目类型
+        const wrongAnswers = answers.filter(a => !a.isCorrect);
+        if (wrongAnswers.length > answers.length * 0.5) {
+            weaknesses.push('知识点掌握不够牢固');
+        }
+
+        return weaknesses.length > 0 ? weaknesses : ['无明显薄弱点'];
+    }
+
+    // 生成学生个人建议
+    generateStudentRecommendations(student, score) {
+        const recommendations = [];
+
+        if (score >= 90) {
+            recommendations.push('继续保持优秀表现，可以挑战更高难度的题目');
+        } else if (score >= 80) {
+            recommendations.push('表现良好，注意巩固薄弱知识点');
+        } else if (score >= 70) {
+            recommendations.push('需要加强基础知识的学习和练习');
+        } else if (score >= 60) {
+            recommendations.push('建议重点复习基础概念，多做练习题');
+        } else {
+            recommendations.push('需要系统性地重新学习相关知识点');
+        }
+
+        if (student.timeTaken && student.timeTaken > 45) {
+            recommendations.push('建议提高答题速度，多做限时练习');
+        }
+
+        return recommendations;
+    }
+
+    // 生成教学建议
+    generateTeachingRecommendations(analysisText, averageScore, passRate) {
+        const recommendations = [];
+
+        if (averageScore < 70) {
+            recommendations.push('建议放慢教学节奏，加强基础知识讲解');
+        }
+
+        if (passRate < 80) {
+            recommendations.push('需要增加课堂练习和个别辅导');
+        }
+
+        if (analysisText.includes('困难') || analysisText.includes('薄弱')) {
+            recommendations.push('识别并重点关注学生的薄弱环节');
+        }
+
+        recommendations.push('建议采用多样化的教学方法提高学生参与度');
+
+        return recommendations;
+    }
+
+    // 生成个别指导建议
+    generateIndividualGuidance(studentAnswers) {
+        const guidance = [];
+
+        studentAnswers.forEach((student, index) => {
+            const score = student.score || 0;
+            const studentName = student.studentName || `学生${index + 1}`;
+
+            if (score < 60) {
+                guidance.push({
+                    student: studentName,
+                    type: '重点关注',
+                    suggestion: '需要额外的个别辅导和基础知识强化'
+                });
+            } else if (score >= 90) {
+                guidance.push({
+                    student: studentName,
+                    type: '优秀学生',
+                    suggestion: '可以承担小组学习的领导角色，挑战更高难度'
+                });
+            }
+        });
+
+        return guidance;
+    }
+
+    // 识别重点关注领域
+    identifyFocusAreas(questions, studentAnswers) {
+        const focusAreas = [];
+        const knowledgePointErrors = {};
+
+        questions.forEach((question, qIndex) => {
+            const knowledgePoints = question.knowledgePoints || ['未分类'];
+            const errorCount = studentAnswers.filter(student =>
+                !student.answers?.[qIndex]?.isCorrect
+            ).length;
+
+            knowledgePoints.forEach(kp => {
+                knowledgePointErrors[kp] = (knowledgePointErrors[kp] || 0) + errorCount;
+            });
+        });
+
+        // 找出错误率最高的知识点
+        const sortedErrors = Object.entries(knowledgePointErrors)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 3);
+
+        sortedErrors.forEach(([kp, errorCount]) => {
+            if (errorCount > studentAnswers.length * 0.3) {
+                focusAreas.push(kp);
+            }
+        });
+
+        return focusAreas.length > 0 ? focusAreas : ['基础知识巩固'];
+    }
+
+    // 提取关键发现
+    extractKeyFindings(text) {
+        const findings = [];
+
+        if (text.includes('优秀') || text.includes('良好')) {
+            findings.push('班级整体表现良好');
+        }
+
+        if (text.includes('薄弱') || text.includes('困难')) {
+            findings.push('存在需要重点关注的薄弱环节');
+        }
+
+        if (text.includes('提高') || text.includes('改进')) {
+            findings.push('有明确的改进空间和方向');
+        }
+
+        return findings.length > 0 ? findings : ['学习情况基本稳定'];
+    }
+
+    // 生成预测分析
+    generatePredictiveAnalysis(scores) {
+        const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+
+        return {
+            expectedTrend: averageScore > 75 ? '上升' : averageScore > 60 ? '稳定' : '需要关注',
+            riskStudents: scores.filter(s => s < 60).length,
+            potentialImprovement: Math.max(0, 85 - averageScore)
+        };
+    }
+
+    // 生成行动项目
+    generateActionItems(averageScore, passRate) {
+        const actions = [];
+
+        if (averageScore < 70) {
+            actions.push('制定基础知识强化计划');
+        }
+
+        if (passRate < 80) {
+            actions.push('安排额外的辅导时间');
+        }
+
+        actions.push('定期跟踪学生学习进度');
+        actions.push('调整教学策略以提高效果');
+
+        return actions;
     }
 }
 

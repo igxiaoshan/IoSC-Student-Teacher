@@ -60,11 +60,13 @@ const PracticeAssistant = () => {
     const [answers, setAnswers] = useState({});
     const [evaluations, setEvaluations] = useState({});
     const [practiceStats, setPracticeStats] = useState(null);
+    const [questionStartTime, setQuestionStartTime] = useState(Date.now());
 
     // 其他状态
     const [subjects, setSubjects] = useState([]);
     const [subjectsLoading, setSubjectsLoading] = useState(false);
     const [showResults, setShowResults] = useState(false);
+    const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
 
     const steps = ['配置练习', '开始练习', '查看结果'];
     const difficulties = ['简单', '中等', '困难'];
@@ -178,6 +180,7 @@ const PracticeAssistant = () => {
                 setAnswers({});
                 setEvaluations({});
                 setCurrentQuestionIndex(0);
+                setQuestionStartTime(Date.now()); // 开始第一题计时
                 setActiveStep(1);
                 setSuccess(`练习题目生成成功！共 ${validatedQuestions.length} 道题目`);
             } else {
@@ -214,13 +217,16 @@ const PracticeAssistant = () => {
                 return;
             }
 
+            // 计算实际答题时间（秒）
+            const timeTaken = Math.round((Date.now() - questionStartTime) / 1000);
+
             const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/student/ai/practice/submit`, {
                 studentId: studentId,
                 subjectId: practiceConfig.subjectId,
                 practiceId: practiceData.practiceId,
                 questionId: questionId,
                 studentAnswer: answer,
-                timeTaken: 60 // 可以记录实际答题时间
+                timeTaken: timeTaken
             });
 
             if (response.data.success) {
@@ -237,6 +243,7 @@ const PracticeAssistant = () => {
                     // 移动到下一题
                     if (currentQuestionIndex < practiceData.questions.length - 1) {
                         setCurrentQuestionIndex(prev => prev + 1);
+                        setQuestionStartTime(Date.now()); // 重置下一题的计时
                     }
                 }
             } else {
@@ -485,7 +492,10 @@ const PracticeAssistant = () => {
                         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
                             <Button
                                 disabled={currentQuestionIndex === 0}
-                                onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
+                                onClick={() => {
+                                    setCurrentQuestionIndex(prev => prev - 1);
+                                    setQuestionStartTime(Date.now()); // 重置计时器
+                                }}
                             >
                                 上一题
                             </Button>
@@ -504,6 +514,7 @@ const PracticeAssistant = () => {
                                     onClick={() => {
                                         if (currentQuestionIndex < practiceData.questions.length - 1) {
                                             setCurrentQuestionIndex(prev => prev + 1);
+                                            setQuestionStartTime(Date.now()); // 重置计时器
                                         } else {
                                             setActiveStep(2);
                                             setShowResults(true);
@@ -598,12 +609,179 @@ const PracticeAssistant = () => {
                         >
                             重新练习
                         </Button>
-                        <Button variant="contained">
+                        <Button
+                            variant="contained"
+                            onClick={() => setShowDetailedAnalysis(true)}
+                        >
                             查看详细分析
                         </Button>
                     </Box>
                 </Grid>
             </Grid>
+        );
+    };
+
+    // 渲染详细分析对话框
+    const renderDetailedAnalysis = () => {
+        if (!practiceData || !practiceData.questions) return null;
+
+        return (
+            <Dialog
+                open={showDetailedAnalysis}
+                onClose={() => setShowDetailedAnalysis(false)}
+                maxWidth="md"
+                fullWidth
+                scroll="paper"
+            >
+                <DialogTitle>
+                    <Typography variant="h6" component="div" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <QuizIcon color="primary" />
+                        练习详细分析
+                    </Typography>
+                </DialogTitle>
+
+                <DialogContent dividers>
+                    {/* 总体统计 */}
+                    <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                        <Typography variant="h6" gutterBottom>总体表现</Typography>
+                        <Grid container spacing={2}>
+                            <Grid item xs={3}>
+                                <Typography variant="body2" color="text.secondary">正确题数</Typography>
+                                <Typography variant="h6" color="success.main">
+                                    {practiceStats?.correctAnswers || 0} / {practiceData.questions.length}
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={3}>
+                                <Typography variant="body2" color="text.secondary">正确率</Typography>
+                                <Typography variant="h6" color="primary">
+                                    {practiceStats?.accuracy?.toFixed(1) || 0}%
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={3}>
+                                <Typography variant="body2" color="text.secondary">总得分</Typography>
+                                <Typography variant="h6" color="warning.main">
+                                    {practiceStats?.totalScore || 0}分
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={3}>
+                                <Typography variant="body2" color="text.secondary">平均用时</Typography>
+                                <Typography variant="h6">
+                                    {practiceStats?.averageTime?.toFixed(1) || 0}秒
+                                </Typography>
+                            </Grid>
+                        </Grid>
+                    </Box>
+
+                    {/* 题目详细分析 */}
+                    <Typography variant="h6" gutterBottom>题目详细分析</Typography>
+                    {practiceData.questions.map((question, index) => {
+                        const questionId = question.questionId || question.id || index;
+                        const userAnswer = answers[questionId];
+                        const evaluation = evaluations[questionId];
+
+                        return (
+                            <Card key={questionId} sx={{ mb: 2 }}>
+                                <CardContent>
+                                    {/* 题目标题 */}
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                        <Typography variant="subtitle1" fontWeight="bold">
+                                            题目 {index + 1}
+                                        </Typography>
+                                        <Chip
+                                            label={evaluation?.isCorrect ? '正确' : '错误'}
+                                            color={evaluation?.isCorrect ? 'success' : 'error'}
+                                            size="small"
+                                        />
+                                    </Box>
+
+                                    {/* 题目内容 */}
+                                    <Typography variant="body1" sx={{ mb: 2 }}>
+                                        {question.questionText || question.question}
+                                    </Typography>
+
+                                    {/* 选项（如果是选择题） */}
+                                    {question.options && question.options.length > 0 && (
+                                        <Box sx={{ mb: 2 }}>
+                                            {question.options.map((option, optIndex) => (
+                                                <Box key={optIndex} sx={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    mb: 1,
+                                                    p: 1,
+                                                    borderRadius: 1,
+                                                    bgcolor: option.isCorrect ? 'success.light' :
+                                                            (userAnswer === option.text || userAnswer === option.label) ? 'error.light' : 'transparent',
+                                                    color: option.isCorrect ? 'success.contrastText' :
+                                                           (userAnswer === option.text || userAnswer === option.label) ? 'error.contrastText' : 'inherit'
+                                                }}>
+                                                    <Typography variant="body2">
+                                                        {option.label || String.fromCharCode(65 + optIndex)}. {option.text}
+                                                        {option.isCorrect && ' ✓ (正确答案)'}
+                                                        {(userAnswer === option.text || userAnswer === option.label) && !option.isCorrect && ' ✗ (你的答案)'}
+                                                    </Typography>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    )}
+
+                                    {/* 你的答案 */}
+                                    <Box sx={{ mb: 2 }}>
+                                        <Typography variant="body2" color="text.secondary">你的答案：</Typography>
+                                        <Typography variant="body1" color={evaluation?.isCorrect ? 'success.main' : 'error.main'}>
+                                            {userAnswer || '未作答'}
+                                        </Typography>
+                                    </Box>
+
+                                    {/* 评估反馈 */}
+                                    {evaluation && (
+                                        <Box sx={{ mb: 2 }}>
+                                            <Alert
+                                                severity={evaluation.isCorrect ? 'success' : 'error'}
+                                                sx={{ mb: 1 }}
+                                            >
+                                                <Typography variant="body2">
+                                                    <strong>得分：</strong>{evaluation.score || 0}分
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    <strong>反馈：</strong>{evaluation.feedback}
+                                                </Typography>
+                                            </Alert>
+
+                                            {evaluation.errorAnalysis && (
+                                                <Alert severity="info">
+                                                    <Typography variant="body2">
+                                                        <strong>改进建议：</strong>{evaluation.errorAnalysis.suggestion}
+                                                    </Typography>
+                                                    {evaluation.errorAnalysis.correctAnswer && (
+                                                        <Typography variant="body2">
+                                                            <strong>正确答案：</strong>{evaluation.errorAnalysis.correctAnswer}
+                                                        </Typography>
+                                                    )}
+                                                </Alert>
+                                            )}
+                                        </Box>
+                                    )}
+
+                                    {/* 题目解析 */}
+                                    {(question.explanation || question.解析) && (
+                                        <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
+                                            <Typography variant="body2" color="info.contrastText">
+                                                <strong>题目解析：</strong>{question.explanation || question.解析}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
+                </DialogContent>
+
+                <DialogActions>
+                    <Button onClick={() => setShowDetailedAnalysis(false)}>
+                        关闭
+                    </Button>
+                </DialogActions>
+            </Dialog>
         );
     };
 
@@ -639,6 +817,9 @@ const PracticeAssistant = () => {
                 {activeStep === 1 && renderPracticeStep()}
                 {activeStep === 2 && renderResultsStep()}
             </Paper>
+
+            {/* 详细分析对话框 */}
+            {renderDetailedAnalysis()}
         </Container>
     );
 };
