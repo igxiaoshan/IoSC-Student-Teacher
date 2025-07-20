@@ -59,12 +59,12 @@ const TeacherSideBar = () => {
                     </ListItemIcon>
                     <ListItemText primary="实训练习生成" />
                 </ListItemButton>
-                <ListItemButton component={Link} to="/Teacher/analytics">
+                {/* <ListItemButton component={Link} to="/Teacher/analytics">
                     <ListItemIcon>
                         <AnalyticsIcon color={location.pathname.startsWith("/Teacher/analytics") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
                     <ListItemText primary={tTeacher('studentAnalytics')} />
-                </ListItemButton>
+                </ListItemButton> */}
             </React.Fragment>
             <Divider sx={{ my: 1 }} />
             <React.Fragment>
