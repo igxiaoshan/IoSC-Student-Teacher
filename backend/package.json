@@ -29,6 +29,7 @@
     "nodemon": "^2.0.22",
     "path": "^0.12.7",
     "pdf-parse": "^1.1.1",
+    "uuid": "^11.1.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

@@ -150,7 +150,7 @@ class AIResponseParser {
     static parsePerformanceAnalysis(response) {
         try {
             const parsed = JSON.parse(response);
-            
+
             return {
                 success: true,
                 data: {
@@ -170,6 +170,257 @@ class AIResponseParser {
         } catch (error) {
             return { success: false, error: '解析性能分析失败', rawResponse: response };
         }
+    }
+
+    /**
+     * 解析实训练习响应 - 多元化解析方案
+     */
+    static parsePracticalExercise(response) {
+        console.log('🔍 开始多元化解析实训练习响应...');
+
+        try {
+            // 方案1: 直接JSON解析
+            const parsed = JSON.parse(response);
+            console.log('✅ JSON解析成功');
+
+            // 检测不同的响应格式
+            let exerciseData = null;
+            let questions = [];
+
+            // 格式1: 标准格式 { exercises: [...] }
+            if (parsed.exercises && Array.isArray(parsed.exercises)) {
+                console.log('检测到标准exercises格式');
+                exerciseData = parsed;
+                questions = parsed.exercises;
+            }
+            // 格式2: Dify嵌套格式 { 实训练习: { 题目列表: [...] } }
+            else if (parsed.实训练习 && parsed.实训练习.题目列表) {
+                console.log('检测到Dify嵌套格式');
+                exerciseData = parsed.实训练习;
+                questions = parsed.实训练习.题目列表;
+            }
+            // 格式3: 直接题目数组 [...]
+            else if (Array.isArray(parsed)) {
+                console.log('检测到直接数组格式');
+                questions = parsed;
+                exerciseData = { questions: parsed };
+            }
+            // 格式4: 单层对象包含题目
+            else if (parsed.题目列表 && Array.isArray(parsed.题目列表)) {
+                console.log('检测到单层题目列表格式');
+                exerciseData = parsed;
+                questions = parsed.题目列表;
+            }
+
+            if (questions && questions.length > 0) {
+                // 转换题目格式，处理类型转换问题
+                const convertedQuestions = questions.map((q, index) => {
+                    return this.convertPracticalQuestion(q, index);
+                });
+
+                console.log(`✅ 成功解析${convertedQuestions.length}道实训题目`);
+
+                return {
+                    success: true,
+                    data: {
+                        title: exerciseData.练习信息?.练习标题 || exerciseData.title || '实训练习',
+                        description: exerciseData.练习信息?.练习描述 || exerciseData.description || '',
+                        questions: convertedQuestions,
+                        difficulty: exerciseData.练习信息?.难度等级 || exerciseData.difficulty || '中级',
+                        duration: exerciseData.练习信息?.练习时长 || exerciseData.duration || 120,
+                        targetSkills: exerciseData.练习信息?.目标技能 || exerciseData.targetSkills || [],
+                        exerciseType: exerciseData.练习信息?.实训类型 || exerciseData.exerciseType || '综合实训',
+                        aiGenerated: true,
+                        generatedAt: new Date()
+                    }
+                };
+            }
+
+        } catch (jsonError) {
+            console.log('JSON解析失败，尝试文本解析:', jsonError.message);
+
+            // 方案2: 文本解析
+            return this.parseUnstructuredPracticalExercise(response);
+        }
+
+        return { success: false, error: '无法解析实训练习响应', rawResponse: response };
+    }
+
+    /**
+     * 转换实训题目格式，处理类型问题
+     */
+    static convertPracticalQuestion(q, index) {
+        // 智能处理explanation字段
+        let explanationText = '';
+        if (q.知识点说明) {
+            if (Array.isArray(q.知识点说明)) {
+                explanationText = q.知识点说明.join('、');
+            } else {
+                explanationText = String(q.知识点说明);
+            }
+        } else if (q.解析说明) {
+            if (Array.isArray(q.解析说明)) {
+                explanationText = q.解析说明.join('、');
+            } else {
+                explanationText = String(q.解析说明);
+            }
+        } else if (q.explanation) {
+            if (Array.isArray(q.explanation)) {
+                explanationText = q.explanation.join('、');
+            } else {
+                explanationText = String(q.explanation);
+            }
+        } else {
+            explanationText = '本题考查实际操作能力和问题解决能力';
+        }
+
+        // 智能处理knowledgePoints字段
+        let knowledgePointsArray = [];
+        if (q.知识点说明 && Array.isArray(q.知识点说明)) {
+            knowledgePointsArray = q.知识点说明.map(point => String(point));
+        } else if (q.knowledgePoints) {
+            if (Array.isArray(q.knowledgePoints)) {
+                knowledgePointsArray = q.knowledgePoints.map(point => String(point));
+            } else {
+                knowledgePointsArray = [String(q.knowledgePoints)];
+            }
+        } else {
+            knowledgePointsArray = ['基础概念', '实际操作'];
+        }
+
+        // 处理评分标准
+        let gradingCriteria = [];
+        if (q.评分标准) {
+            if (Array.isArray(q.评分标准)) {
+                gradingCriteria = q.评分标准.map((criterion, idx) => ({
+                    criterion: String(criterion),
+                    points: 25,
+                    description: `评分标准${idx + 1}`
+                }));
+            }
+        }
+
+        // 处理实训步骤
+        let requirements = [];
+        if (q.实训步骤和预期输出) {
+            if (Array.isArray(q.实训步骤和预期输出)) {
+                requirements = q.实训步骤和预期输出.map((step, idx) => ({
+                    step: idx + 1,
+                    description: String(step),
+                    expectedOutput: ''
+                }));
+            }
+        } else if (q.题目要求) {
+            if (Array.isArray(q.题目要求)) {
+                requirements = q.题目要求.map((req, idx) => ({
+                    step: idx + 1,
+                    description: String(req),
+                    expectedOutput: ''
+                }));
+            }
+        }
+
+        return {
+            questionNumber: q.题目编号 || index + 1,
+            questionType: '实操题',
+            questionText: String(q.题目描述 || q.questionText || ''),
+            requirements: requirements,
+            referenceAnswer: String(q.参考答案和实现方案 || q.referenceAnswer || ''),
+            codeTemplate: {
+                language: 'python',
+                template: String(q.代码模板 || q.codeTemplate || ''),
+                testCases: []
+            },
+            gradingCriteria: gradingCriteria,
+            explanation: explanationText, // 确保是字符串
+            difficulty: String(q.difficulty || '中级'),
+            points: Number(q.分值 || q.points || 20),
+            estimatedTime: Number(q.预计时间 || q.estimatedTime || 30),
+            knowledgePoints: knowledgePointsArray, // 确保是字符串数组
+            environmentRequirements: {
+                software: String(q.环境要求 || q.environmentRequirements || 'Python 3.x'),
+                hardware: '标准计算机配置',
+                platforms: ['Windows', 'macOS', 'Linux']
+            }
+        };
+    }
+
+    /**
+     * 解析非结构化实训练习文本
+     */
+    static parseUnstructuredPracticalExercise(response) {
+        console.log('🔍 尝试文本解析实训练习...');
+
+        try {
+            // 简单的文本解析逻辑
+            const questions = [];
+            const lines = response.split('\n').filter(line => line.trim());
+
+            let currentQuestion = null;
+            let questionCount = 0;
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+
+                // 检测题目开始
+                if (trimmedLine.match(/^(\d+[\.\)、]|题目\d+|练习\d+)/)) {
+                    if (currentQuestion) {
+                        questions.push(currentQuestion);
+                    }
+
+                    questionCount++;
+                    currentQuestion = {
+                        questionNumber: questionCount,
+                        questionType: '实操题',
+                        questionText: trimmedLine.replace(/^(\d+[\.\)、]|题目\d+|练习\d+)[：:]?\s*/, ''),
+                        requirements: [],
+                        referenceAnswer: '请根据题目要求完成相应操作',
+                        explanation: '本题考查实际操作能力',
+                        difficulty: '中级',
+                        points: 20,
+                        estimatedTime: 30,
+                        knowledgePoints: ['基础概念'],
+                        environmentRequirements: {
+                            software: 'Python 3.x',
+                            hardware: '标准计算机配置',
+                            platforms: ['Windows', 'macOS', 'Linux']
+                        }
+                    };
+                } else if (currentQuestion && trimmedLine) {
+                    // 将其他内容添加到当前题目的描述中
+                    if (currentQuestion.questionText.length < 200) {
+                        currentQuestion.questionText += ' ' + trimmedLine;
+                    }
+                }
+            }
+
+            if (currentQuestion) {
+                questions.push(currentQuestion);
+            }
+
+            if (questions.length > 0) {
+                console.log(`✅ 文本解析成功，解析出${questions.length}道题目`);
+                return {
+                    success: true,
+                    data: {
+                        title: '实训练习',
+                        description: '基于AI生成的实训练习',
+                        questions: questions,
+                        difficulty: '中级',
+                        duration: questions.length * 30,
+                        targetSkills: ['实际操作', '问题解决'],
+                        exerciseType: '综合实训',
+                        aiGenerated: true,
+                        generatedAt: new Date()
+                    }
+                };
+            }
+
+        } catch (error) {
+            console.error('文本解析失败:', error);
+        }
+
+        return { success: false, error: '文本解析失败', rawResponse: response };
     }
 
     // 辅助验证方法

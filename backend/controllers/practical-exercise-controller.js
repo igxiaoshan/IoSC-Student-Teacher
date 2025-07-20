@@ -4,6 +4,7 @@ const Teacher = require('../models/teacherSchema');
 const Subject = require('../models/subjectSchema');
 const difyService = require('../services/difyService');
 const smartDifyWrapper = require('../services/smartDifyWrapper');
+const AIResponseParser = require('../utils/aiResponseParser');
 
 /**
  * 生成实训练习
@@ -80,8 +81,24 @@ const generatePracticalExercise = async (req, res) => {
             });
 
             if (difyResponse.success) {
-                aiGeneratedExercise = difyResponse.data;
-                dataSource = difyResponse.source;
+                // 使用多元化解析器处理Dify响应
+                if (difyResponse.rawResponse) {
+                    console.log('🔍 使用多元化解析器处理Dify响应...');
+                    const parseResult = AIResponseParser.parsePracticalExercise(difyResponse.rawResponse);
+
+                    if (parseResult.success) {
+                        console.log('✅ 多元化解析成功');
+                        aiGeneratedExercise = parseResult.data;
+                        dataSource = 'dify_parsed';
+                    } else {
+                        console.log('⚠️ 多元化解析失败，使用原始数据');
+                        aiGeneratedExercise = difyResponse.data;
+                        dataSource = difyResponse.source;
+                    }
+                } else {
+                    aiGeneratedExercise = difyResponse.data;
+                    dataSource = difyResponse.source;
+                }
                 console.log(`实训练习生成成功，数据源: ${dataSource}`);
             } else {
                 throw new Error('Dify服务返回失败响应');
@@ -107,22 +124,52 @@ const generatePracticalExercise = async (req, res) => {
             });
         }
 
-        // 转换题目格式
-        const convertedQuestions = (aiGeneratedExercise.questions || []).map((q, index) => ({
-            questionNumber: index + 1,
-            questionType: q.type || q.questionType || '实操题',
-            questionText: q.question || q.questionText || '',
-            requirements: q.requirements || [],
-            referenceAnswer: q.referenceAnswer || q.answer || '',
-            codeTemplate: q.codeTemplate || null,
-            gradingCriteria: q.gradingCriteria || [],
-            explanation: q.explanation || '',
-            difficulty: q.difficulty || difficulty,
-            points: q.points || 20,
-            estimatedTime: q.estimatedTime || Math.floor(duration / questionCount),
-            knowledgePoints: q.knowledgePoints || [],
-            environmentRequirements: q.environmentRequirements || {}
-        }));
+        // 转换题目格式 - 类型安全转换
+        const convertedQuestions = (aiGeneratedExercise.questions || []).map((q, index) => {
+            // 确保explanation字段是字符串类型
+            let explanationText = '';
+            if (q.explanation) {
+                if (Array.isArray(q.explanation)) {
+                    explanationText = q.explanation.join('、');
+                } else {
+                    explanationText = String(q.explanation);
+                }
+            } else {
+                explanationText = '本题考查实际操作能力和问题解决能力';
+            }
+
+            // 确保knowledgePoints字段是字符串数组
+            let knowledgePointsArray = [];
+            if (q.knowledgePoints) {
+                if (Array.isArray(q.knowledgePoints)) {
+                    knowledgePointsArray = q.knowledgePoints.map(point => String(point));
+                } else {
+                    knowledgePointsArray = [String(q.knowledgePoints)];
+                }
+            } else {
+                knowledgePointsArray = ['基础概念', '实际操作'];
+            }
+
+            return {
+                questionNumber: q.questionNumber || index + 1,
+                questionType: q.type || q.questionType || '实操题',
+                questionText: String(q.question || q.questionText || ''),
+                requirements: Array.isArray(q.requirements) ? q.requirements : [],
+                referenceAnswer: String(q.referenceAnswer || q.answer || ''),
+                codeTemplate: q.codeTemplate || null,
+                gradingCriteria: Array.isArray(q.gradingCriteria) ? q.gradingCriteria : [],
+                explanation: explanationText, // 确保是字符串
+                difficulty: String(q.difficulty || difficulty),
+                points: Number(q.points || 20),
+                estimatedTime: Number(q.estimatedTime || Math.floor(duration / questionCount)),
+                knowledgePoints: knowledgePointsArray, // 确保是字符串数组
+                environmentRequirements: q.environmentRequirements || {
+                    software: ['Python 3.x'],
+                    hardware: ['标准计算机配置'],
+                    platforms: ['Windows', 'macOS', 'Linux']
+                }
+            };
+        });
 
         // 计算总分
         const totalPoints = convertedQuestions.reduce((sum, q) => sum + (q.points || 0), 0) || 100;

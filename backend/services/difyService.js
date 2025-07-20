@@ -2457,7 +2457,8 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
                     success: true,
                     data: exerciseContent,
                     source: 'dify',
-                    conversation_id: response.conversation_id
+                    conversation_id: response.conversation_id,
+                    rawResponse: response.answer // 保留原始响应用于多元化解析
                 };
             } else {
                 throw new Error('Dify返回的响应格式不正确');
@@ -2578,6 +2579,60 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
                         }
                     }
 
+                    // 处理知识点说明字段 - 智能类型转换
+                    let explanationText = '';
+                    let knowledgePointsArray = [];
+
+                    // 处理知识点说明字段的多种格式
+                    if (q.知识点说明) {
+                        if (Array.isArray(q.知识点说明)) {
+                            // 如果是数组，转换为字符串用于explanation，保留数组用于knowledgePoints
+                            explanationText = q.知识点说明.join('、');
+                            knowledgePointsArray = q.知识点说明;
+                        } else if (typeof q.知识点说明 === 'string') {
+                            // 如果是字符串，直接使用
+                            explanationText = q.知识点说明;
+                            knowledgePointsArray = [q.知识点说明];
+                        }
+                    }
+
+                    // 备用解析说明字段
+                    if (!explanationText && q.解析说明) {
+                        if (Array.isArray(q.解析说明)) {
+                            explanationText = q.解析说明.join('、');
+                        } else {
+                            explanationText = q.解析说明;
+                        }
+                    }
+
+                    // 备用explanation字段
+                    if (!explanationText && q.explanation) {
+                        if (Array.isArray(q.explanation)) {
+                            explanationText = q.explanation.join('、');
+                        } else {
+                            explanationText = q.explanation;
+                        }
+                    }
+
+                    // 如果还是没有explanation，使用默认值
+                    if (!explanationText) {
+                        explanationText = '本题考查实际操作能力和问题解决能力';
+                    }
+
+                    // 处理knowledgePoints字段
+                    if (knowledgePointsArray.length === 0) {
+                        if (q.knowledgePoints) {
+                            if (Array.isArray(q.knowledgePoints)) {
+                                knowledgePointsArray = q.knowledgePoints;
+                            } else {
+                                knowledgePointsArray = [q.knowledgePoints];
+                            }
+                        } else {
+                            // 使用默认知识点
+                            knowledgePointsArray = ['基础概念', '实际操作'];
+                        }
+                    }
+
                     return {
                         questionNumber: q.题目编号 || q.题号 || index + 1,
                         questionType: '实操题', // 默认类型
@@ -2596,10 +2651,10 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
                             testCases: []
                         },
                         gradingCriteria: gradingCriteria,
-                        explanation: q.知识点说明 || q.解析说明 || q.explanation || '',
+                        explanation: explanationText, // 确保是字符串类型
                         points: q.分值 || 20,
                         estimatedTime: q.预计时间 || 30,
-                        knowledgePoints: q.知识点说明 || q.knowledgePoints || [],
+                        knowledgePoints: knowledgePointsArray, // 确保是字符串数组类型
                         environmentRequirements: {
                             software: q.环境要求 || q.environmentRequirements || 'Python 3.7+',
                             hardware: '标准计算机配置',
