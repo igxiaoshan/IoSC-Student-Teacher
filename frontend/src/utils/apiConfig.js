@@ -119,12 +119,15 @@ export const aiAPI = {
 
     // 实训练习生成 - 增加超时时间
     generatePracticalExercise: (teacherId, data) => api.post(`/ai/practical-exercise/generate/${teacherId}`, data, { timeout: 60000 }),
-    getTeacherPracticalExercises: (teacherId) => api.get(`/ai/practical-exercise/teacher/${teacherId}`),
+    getTeacherPracticalExercises: (teacherId, params) => api.get(`/ai/practical-exercise/teacher/${teacherId}`, { params }),
     getPracticalExerciseById: (exerciseId) => api.get(`/ai/practical-exercise/${exerciseId}`),
     updatePracticalExercise: (exerciseId, data) => api.put(`/ai/practical-exercise/${exerciseId}`, data),
-    deletePracticalExercise: (exerciseId) => api.delete(`/ai/practical-exercise/${exerciseId}`),
+    deletePracticalExercise: (exerciseId, data) => api.delete(`/ai/practical-exercise/${exerciseId}`, { data }),
+    copyPracticalExercise: (exerciseId, data) => api.post(`/ai/practical-exercise/${exerciseId}/copy`, data),
+    batchDeletePracticalExercises: (data) => api.post('/ai/practical-exercise/batch/delete', data),
     exportPracticalExerciseToWord: (exercise) => api.post('/ai/practical-exercise/export/word', { exercise }, { responseType: 'blob' }),
-    publishPracticalExercise: (exerciseId) => api.put(`/ai/practical-exercise/${exerciseId}/publish`),
+    exportPracticalExerciseByIdToWord: (exerciseId) => api.post(`/ai/practical-exercise/${exerciseId}/export/word`, {}, { responseType: 'blob' }),
+    publishPracticalExercise: (exerciseId, data) => api.put(`/ai/practical-exercise/${exerciseId}/publish`, data),
     sharePracticalExercise: (exerciseId, data) => api.post(`/ai/practical-exercise/${exerciseId}/share`, data),
 
 

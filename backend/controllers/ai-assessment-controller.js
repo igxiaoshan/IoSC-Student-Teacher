@@ -849,8 +849,12 @@ const exportAssessmentDataToWord = async (req, res) => {
 
         const buffer = await Packer.toBuffer(doc);
 
+        // 安全处理文件名
+        const filename = `assessment_${Date.now()}.docx`;
+        const encodedFilename = encodeURIComponent(filename);
+
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-        res.setHeader('Content-Disposition', `attachment; filename="assessment_${Date.now()}.docx"`);
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodedFilename}`);
         res.send(buffer);
 
     } catch (error) {
@@ -1027,8 +1031,12 @@ const exportAssessmentToWord = async (req, res) => {
 
         const buffer = await Packer.toBuffer(doc);
 
+        // 安全处理文件名
+        const filename = `assessment_${id}_${Date.now()}.docx`;
+        const encodedFilename = encodeURIComponent(filename);
+
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-        res.setHeader('Content-Disposition', `attachment; filename="assessment_${id}_${Date.now()}.docx"`);
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodedFilename}`);
         res.send(buffer);
 
     } catch (error) {

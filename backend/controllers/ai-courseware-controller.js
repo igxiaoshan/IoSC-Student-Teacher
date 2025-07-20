@@ -1239,9 +1239,12 @@ const exportCoursewareToWord = async (req, res) => {
         // 生成Word文档
         const buffer = await Packer.toBuffer(doc);
 
-        // 设置响应头
+        // 设置响应头 - 安全处理文件名
+        const filename = `courseware_${id}_${Date.now()}.docx`;
+        const encodedFilename = encodeURIComponent(filename);
+
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-        res.setHeader('Content-Disposition', `attachment; filename="courseware_${id}_${Date.now()}.docx"`);
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodedFilename}`);
 
         // 发送文件
         res.send(buffer);

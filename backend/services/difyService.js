@@ -1873,7 +1873,10 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
         try {
             // 尝试解析JSON格式
             console.log('尝试解析JSON格式的实训练习内容...');
+            console.log('原始内容长度:', content.length);
+            console.log('内容前500字符:', content.substring(0, 500));
             const parsed = JSON.parse(content);
+            console.log('JSON解析成功，检测到的顶级字段:', Object.keys(parsed));
 
             // 支持多种JSON结构
             let questions = null;
@@ -1893,32 +1896,63 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
             else if (parsed.题目列表 && Array.isArray(parsed.题目列表)) {
                 questions = parsed.题目列表;
             }
+            // 结构4: 新的Dify响应格式 - 题目详情数组
+            else if (parsed.题目详情 && Array.isArray(parsed.题目详情)) {
+                questions = parsed.题目详情;
+                exerciseInfo = {
+                    练习标题: parsed.练习标题,
+                    练习描述: parsed.练习描述,
+                    难度等级: parsed.难度等级,
+                    题目数量: parsed.题目数量,
+                    题目类型: parsed.题目类型,
+                    练习时长: parsed.练习时长,
+                    关注领域: parsed.关注领域,
+                    目标技能: parsed.目标技能,
+                    实训类型: parsed.实训类型
+                };
+                console.log('检测到新的Dify响应格式，成功提取题目详情');
+            }
 
             if (questions && questions.length > 0) {
                 // 转换Dify格式的题目到标准格式
                 const convertedQuestions = questions.map((q, index) => {
+                    // 处理评分标准 - 支持数组格式
+                    let gradingCriteria = [];
+                    if (q.评分标准) {
+                        if (Array.isArray(q.评分标准)) {
+                            gradingCriteria = q.评分标准.map((criterion, index) => ({
+                                criterion: criterion,
+                                points: 25, // 默认分值
+                                description: `评分标准${index + 1}`
+                            }));
+                        } else if (typeof q.评分标准 === 'object') {
+                            gradingCriteria = Object.entries(q.评分标准).map(([criterion, points]) => ({
+                                criterion,
+                                points: typeof points === 'number' ? points : 10,
+                                description: `${criterion}评分标准`
+                            }));
+                        }
+                    }
+
                     return {
-                        questionNumber: q.题号 || index + 1,
+                        questionNumber: q.题目编号 || q.题号 || index + 1,
                         questionType: '实操题', // 默认类型
-                        questionText: q.题目描述和要求 || q.questionText || '',
-                        requirements: Array.isArray(q.实训步骤和预期输出) ?
-                            q.实训步骤和预期输出.map((step, i) => ({
-                                step: i + 1,
-                                description: step,
-                                expectedOutput: ''
-                            })) : [],
+                        questionText: q.题目描述 || q.题目描述和要求 || q.questionText || '',
+                        requirements: q.要求 ? (Array.isArray(q.要求) ? q.要求 : [q.要求]) :
+                                     Array.isArray(q.实训步骤和预期输出) ?
+                                     q.实训步骤和预期输出.map((step, i) => ({
+                                         step: i + 1,
+                                         description: step,
+                                         expectedOutput: ''
+                                     })) : [],
                         referenceAnswer: q.参考答案和实现方案 || q.referenceAnswer || '',
                         codeTemplate: {
                             language: 'python',
                             template: q.代码模板 || q.codeTemplate || '',
                             testCases: []
                         },
-                        gradingCriteria: q.评分标准 ? Object.entries(q.评分标准).map(([criterion, points]) => ({
-                            criterion,
-                            points: typeof points === 'number' ? points : 10,
-                            description: `${criterion}评分标准`
-                        })) : [],
-                        explanation: q.解析说明 || q.explanation || '',
+                        gradingCriteria: gradingCriteria,
+                        explanation: q.知识点说明 || q.解析说明 || q.explanation || '',
                         points: q.分值 || 20,
                         estimatedTime: q.预计时间 || 30,
                         knowledgePoints: q.知识点说明 || q.knowledgePoints || [],

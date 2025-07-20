@@ -193,7 +193,10 @@ const getTeacherPracticalExercises = async (req, res) => {
         const { teacherId } = req.params;
         const { page = 1, limit = 10, status, difficulty, exerciseType } = req.query;
 
-        const filter = { teacher: teacherId };
+        const filter = {
+            teacher: teacherId,
+            status: { $ne: '已删除' } // 排除已删除的记录
+        };
         if (status) filter.status = status;
         if (difficulty) filter.difficulty = difficulty;
         if (exerciseType) filter.exerciseType = exerciseType;
@@ -271,16 +274,53 @@ const updatePracticalExercise = async (req, res) => {
         const { exerciseId } = req.params;
         const updateData = req.body;
 
+        // 验证实训练习是否存在
+        const existingExercise = await PracticalExercise.findById(exerciseId);
+        if (!existingExercise) {
+            return res.status(404).json({
+                success: false,
+                message: '实训练习不存在'
+            });
+        }
+
+        // 验证权限（只有创建者可以编辑）
+        if (updateData.teacherId && existingExercise.teacher.toString() !== updateData.teacherId) {
+            return res.status(403).json({
+                success: false,
+                message: '无权限编辑此实训练习'
+            });
+        }
+
+        // 准备更新数据
+        const allowedUpdates = [
+            'title', 'description', 'difficulty', 'duration', 'exerciseType',
+            'targetSkills', 'questions', 'status'
+        ];
+
+        const filteredUpdateData = {};
+        allowedUpdates.forEach(field => {
+            if (updateData[field] !== undefined) {
+                filteredUpdateData[field] = updateData[field];
+            }
+        });
+
+        // 重新计算总分
+        if (filteredUpdateData.questions) {
+            filteredUpdateData.totalPoints = filteredUpdateData.questions.reduce(
+                (total, question) => total + (question.points || 0), 0
+            );
+        }
+
+        // 更新时间戳
+        filteredUpdateData.updatedAt = new Date();
+
         const exercise = await PracticalExercise.findByIdAndUpdate(
             exerciseId,
-            { ...updateData, updatedAt: new Date() },
+            filteredUpdateData,
             { new: true, runValidators: true }
         ).populate('subject', 'subName subCode')
-         .populate('courseware', 'title');
-
-        if (!exercise) {
-            return res.status(404).json({ message: '实训练习不存在' });
-        }
+         .populate('courseware', 'title')
+         .populate('teacher', 'name');
 
         res.json({
             success: true,
@@ -290,10 +330,10 @@ const updatePracticalExercise = async (req, res) => {
 
     } catch (error) {
         console.error('更新实训练习错误:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            message: '更新实训练习失败', 
-            error: error.message 
+            message: '更新实训练习失败',
+            error: error.message
         });
     }
 };
@@ -304,24 +344,61 @@ const updatePracticalExercise = async (req, res) => {
 const deletePracticalExercise = async (req, res) => {
     try {
         const { exerciseId } = req.params;
+        const { teacherId, forceDelete = false } = req.body;
 
-        const exercise = await PracticalExercise.findByIdAndDelete(exerciseId);
-
+        // 验证实训练习是否存在
+        const exercise = await PracticalExercise.findById(exerciseId);
         if (!exercise) {
-            return res.status(404).json({ message: '实训练习不存在' });
+            return res.status(404).json({
+                success: false,
+                message: '实训练习不存在'
+            });
         }
 
-        res.json({
-            success: true,
-            message: '实训练习删除成功'
-        });
+        // 验证权限（只有创建者可以删除）
+        if (teacherId && exercise.teacher.toString() !== teacherId) {
+            return res.status(403).json({
+                success: false,
+                message: '无权限删除此实训练习'
+            });
+        }
+
+        // 检查是否有学生提交记录
+        // 这里可以添加检查学生提交记录的逻辑
+        // const hasSubmissions = await StudentSubmission.exists({ exerciseId });
+
+        if (forceDelete) {
+            // 硬删除
+            await PracticalExercise.findByIdAndDelete(exerciseId);
+            res.json({
+                success: true,
+                message: '实训练习已永久删除'
+            });
+        } else {
+            // 软删除 - 更新状态为已删除
+            const deletedExercise = await PracticalExercise.findByIdAndUpdate(
+                exerciseId,
+                {
+                    status: '已删除',
+                    deletedAt: new Date(),
+                    updatedAt: new Date()
+                },
+                { new: true }
+            );
+
+            res.json({
+                success: true,
+                message: '实训练习已删除',
+                exercise: deletedExercise
+            });
+        }
 
     } catch (error) {
         console.error('删除实训练习错误:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            message: '删除实训练习失败', 
-            error: error.message 
+            message: '删除实训练习失败',
+            error: error.message
         });
     }
 };
@@ -407,10 +484,206 @@ function generateMockPracticalExercise(params) {
     };
 }
 
+/**
+ * 复制实训练习
+ */
+const copyPracticalExercise = async (req, res) => {
+    try {
+        const { exerciseId } = req.params;
+        const { title, teacherId } = req.body;
+
+        // 获取原实训练习
+        const originalExercise = await PracticalExercise.findById(exerciseId);
+        if (!originalExercise) {
+            return res.status(404).json({
+                success: false,
+                message: '原实训练习不存在'
+            });
+        }
+
+        // 验证教师权限
+        const teacher = await Teacher.findById(teacherId);
+        if (!teacher) {
+            return res.status(404).json({
+                success: false,
+                message: '教师不存在'
+            });
+        }
+
+        // 创建副本
+        const exerciseCopy = new PracticalExercise({
+            title: title || `${originalExercise.title} - 副本`,
+            description: originalExercise.description,
+            courseware: originalExercise.courseware,
+            teacher: teacherId,
+            subject: originalExercise.subject,
+            school: teacher.school,
+            questions: originalExercise.questions.map(q => ({
+                ...q.toObject(),
+                _id: undefined // 移除原ID，让MongoDB生成新ID
+            })),
+            totalPoints: originalExercise.totalPoints,
+            duration: originalExercise.duration,
+            difficulty: originalExercise.difficulty,
+            exerciseType: originalExercise.exerciseType,
+            targetSkills: [...originalExercise.targetSkills],
+            isAIGenerated: originalExercise.isAIGenerated,
+            status: '草稿',
+            usageStats: {
+                viewCount: 0,
+                downloadCount: 0,
+                completionCount: 0
+            }
+        });
+
+        const savedCopy = await exerciseCopy.save();
+        await savedCopy.populate('subject', 'subName subCode');
+        await savedCopy.populate('courseware', 'title');
+        await savedCopy.populate('teacher', 'name');
+
+        res.json({
+            success: true,
+            message: '实训练习复制成功',
+            exercise: savedCopy
+        });
+
+    } catch (error) {
+        console.error('复制实训练习错误:', error);
+        res.status(500).json({
+            success: false,
+            message: '复制实训练习失败',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * 批量删除实训练习
+ */
+const batchDeletePracticalExercises = async (req, res) => {
+    try {
+        const { exerciseIds, teacherId, forceDelete = false } = req.body;
+
+        if (!exerciseIds || !Array.isArray(exerciseIds) || exerciseIds.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: '请提供要删除的实训练习ID列表'
+            });
+        }
+
+        // 验证所有实训练习都属于该教师
+        const exercises = await PracticalExercise.find({
+            _id: { $in: exerciseIds },
+            teacher: teacherId
+        });
+
+        if (exercises.length !== exerciseIds.length) {
+            return res.status(403).json({
+                success: false,
+                message: '部分实训练习不存在或无权限删除'
+            });
+        }
+
+        let result;
+        if (forceDelete) {
+            // 硬删除
+            result = await PracticalExercise.deleteMany({
+                _id: { $in: exerciseIds },
+                teacher: teacherId
+            });
+        } else {
+            // 软删除
+            result = await PracticalExercise.updateMany(
+                {
+                    _id: { $in: exerciseIds },
+                    teacher: teacherId
+                },
+                {
+                    status: '已删除',
+                    deletedAt: new Date(),
+                    updatedAt: new Date()
+                }
+            );
+        }
+
+        res.json({
+            success: true,
+            message: `成功删除 ${result.modifiedCount || result.deletedCount} 个实训练习`,
+            deletedCount: result.modifiedCount || result.deletedCount
+        });
+
+    } catch (error) {
+        console.error('批量删除实训练习错误:', error);
+        res.status(500).json({
+            success: false,
+            message: '批量删除失败',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * 发布实训练习
+ */
+const publishPracticalExercise = async (req, res) => {
+    try {
+        const { exerciseId } = req.params;
+        const { teacherId } = req.body;
+
+        const exercise = await PracticalExercise.findById(exerciseId);
+        if (!exercise) {
+            return res.status(404).json({
+                success: false,
+                message: '实训练习不存在'
+            });
+        }
+
+        // 验证权限
+        if (exercise.teacher.toString() !== teacherId) {
+            return res.status(403).json({
+                success: false,
+                message: '无权限发布此实训练习'
+            });
+        }
+
+        // 验证实训练习完整性
+        if (!exercise.questions || exercise.questions.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: '实训练习必须包含至少一道题目才能发布'
+            });
+        }
+
+        // 更新状态
+        exercise.status = '已发布';
+        exercise.publishedAt = new Date();
+        exercise.updatedAt = new Date();
+
+        await exercise.save();
+
+        res.json({
+            success: true,
+            message: '实训练习发布成功',
+            exercise
+        });
+
+    } catch (error) {
+        console.error('发布实训练习错误:', error);
+        res.status(500).json({
+            success: false,
+            message: '发布失败',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     generatePracticalExercise,
     getTeacherPracticalExercises,
     getPracticalExerciseById,
     updatePracticalExercise,
-    deletePracticalExercise
+    deletePracticalExercise,
+    copyPracticalExercise,
+    batchDeletePracticalExercises,
+    publishPracticalExercise
 };

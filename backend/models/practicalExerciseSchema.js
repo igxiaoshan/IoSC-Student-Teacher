@@ -87,25 +87,25 @@ const practicalExerciseSchema = new mongoose.Schema({
     // 关联的课件
     courseware: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Courseware',
+        ref: 'courseware',
         required: true
     },
     // 创建教师
     teacher: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Teacher',
+        ref: 'teacher',
         required: true
     },
     // 学科
     subject: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Subject',
+        ref: 'subject',
         required: true
     },
     // 学校
     school: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Admin',
+        ref: 'admin',
         required: true
     },
     // 练习题目
@@ -154,14 +154,23 @@ const practicalExerciseSchema = new mongoose.Schema({
     // 状态
     status: {
         type: String,
-        enum: ['草稿', '已发布', '已归档'],
+        enum: ['草稿', '已发布', '已归档', '已删除'],
         default: '草稿'
+    },
+    // 发布时间
+    publishedAt: {
+        type: Date
+    },
+    // 软删除时间
+    deletedAt: {
+        type: Date
     },
     // 使用统计
     usageStats: {
         viewCount: { type: Number, default: 0 },
         downloadCount: { type: Number, default: 0 },
-        shareCount: { type: Number, default: 0 }
+        shareCount: { type: Number, default: 0 },
+        completionCount: { type: Number, default: 0 }
     },
     // 标签
     tags: [String],
@@ -188,4 +197,4 @@ practicalExerciseSchema.index({ subject: 1, difficulty: 1 });
 practicalExerciseSchema.index({ status: 1, createdAt: -1 });
 practicalExerciseSchema.index({ 'generationParams.basedOnCourseware': 1 });
 
-module.exports = mongoose.model('PracticalExercise', practicalExerciseSchema);
+module.exports = mongoose.model('practicalExercise', practicalExerciseSchema);

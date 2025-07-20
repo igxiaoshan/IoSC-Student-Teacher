@@ -4,7 +4,10 @@ const {
     getTeacherPracticalExercises,
     getPracticalExerciseById,
     updatePracticalExercise,
-    deletePracticalExercise
+    deletePracticalExercise,
+    copyPracticalExercise,
+    batchDeletePracticalExercises,
+    publishPracticalExercise
 } = require('../controllers/practical-exercise-controller');
 
 // 中间件
@@ -37,8 +40,23 @@ router.put('/:exerciseId',
 );
 
 // 删除实训练习
-router.delete('/:exerciseId', 
+router.delete('/:exerciseId',
     deletePracticalExercise
+);
+
+// 复制实训练习
+router.post('/:exerciseId/copy',
+    copyPracticalExercise
+);
+
+// 批量删除实训练习
+router.post('/batch/delete',
+    batchDeletePracticalExercises
+);
+
+// 发布实训练习
+router.put('/:exerciseId/publish',
+    publishPracticalExercise
 );
 
 // 导出实训练习为Word文档
@@ -57,7 +75,7 @@ router.post('/:exerciseId/export/word', async (req, res) => {
         }
 
         // 使用现有的Word导出功能
-        const { generateWordDocument } = require('../utils/wordGenerator');
+        const { generateWordDocument, createSafeFilename } = require('../utils/wordGenerator');
         
         const docBuffer = await generateWordDocument({
             title: exercise.title,
@@ -91,8 +109,11 @@ router.post('/:exerciseId/export/word', async (req, res) => {
         exercise.usageStats.downloadCount += 1;
         await exercise.save();
 
+        // 安全处理文件名，避免中文字符导致的HTTP头部错误
+        const { contentDisposition } = createSafeFilename(exercise.title, '实训练习');
+
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-        res.setHeader('Content-Disposition', `attachment; filename="实训练习_${exercise.title}_${Date.now()}.docx"`);
+        res.setHeader('Content-Disposition', contentDisposition);
         res.send(docBuffer);
 
     } catch (error) {
@@ -114,7 +135,7 @@ router.post('/export/word', async (req, res) => {
             return res.status(400).json({ message: '缺少实训练习数据' });
         }
 
-        const { generateWordDocument } = require('../utils/wordGenerator');
+        const { generateWordDocument, createSafeFilename } = require('../utils/wordGenerator');
         
         const docBuffer = await generateWordDocument({
             title: exercise.title,
@@ -131,8 +152,11 @@ router.post('/export/word', async (req, res) => {
             createdAt: exercise.createdAt || new Date()
         }, 'practical-exercise');
 
+        // 安全处理文件名，避免中文字符导致的HTTP头部错误
+        const { contentDisposition } = createSafeFilename(exercise.title, '实训练习');
+
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-        res.setHeader('Content-Disposition', `attachment; filename="实训练习_${exercise.title}_${Date.now()}.docx"`);
+        res.setHeader('Content-Disposition', contentDisposition);
         res.send(docBuffer);
 
     } catch (error) {
