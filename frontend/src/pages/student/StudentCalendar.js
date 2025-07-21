@@ -1015,13 +1015,13 @@ const StudentCalendar = () => {
         );
     };
 
-    // 课程时间段配置
+    // 课程时间段配置 - 优化高度和布局
     const courseTimeSlots = [
-        { id: 1, label: '第1节', time: '08:00-10:00', period: 'morning', height: 120 },
-        { id: 2, label: '第2节', time: '10:20-12:20', period: 'morning', height: 120 },
-        { id: 3, label: '第3节', time: '14:00-16:00', period: 'afternoon', height: 120 },
-        { id: 4, label: '第4节', time: '16:20-18:20', period: 'afternoon', height: 120 },
-        { id: 5, label: '第5节', time: '19:00-21:00', period: 'evening', height: 120 }
+        { id: 1, label: '第1节', time: '08:00-10:00', period: 'morning', height: 80 },
+        { id: 2, label: '第2节', time: '10:20-12:20', period: 'morning', height: 80 },
+        { id: 3, label: '第3节', time: '14:00-16:00', period: 'afternoon', height: 80 },
+        { id: 4, label: '第4节', time: '16:20-18:20', period: 'afternoon', height: 80 },
+        { id: 5, label: '第5节', time: '19:00-21:00', period: 'evening', height: 80 }
     ];
 
     // 获取事件对应的课程时段
@@ -1050,13 +1050,32 @@ const StudentCalendar = () => {
         const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
         return (
-            <Paper elevation={1} sx={{ overflow: 'auto', maxHeight: 600 }}>
-                <Grid container>
+            <Paper elevation={1} sx={{
+                overflow: 'auto',
+                maxHeight: 500,
+                borderRadius: 2,
+                '& .MuiGrid-container': {
+                    minWidth: 800 // 确保最小宽度
+                }
+            }}>
+                <Grid container spacing={0}>
                     {/* 课程时段列 */}
-                    <Grid item xs={1.5}>
-                        <Box sx={{ position: 'sticky', left: 0, bgcolor: 'background.paper', zIndex: 1 }}>
+                    <Grid item sx={{ width: 100, minWidth: 100 }}>
+                        <Box sx={{
+                            position: 'sticky',
+                            left: 0,
+                            bgcolor: 'background.paper',
+                            zIndex: 2,
+                            borderRight: '2px solid',
+                            borderColor: 'divider'
+                        }}>
                             {/* 头部空白 */}
-                            <Box sx={{ height: 60, borderBottom: '1px solid', borderColor: 'divider' }} />
+                            <Box sx={{
+                                height: 50,
+                                borderBottom: '1px solid',
+                                borderColor: 'divider',
+                                bgcolor: 'grey.100'
+                            }} />
                             {courseTimeSlots.map(slot => (
                                 <Box
                                     key={slot.id}
@@ -1068,15 +1087,23 @@ const StudentCalendar = () => {
                                         flexDirection: 'column',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        bgcolor: slot.period === 'morning' ? 'blue.50' :
-                                               slot.period === 'afternoon' ? 'green.50' : 'purple.50',
-                                        px: 1
+                                        bgcolor: slot.period === 'morning' ? '#e3f2fd' :
+                                               slot.period === 'afternoon' ? '#e8f5e8' : '#f3e5f5',
+                                        px: 0.5
                                     }}
                                 >
-                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                    <Typography variant="body2" sx={{
+                                        fontWeight: 700,
+                                        color: 'text.primary',
+                                        fontSize: '0.75rem'
+                                    }}>
                                         {slot.label}
                                     </Typography>
-                                    <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
+                                    <Typography variant="caption" color="text.secondary" sx={{
+                                        textAlign: 'center',
+                                        fontSize: '0.65rem',
+                                        lineHeight: 1.2
+                                    }}>
                                         {slot.time}
                                     </Typography>
                                 </Box>
@@ -1085,34 +1112,37 @@ const StudentCalendar = () => {
                     </Grid>
 
                     {/* 日期列 */}
-                    {weekDays.map(day => {
+                    {weekDays.map((day, dayIndex) => {
                         const dayEvents = getEventsForDate(day);
                         const isDayToday = isToday(day);
+                        const isWeekend = day.getDay() === 0 || day.getDay() === 6;
 
                         return (
                             <Grid item xs key={day.toString()}>
                                 {/* 日期头部 */}
                                 <Box
                                     sx={{
-                                        height: 60,
+                                        height: 50,
                                         borderBottom: '1px solid',
-                                        borderRight: '1px solid',
+                                        borderRight: dayIndex === weekDays.length - 1 ? 'none' : '1px solid',
                                         borderColor: 'divider',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        bgcolor: isDayToday ? 'primary.50' : 'background.paper'
+                                        bgcolor: isDayToday ? 'primary.100' :
+                                               isWeekend ? 'grey.50' : 'background.paper'
                                     }}
                                 >
-                                    <Typography variant="caption" color="text.secondary">
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                                         {format(day, 'EEE', { locale: zhCN })}
                                     </Typography>
                                     <Typography
-                                        variant="h6"
+                                        variant="body1"
                                         sx={{
                                             color: isDayToday ? 'primary.main' : 'text.primary',
-                                            fontWeight: isDayToday ? 700 : 500
+                                            fontWeight: isDayToday ? 700 : 500,
+                                            fontSize: '0.9rem'
                                         }}
                                     >
                                         {format(day, 'd')}
@@ -1121,16 +1151,20 @@ const StudentCalendar = () => {
 
                                 {/* 课程时段槽 */}
                                 <Box sx={{ position: 'relative' }}>
-                                    {courseTimeSlots.map(slot => (
+                                    {courseTimeSlots.map((slot, slotIndex) => (
                                         <Box
                                             key={slot.id}
                                             sx={{
                                                 height: slot.height,
                                                 borderBottom: '1px solid',
-                                                borderRight: '1px solid',
+                                                borderRight: dayIndex === weekDays.length - 1 ? 'none' : '1px solid',
                                                 borderColor: 'divider',
-                                                bgcolor: slot.period === 'morning' ? 'blue.25' :
-                                                        slot.period === 'afternoon' ? 'green.25' : 'purple.25'
+                                                bgcolor: slot.period === 'morning' ? '#f8fbff' :
+                                                        slot.period === 'afternoon' ? '#f8fff8' : '#faf8ff',
+                                                '&:hover': {
+                                                    bgcolor: slot.period === 'morning' ? '#e3f2fd' :
+                                                            slot.period === 'afternoon' ? '#e8f5e8' : '#f3e5f5'
+                                                }
                                             }}
                                         />
                                     ))}
@@ -1141,8 +1175,8 @@ const StudentCalendar = () => {
                                         if (!timeSlot) return null;
 
                                         const slotIndex = courseTimeSlots.findIndex(s => s.id === timeSlot.id);
-                                        const top = slotIndex * timeSlot.height + 4;
-                                        const height = timeSlot.height - 8;
+                                        const top = slotIndex * timeSlot.height + 2;
+                                        const height = timeSlot.height - 4;
 
                                         return (
                                             <Box
@@ -1150,39 +1184,61 @@ const StudentCalendar = () => {
                                                 sx={{
                                                     position: 'absolute',
                                                     top: `${top}px`,
-                                                    left: 4,
-                                                    right: 4,
+                                                    left: 2,
+                                                    right: 2,
                                                     height: `${height}px`,
                                                     bgcolor: event.color || getEventTypeColor(event.eventType),
                                                     color: 'white',
                                                     borderRadius: 1,
-                                                    p: 1,
+                                                    p: 0.5,
                                                     cursor: 'pointer',
                                                     overflow: 'hidden',
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    textAlign: 'center',
+                                                    boxShadow: 1,
                                                     '&:hover': {
                                                         opacity: 0.9,
-                                                        transform: 'scale(1.02)',
-                                                        boxShadow: 2
+                                                        transform: 'scale(1.05)',
+                                                        boxShadow: 3,
+                                                        zIndex: 1
                                                     },
-                                                    transition: 'all 0.2s'
+                                                    transition: 'all 0.2s ease-in-out'
                                                 }}
                                                 onClick={() => {
                                                     setSelectedEvent(event);
                                                     setShowEventDialog(true);
                                                 }}
                                             >
-                                                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                                <Typography variant="caption" sx={{
+                                                    fontWeight: 700,
+                                                    fontSize: '0.7rem',
+                                                    lineHeight: 1.2,
+                                                    mb: 0.25
+                                                }}>
                                                     {event.subject || event.title}
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ opacity: 0.9 }}>
-                                                    {event.teacher || event.location}
-                                                </Typography>
-                                                <Typography variant="caption" sx={{ opacity: 0.8, mt: 0.5 }}>
-                                                    {timeSlot.label}
-                                                </Typography>
+                                                {event.teacher && (
+                                                    <Typography variant="caption" sx={{
+                                                        opacity: 0.9,
+                                                        fontSize: '0.65rem',
+                                                        lineHeight: 1.1
+                                                    }}>
+                                                        {event.teacher}
+                                                    </Typography>
+                                                )}
+                                                {event.location && (
+                                                    <Typography variant="caption" sx={{
+                                                        opacity: 0.8,
+                                                        fontSize: '0.6rem',
+                                                        lineHeight: 1.1,
+                                                        mt: 0.25
+                                                    }}>
+                                                        {event.location}
+                                                    </Typography>
+                                                )}
                                             </Box>
                                         );
                                     })}
