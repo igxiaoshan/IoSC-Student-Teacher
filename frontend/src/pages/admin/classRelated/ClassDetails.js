@@ -51,16 +51,18 @@ const ClassDetails = () => {
     const [message, setMessage] = useState("");
 
     const deleteHandler = (deleteID, address) => {
-        console.log(deleteID);
-        console.log(address);
-        setMessage("Sorry the delete function has been disabled for now.")
-        setShowPopup(true)
-        // dispatch(deleteUser(deleteID, address))
-        //     .then(() => {
-        //         dispatch(getClassStudents(classID));
-        //         dispatch(resetSubjects())
-        //         dispatch(getSubjectList(classID, "ClassSubjects"))
-        //     })
+        if (window.confirm('确定要删除吗？此操作不可撤销。')) {
+            dispatch(deleteUser(deleteID, address))
+                .then(() => {
+                    dispatch(getClassStudents(classID));
+                    dispatch(resetSubjects())
+                    dispatch(getSubjectList(classID, "ClassSubjects"))
+                })
+                .catch((error) => {
+                    setMessage("删除失败：" + (error.message || "未知错误"));
+                    setShowPopup(true);
+                });
+        }
     }
 
     const subjectColumns = [
@@ -350,7 +352,7 @@ const ClassDetails = () => {
     return (
         <>
             {loading ? (
-                <div>Loading...</div>
+                <div>加载中...</div>
             ) : (
                 <>
                     <Box sx={{ width: '100%', typography: 'body1', }} >

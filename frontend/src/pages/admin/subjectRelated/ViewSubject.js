@@ -181,7 +181,7 @@ const ViewSubject = () => {
   return (
     <>
       {subloading ?
-        < div > Loading...</div >
+        < div > 加载中...</div >
         :
         <>
           <Box sx={{ width: '100%', typography: 'body1', }} >

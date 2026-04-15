@@ -55,8 +55,8 @@ const TeacherViewStudent = () => {
     const overallAbsentPercentage = 100 - overallAttendancePercentage;
 
     const chartData = [
-        { name: 'Present', value: overallAttendancePercentage },
-        { name: 'Absent', value: overallAbsentPercentage }
+        { name: '出勤', value: overallAttendancePercentage },
+        { name: '缺勤', value: overallAbsentPercentage }
     ];
 
     return (
@@ -64,7 +64,7 @@ const TeacherViewStudent = () => {
             {loading
                 ?
                 <>
-                    <div>Loading...</div>
+                    <div>加载中...</div>
                 </>
                 :
                 <div>

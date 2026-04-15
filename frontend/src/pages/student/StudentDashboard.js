@@ -42,7 +42,7 @@ const StudentDashboard = () => {
                         <IconButton
                             edge="start"
                             color="inherit"
-                            aria-label="open drawer"
+                            aria-label="打开侧边栏"
                             onClick={toggleDrawer}
                             sx={{
                                 marginRight: '36px',

@@ -82,14 +82,16 @@ const ShowTeachers = () => {
     }
 
     const deleteHandler = (deleteID, address) => {
-        console.log(deleteID);
-        console.log(address);
-        setMessage("抱歉，删除功能暂时被禁用。")
-        setShowPopup(true)
-
-        // dispatch(deleteUser(deleteID, address)).then(() => {
-        //     dispatch(getAllTeachers(currentUser._id));
-        // });
+        if (window.confirm('确定要删除这位教师吗？此操作不可撤销。')) {
+            dispatch(deleteUser(deleteID, address))
+                .then(() => {
+                    dispatch(getAllTeachers(currentUser._id));
+                })
+                .catch((error) => {
+                    setMessage("删除失败：" + (error.message || "未知错误"));
+                    setShowPopup(true);
+                });
+        }
     };
 
     const columns = [

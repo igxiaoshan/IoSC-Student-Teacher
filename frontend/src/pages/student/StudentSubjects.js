@@ -96,7 +96,7 @@ const StudentSubjects = () => {
                     subjectsList.map((subject, index) => (
                         <div key={index}>
                             <Typography variant="subtitle1">
-                                {safeGet(subject, 'subName', '未知科目')} ({safeGet(subject, 'subCode', 'N/A')})
+                                {safeGet(subject, 'subName', '未知科目')} ({safeGet(subject, 'subCode', '无代码')})
                             </Typography>
                         </div>
                     ))}
@@ -107,7 +107,7 @@ const StudentSubjects = () => {
     return (
         <>
             {loading ? (
-                <div>Loading...</div>
+                <div>加载中...</div>
             ) : (
                 <div>
                     {subjectMarks && Array.isArray(subjectMarks) && subjectMarks.length > 0
@@ -119,12 +119,12 @@ const StudentSubjects = () => {
                             <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
                                 <BottomNavigation value={selectedSection} onChange={handleSectionChange} showLabels>
                                     <BottomNavigationAction
-                                        label="Table"
+                                        label="表格"
                                         value="table"
                                         icon={selectedSection === 'table' ? <TableChartIcon /> : <TableChartOutlinedIcon />}
                                     />
                                     <BottomNavigationAction
-                                        label="Chart"
+                                        label="图表"
                                         value="chart"
                                         icon={selectedSection === 'chart' ? <InsertChartIcon /> : <InsertChartOutlinedIcon />}
                                     />

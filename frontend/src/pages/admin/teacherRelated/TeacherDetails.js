@@ -32,7 +32,7 @@ const TeacherDetails = () => {
     return (
         <>
             {loading ? (
-                <div>Loading...</div>
+                <div>加载中...</div>
             ) : (
                 <Container>
                     <Typography variant="h4" align="center" gutterBottom>

@@ -90,7 +90,7 @@ const ShowSubjects = () => {
     return (
         <>
             {loading ?
-                <div>Loading...</div>
+                <div>加载中...</div>
                 :
                 <>
                     {response ?

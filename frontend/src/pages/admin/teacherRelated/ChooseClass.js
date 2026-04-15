@@ -55,7 +55,7 @@ const ChooseClass = ({ situation }) => {
     return (
         <>
             {loading ?
-                <div>Loading...</div>
+                <div>加载中...</div>
                 :
                 <>
                     {getresponse ?

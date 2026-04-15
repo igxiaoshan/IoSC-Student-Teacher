@@ -35,14 +35,14 @@ const ShowNotices = () => {
     }
 
     const noticeColumns = [
-        { id: 'title', label: 'Title', minWidth: 170 },
-        { id: 'details', label: 'Details', minWidth: 100 },
-        { id: 'date', label: 'Date', minWidth: 170 },
+        { id: 'title', label: '标题', minWidth: 170 },
+        { id: 'details', label: '详情', minWidth: 100 },
+        { id: 'date', label: '日期', minWidth: 170 },
     ];
 
     const noticeRows = noticesList && noticesList.length > 0 && noticesList.map((notice) => {
         const date = new Date(notice.date);
-        const dateString = date.toString() !== "Invalid Date" ? date.toISOString().substring(0, 10) : "Invalid Date";
+        const dateString = date.toString() !== "Invalid Date" ? date.toISOString().substring(0, 10) : "无效日期";
         return {
             title: notice.title,
             details: notice.details,
@@ -63,11 +63,11 @@ const ShowNotices = () => {
 
     const actions = [
         {
-            icon: <NoteAddIcon color="primary" />, name: 'Add New Notice',
+            icon: <NoteAddIcon color="primary" />, name: '添加新通知',
             action: () => navigate("/Admin/addnotice")
         },
         {
-            icon: <DeleteIcon color="error" />, name: 'Delete All Notices',
+            icon: <DeleteIcon color="error" />, name: '删除所有通知',
             action: () => deleteHandler(currentUser._id, "Notices")
         }
     ];
@@ -75,14 +75,14 @@ const ShowNotices = () => {
     return (
         <>
             {loading ?
-                <div>Loading...</div>
+                <div>加载中...</div>
                 :
                 <>
                     {response ?
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
                             <GreenButton variant="contained"
                                 onClick={() => navigate("/Admin/addnotice")}>
-                                Add Notice
+                                添加通知
                             </GreenButton>
                         </Box>
                         :

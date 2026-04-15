@@ -170,7 +170,7 @@ const ShowClasses = () => {
   return (
     <>
       {loading ?
-        <div>Loading...</div>
+        <div>加载中...</div>
         :
         <>
           {getresponse ?

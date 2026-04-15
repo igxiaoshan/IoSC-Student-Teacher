@@ -149,7 +149,7 @@ const TeacherClassDetails = () => {
     return (
         <>
             {loading ? (
-                <div>Loading...</div>
+                <div>加载中...</div>
             ) : (
                 <>
                     <Typography variant="h4" align="center" gutterBottom>

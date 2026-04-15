@@ -104,13 +104,16 @@ const ViewStudent = () => {
     }
 
     const deleteHandler = () => {
-        setMessage("抱歉，删除功能暂时被禁用。") // 稍后会启用
-        setShowPopup(true)
-
-        // dispatch(deleteUser(studentID, address))
-        //     .then(() => {
-        //         navigate(-1)
-        //     })
+        if (window.confirm('确定要删除这个学生吗？此操作不可撤销。')) {
+            dispatch(deleteUser(studentID, address))
+                .then(() => {
+                    navigate(-1)
+                })
+                .catch((error) => {
+                    setMessage("删除失败：" + (error.message || "未知错误"));
+                    setShowPopup(true);
+                });
+        }
     }
 
     const removeHandler = (id, deladdress) => {
@@ -154,9 +157,9 @@ const ViewStudent = () => {
                         <TableHead>
                             <StyledTableRow>
                                 <StyledTableCell>科目</StyledTableCell>
-                                <StyledTableCell>出席</StyledTableCell>
-                                <StyledTableCell>总会议</StyledTableCell>
-                                <StyledTableCell>出勤百分比</StyledTableCell>
+                                <StyledTableCell>出勤次数</StyledTableCell>
+                                <StyledTableCell>总课时</StyledTableCell>
+                                <StyledTableCell>出勤率</StyledTableCell>
                                 <StyledTableCell align="center">操作</StyledTableCell>
                             </StyledTableRow>
                         </TableHead>
@@ -249,12 +252,12 @@ const ViewStudent = () => {
                         <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
                             <BottomNavigation value={selectedSection} onChange={handleSectionChange} showLabels>
                                 <BottomNavigationAction
-                                    label="Table"
+                                    label="表格"
                                     value="table"
                                     icon={selectedSection === 'table' ? <TableChartIcon /> : <TableChartOutlinedIcon />}
                                 />
                                 <BottomNavigationAction
-                                    label="Chart"
+                                    label="图表"
                                     value="chart"
                                     icon={selectedSection === 'chart' ? <InsertChartIcon /> : <InsertChartOutlinedIcon />}
                                 />
@@ -320,12 +323,12 @@ const ViewStudent = () => {
                         <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
                             <BottomNavigation value={selectedSection} onChange={handleSectionChange} showLabels>
                                 <BottomNavigationAction
-                                    label="Table"
+                                    label="表格"
                                     value="table"
                                     icon={selectedSection === 'table' ? <TableChartIcon /> : <TableChartOutlinedIcon />}
                                 />
                                 <BottomNavigationAction
-                                    label="Chart"
+                                    label="图表"
                                     value="chart"
                                     icon={selectedSection === 'chart' ? <InsertChartIcon /> : <InsertChartOutlinedIcon />}
                                 />
@@ -373,19 +376,19 @@ const ViewStudent = () => {
                         <form className="registerForm" onSubmit={submitHandler}>
                             <span className="registerTitle">Edit Details</span>
                             <label>Name</label>
-                            <input className="registerInput" type="text" placeholder="Enter user's name..."
+                            <input className="registerInput" type="text" placeholder="请输入学生姓名..."
                                 value={name}
                                 onChange={(event) => setName(event.target.value)}
                                 autoComplete="name" required />
 
                             <label>Roll Number</label>
-                            <input className="registerInput" type="number" placeholder="Enter user's Roll Number..."
+                            <input className="registerInput" type="number" placeholder="请输入学号..."
                                 value={rollNum}
                                 onChange={(event) => setRollNum(event.target.value)}
                                 required />
 
                             <label>Password</label>
-                            <input className="registerInput" type="password" placeholder="Enter user's password..."
+                            <input className="registerInput" type="password" placeholder="请输入密码..."
                                 value={password}
                                 onChange={(event) => setPassword(event.target.value)}
                                 autoComplete="new-password" />
