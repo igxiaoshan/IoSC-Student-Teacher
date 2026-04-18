@@ -24,6 +24,7 @@ export const useTranslation = (namespace = 'common') => {
   const tTeacher = (key, options = {}) => t(`teacher.${key}`, options);
   const tClass = (key, options = {}) => t(`class.${key}`, options);
   const tSubject = (key, options = {}) => t(`subject.${key}`, options);
+  const tJimeng = (key, options = {}) => t(`jimeng.${key}`, options);
 
   // 语言切换函数
   const changeLanguage = (lng) => {
@@ -32,9 +33,11 @@ export const useTranslation = (namespace = 'common') => {
 
   // 获取当前语言
   const currentLanguage = i18n.language;
+  console.log('currentLanguage...'+currentLanguage);
 
   // 判断是否为中文
   const isChinese = currentLanguage.startsWith('zh');
+  console.log('isChinese...'+isChinese);
 
   return {
     t: translate,
@@ -47,6 +50,7 @@ export const useTranslation = (namespace = 'common') => {
     tTeacher,
     tClass,
     tSubject,
+    tJimeng,
     changeLanguage,
     currentLanguage,
     isChinese,

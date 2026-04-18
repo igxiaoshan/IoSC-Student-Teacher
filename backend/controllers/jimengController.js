@@ -5,14 +5,27 @@
 
 const jimengService = require('../services/jimengService');
 const JimengGeneration = require('../models/JimengGeneration');
+const jimengConfig = require('../config/jimengConfig');
 
 /**
  * 文生图 - 提交任务
  * POST /api/jimeng/text-to-image
  */
 const generateImage = async (req, res) => {
+    console.log('\n========== 文生图请求到达 ==========');
+    console.log('请求body:', JSON.stringify(req.body, null, 2));
+    console.log('===================================\n');
+
     try {
         const { prompt, options = {} } = req.body;
+
+        console.log('\n[DEBUG] isConfigured()开始检查...');
+        const configured = jimengService.isConfigured();
+        console.log('[DEBUG] isConfigured()结果:', configured);
+        console.log('[DEBUG] ACCESS_KEY:', jimengConfig.ACCESS_KEY ? '[已设置]' : '[未设置]');
+        console.log('[DEBUG] SECRET_KEY:', jimengConfig.SECRET_KEY ? '[已设置]' : '[未设置]');
+        console.log('[DEBUG] API_KEY:', jimengConfig.API_KEY ? '[已设置]' : '[未设置]');
+        console.log('[DEBUG] getServiceInfo:', jimengService.getServiceInfo());
 
         if (!prompt || prompt.trim() === '') {
             return res.status(400).json({
@@ -21,10 +34,11 @@ const generateImage = async (req, res) => {
             });
         }
 
-        const userId = req.body.userId || req.user?._id;
-        const userType = req.body.userType || req.user?.role || 'Teacher';
+        console.log('[DEBUG] userId:', userId);
+        console.log('[DEBUG] userType:', userType);
 
         if (!userId) {
+            console.log('[DEBUG] 缺少userId，返回401');
             return res.status(401).json({
                 success: false,
                 message: '用户未认证',

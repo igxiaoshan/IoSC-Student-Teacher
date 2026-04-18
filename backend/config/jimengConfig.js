@@ -16,22 +16,21 @@ module.exports = {
 
     // 文生图4.0默认参数
     imageDefaults: {
-        req_key: 'jimeng_t2i_v40',  // 固定值
+        req_key: 'jimeng_t2i_v40',  // 即梦4.0模型
         prompt: '',
-        image_urls: [],  // 可选，输入参考图片URL
-        size: 2048 * 2048,  // 默认2K分辨率
-        scale: 0.5,  // 文本影响程度
-        force_single: false,  // 是否强制单图
-        min_ratio: 1 / 3,
-        max_ratio: 3,
+        width: 1024,
+        height: 1024,
+        scale: 0.7,  // 文本影响程度 (0-1)
+        seed: -1,  // -1 表示随机种子
     },
 
-    // 文生视频默认参数
+    // 文生视频3.0默认参数
     videoDefaults: {
-        req_key: 'jimeng_t2v_v30',  // 固定值
+        req_key: 'jimeng_t2v_v30',  // 即梦3.0模型
         prompt: '',
-        duration: 5,
-        resolution: '720p',
+        duration: 5,  // 5秒或10秒
+        resolution: '720p',  // 720p或1080p
+        aspect_ratio: '16:9',  // 支持 16:9, 4:3, 1:1, 3:4, 9:16, 21:9
     },
 
     // 任务轮询配置

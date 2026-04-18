@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     Box,
     Container,
@@ -16,22 +16,34 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    LinearProgress,
-    List,
-    ListItem,
-    ListItemText,
     Chip,
     Divider,
+    Stack,
+    IconButton,
+    Fade,
+    Tooltip,
+    LinearProgress,
+    Dialog,
+    DialogContent,
+    DialogActions,
 } from '@mui/material';
-import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import HistoryIcon from '@mui/icons-material/History';
+import {
+    Videocam as VideocamIcon,
+    History as HistoryIcon,
+    PlayArrow as PlayArrowIcon,
+    Refresh as RefreshIcon,
+    Close as CloseIcon,
+    Fullscreen as FullscreenIcon,
+    TrendingUp as TrendingUpIcon,
+    HighQuality as HighQualityIcon,
+} from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import { jimengAPI } from '../../utils/jimengAPI';
+import useTranslation from '../../hooks/useTranslation';
 
 const JimengVideoGenerator = () => {
     const { currentUser } = useSelector(state => state.user);
+    const { tJimeng, tCommon } = useTranslation('student');
     const [prompt, setPrompt] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -44,23 +56,14 @@ const JimengVideoGenerator = () => {
     const [history, setHistory] = useState([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
     const [videoUrls, setVideoUrls] = useState([]);
+    const [fullscreenVideo, setFullscreenVideo] = useState(null);
 
-    // 参数选项
+    // 参数选项 - 即梦3.0视频版本
     const [options, setOptions] = useState({
         duration: 5,
         resolution: '720p',
-        fps: 24,
+        aspect_ratio: '16:9',
     });
-
-    const durationOptions = [
-        { value: 5, label: '5秒' },
-        { value: 10, label: '10秒' },
-    ];
-
-    const resolutionOptions = [
-        { value: '720p', label: '720p (HD)' },
-        { value: '1080p', label: '1080p (Full HD)' },
-    ];
 
     const handleOptionChange = (field, value) => {
         setOptions(prev => ({ ...prev, [field]: value }));
@@ -69,7 +72,7 @@ const JimengVideoGenerator = () => {
     // 生成视频
     const handleGenerate = async () => {
         if (!prompt.trim()) {
-            setError('请输入描述文本');
+            setError(tJimeng('videoDescription') + ' ' + tCommon('fieldRequired'));
             return;
         }
 
@@ -87,23 +90,23 @@ const JimengVideoGenerator = () => {
 
             if (response.data.success) {
                 setTaskId(response.data.taskId);
-                setSuccess('视频生成任务已提交，视频生成需要较长时间，请耐心等待...');
+                setSuccess(tJimeng('videoGeneratingPleaseWait'));
                 pollTaskStatus(response.data.taskId);
             } else {
-                setError(response.data.message || '生成失败');
+                setError(response.data.message || tJimeng('generationFailed'));
             }
         } catch (err) {
-            setError(err.response?.data?.message || err.message || '生成失败');
+            setError(err.response?.data?.message || err.message || tJimeng('generationFailed'));
         } finally {
             setLoading(false);
         }
     };
 
     // 轮询任务状态
-    const pollTaskStatus = async (taskId) => {
+    const pollTaskStatus = useCallback(async (taskId) => {
         const poll = async () => {
             try {
-                const response = await jimengAPI.getTaskStatus(taskId);
+                const response = await jimengAPI.getTaskStatus(taskId, 'video');
                 const data = response.data;
 
                 setTaskStatus(data.status);
@@ -114,25 +117,26 @@ const JimengVideoGenerator = () => {
                     if (data.videoUrls && data.videoUrls.length > 0) {
                         setResult(data.videoUrls[0]);
                     }
-                    setSuccess('视频生成成功！');
-                    fetchHistory();
+                    setSuccess(tJimeng('generationSuccess'));
                     return;
                 } else if (data.status === 'failed') {
-                    setError(data.message || '生成失败');
+                    setError(data.message || tJimeng('generationFailed'));
                     return;
                 }
 
-                if (data.status === 'pending' || data.status === 'processing') {
+                // 继续轮询，视频生成时间较长
+                if (data.status === 'pending' || data.status === 'processing' ||
+                    data.status === 'in_queue' || data.status === 'generating') {
                     setTimeout(poll, 5000);
                 }
             } catch (err) {
-                console.error('轮询错误:', err);
+                console.error('Polling error:', err);
                 setTimeout(poll, 8000);
             }
         };
 
         poll();
-    };
+    }, []);
 
     // 获取历史记录
     const fetchHistory = async () => {
@@ -145,7 +149,7 @@ const JimengVideoGenerator = () => {
                 setHistory(response.data.history);
             }
         } catch (err) {
-            console.error('获取历史记录失败:', err);
+            console.error('Failed to fetch history:', err);
         } finally {
             setLoadingHistory(false);
         }
@@ -165,225 +169,437 @@ const JimengVideoGenerator = () => {
         setResult(url);
     };
 
+    // 示例提示词
+    const examplePrompts = [
+        tJimeng('examplePrompts.video1'),
+        tJimeng('examplePrompts.video2'),
+        tJimeng('examplePrompts.video3'),
+        tJimeng('examplePrompts.video4'),
+    ];
+
     return (
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-            <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <VideoLibraryIcon fontSize="large" />
-                AI文生视频
-            </Typography>
-            <Typography variant="body1" color="textSecondary" paragraph>
-                使用即梦AI根据文本描述生成视频（生成可能需要几分钟，请耐心等待）
-            </Typography>
-
-            <Paper sx={{ p: 3 }}>
-                {/* 提示词输入 */}
-                <TextField
-                    fullWidth
-                    multiline
-                    rows={4}
-                    label="视频描述"
-                    placeholder="描述你想要的视频内容，例如：一只橘猫在草地上奔跑，阳光明媚，背景是蓝天白云"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    sx={{ mb: 3 }}
+        <Container maxWidth="xl" sx={{ mt: 3, mb: 4 }}>
+            {/* 页面标题 */}
+            <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                    sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 2,
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <VideocamIcon sx={{ color: 'white', fontSize: 28 }} />
+                </Box>
+                <Box>
+                    <Typography variant="h5" fontWeight="bold">
+                        {tJimeng('aiVideoGenerator')}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                        {tJimeng('jimeng30')} · {tJimeng('generateWonderfulVideo')}
+                    </Typography>
+                </Box>
+                <Chip
+                    label={tJimeng('newVersion')}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    sx={{ ml: 'auto' }}
                 />
+            </Box>
 
-                {/* 参数设置 */}
-                <Grid container spacing={2} sx={{ mb: 3 }}>
-                    <Grid item xs={12} md={4}>
-                        <FormControl fullWidth>
-                            <InputLabel>视频时长</InputLabel>
-                            <Select
-                                value={options.duration}
-                                label="视频时长"
-                                onChange={(e) => handleOptionChange('duration', e.target.value)}
-                            >
-                                {durationOptions.map(opt => (
-                                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+            <Grid container spacing={3}>
+                {/* 左侧：输入区域 */}
+                <Grid item xs={12} md={5}>
+                    <Paper sx={{ p: 3, height: '100%' }}>
+                        {/* 提示词输入 */}
+                        <Box sx={{ mb: 3 }}>
+                            <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                                {tJimeng('videoDescription')}
+                            </Typography>
+                            <TextField
+                                fullWidth
+                                multiline
+                                rows={4}
+                                placeholder={tJimeng('inputDescriptionStartCreatingVideo')}
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 2,
+                                    }
+                                }}
+                            />
+                        </Box>
+
+                        {/* 示例提示词 */}
+                        <Box sx={{ mb: 3 }}>
+                            <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                                {tJimeng('exampleDescription')}
+                            </Typography>
+                            <Stack direction="row" flexWrap="wrap" gap={1}>
+                                {examplePrompts.map((example, index) => (
+                                    <Chip
+                                        key={index}
+                                        label={example}
+                                        size="small"
+                                        onClick={() => setPrompt(example)}
+                                        sx={{
+                                            cursor: 'pointer',
+                                            '&:hover': { bgcolor: 'primary.light', color: 'white' }
+                                        }}
+                                    />
                                 ))}
-                            </Select>
-                        </FormControl>
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                        <FormControl fullWidth>
-                            <InputLabel>分辨率</InputLabel>
-                            <Select
-                                value={options.resolution}
-                                label="分辨率"
-                                onChange={(e) => handleOptionChange('resolution', e.target.value)}
+                            </Stack>
+                        </Box>
+
+                        <Divider sx={{ my: 2 }} />
+
+                        {/* 参数设置 */}
+                        <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                            {tJimeng('generationParameters')}
+                        </Typography>
+
+                        <Stack spacing={3}>
+                            {/* 分辨率 */}
+                            <FormControl fullWidth size="small">
+                                <InputLabel>{tJimeng('videoQuality')}</InputLabel>
+                                <Select
+                                    value={options.resolution}
+                                    label={tJimeng('videoQuality')}
+                                    onChange={(e) => handleOptionChange('resolution', e.target.value)}
+                                >
+                                    <MenuItem value="720p">
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <VideocamIcon />
+                                            {tJimeng('hd720p')}
+                                        </Box>
+                                    </MenuItem>
+                                    <MenuItem value="1080p">
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <HighQualityIcon />
+                                            {tJimeng('hd1080p')}
+                                        </Box>
+                                    </MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            {/* 时长 */}
+                            <FormControl fullWidth size="small">
+                                <InputLabel>{tJimeng('videoDuration')}</InputLabel>
+                                <Select
+                                    value={options.duration}
+                                    label={tJimeng('videoDuration')}
+                                    onChange={(e) => handleOptionChange('duration', e.target.value)}
+                                >
+                                    <MenuItem value={5}>{tJimeng('fiveSeconds')}</MenuItem>
+                                    <MenuItem value={10}>{tJimeng('tenSeconds')}</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            {/* 宽高比 */}
+                            <FormControl fullWidth size="small">
+                                <InputLabel>{tJimeng('videoRatio')}</InputLabel>
+                                <Select
+                                    value={options.aspect_ratio}
+                                    label={tJimeng('videoRatio')}
+                                    onChange={(e) => handleOptionChange('aspect_ratio', e.target.value)}
+                                >
+                                    <MenuItem value="16:9">{tJimeng('ratio16x9')}</MenuItem>
+                                    <MenuItem value="4:3">{tJimeng('ratio4x3')}</MenuItem>
+                                    <MenuItem value="1:1">{tJimeng('ratio1x1')}</MenuItem>
+                                    <MenuItem value="3:4">{tJimeng('ratio3x4')}</MenuItem>
+                                    <MenuItem value="9:16">{tJimeng('ratio9x16')}</MenuItem>
+                                    <MenuItem value="21:9">{tJimeng('ratio21x9')}</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Stack>
+
+                        <Divider sx={{ my: 3 }} />
+
+                        {/* 操作按钮 */}
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            <Button
+                                variant="contained"
+                                fullWidth
+                                size="large"
+                                onClick={handleGenerate}
+                                disabled={loading || !prompt.trim()}
+                                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <VideocamIcon />}
+                                sx={{
+                                    py: 1.5,
+                                    borderRadius: 2,
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    '&:hover': {
+                                        background: 'linear-gradient(135deg, #5568d3 0%, #6a4190 100%)',
+                                    }
+                                }}
                             >
-                                {resolutionOptions.map(opt => (
-                                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                        <FormControl fullWidth>
-                            <InputLabel>帧率</InputLabel>
-                            <Select
-                                value={options.fps}
-                                label="帧率"
-                                onChange={(e) => handleOptionChange('fps', e.target.value)}
+                                {loading ? tJimeng('generating') : tJimeng('generateVideo')}
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={toggleHistory}
+                                startIcon={<HistoryIcon />}
+                                sx={{ borderRadius: 2 }}
                             >
-                                <MenuItem value={24}>24 fps</MenuItem>
-                                <MenuItem value={30}>30 fps</MenuItem>
-                            </Select>
-                        </FormControl>
-                    </Grid>
+                                {showHistory ? tJimeng('hideHistory') : tJimeng('viewHistory')}
+                            </Button>
+                        </Box>
+
+                        {/* 进度显示 */}
+                        {taskId && (taskStatus === 'pending' || taskStatus === 'processing' ||
+                            taskStatus === 'in_queue' || taskStatus === 'generating') && (
+                            <Fade in>
+                                <Box sx={{ mt: 3 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                        <CircularProgress size={16} sx={{ color: 'primary.main' }} />
+                                        <Typography variant="body2" color="textSecondary">
+                                            {taskStatus === 'in_queue' ? tJimeng('queue') :
+                                             taskStatus === 'generating' ? tJimeng('generatingVideo') : tJimeng('processing')}
+                                        </Typography>
+                                        <Typography variant="body2" color="textSecondary" sx={{ ml: 'auto' }}>
+                                            {Math.round(progress * 100)}%
+                                        </Typography>
+                                    </Box>
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={progress * 100}
+                                        sx={{
+                                            height: 6,
+                                            borderRadius: 3,
+                                            bgcolor: '#e0e0e0',
+                                            '& .MuiLinearProgress-bar': {
+                                                borderRadius: 3,
+                                                background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                                            }
+                                        }}
+                                    />
+                                    <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                                        {tJimeng('videoGenerationTakesTime')}
+                                    </Typography>
+                                </Box>
+                            </Fade>
+                        )}
+                    </Paper>
                 </Grid>
 
-                {/* 操作按钮 */}
-                <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleGenerate}
-                        disabled={loading || !prompt.trim()}
-                        startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
-                    >
-                        {loading ? '生成中...' : '生成视频'}
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        onClick={toggleHistory}
-                        startIcon={<HistoryIcon />}
-                    >
-                        {showHistory ? '隐藏历史' : '查看历史'}
-                    </Button>
-                </Box>
-
-                {/* 进度显示 */}
-                {taskId && (taskStatus === 'pending' || taskStatus === 'processing') && (
-                    <Box sx={{ mb: 3 }}>
-                        <Typography variant="body2" color="textSecondary" gutterBottom>
-                            任务ID: {taskId}
-                        </Typography>
-                        <LinearProgress variant="determinate" value={progress * 100} sx={{ mb: 1 }} />
-                        <Typography variant="body2" color="textSecondary">
-                            状态: {taskStatus === 'pending' ? '排队中...' : '生成中...'} {Math.round(progress * 100)}%
-                        </Typography>
-                    </Box>
-                )}
-
-                {/* 错误提示 */}
-                {error && (
-                    <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
-                        {error}
-                    </Alert>
-                )}
-
-                {/* 成功提示 */}
-                {success && !result && (
-                    <Alert severity="info" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
-                        {success}
-                    </Alert>
-                )}
-
-                <Divider sx={{ my: 3 }} />
-
-                {/* 结果展示 */}
-                {result && (
-                    <Box sx={{ mb: 3 }}>
-                        <Typography variant="h6" gutterBottom>生成结果</Typography>
-                        <Card>
-                            <CardMedia
-                                component="video"
-                                src={result}
-                                controls
-                                sx={{ maxHeight: 500, objectFit: 'contain' }}
-                            />
-                            <CardContent>
-                                <Typography variant="body2" color="textSecondary">
-                                    当前播放: {videoUrls.indexOf(result) + 1} / {videoUrls.length}
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                        {videoUrls.length > 1 && (
-                            <Box sx={{ mt: 2 }}>
-                                <Typography variant="subtitle2" gutterBottom>其他生成结果：</Typography>
-                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                    {videoUrls.map((url, index) => (
-                                        <Chip
-                                            key={index}
-                                            icon={<PlayArrowIcon />}
-                                            label={`视频 ${index + 1}`}
-                                            onClick={() => handlePlay(url)}
-                                            color={url === result ? 'primary' : 'default'}
-                                            variant={url === result ? 'filled' : 'outlined'}
-                                        />
-                                    ))}
-                                </Box>
-                            </Box>
+                {/* 右侧：结果展示 */}
+                <Grid item xs={12} md={7}>
+                    <Paper sx={{ p: 3, height: '100%', minHeight: 500 }}>
+                        {/* 错误/成功提示 */}
+                        {error && (
+                            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+                                {error}
+                            </Alert>
                         )}
-                    </Box>
-                )}
 
-                {/* 历史记录 */}
-                {showHistory && (
-                    <Box>
-                        <Typography variant="h6" gutterBottom>历史记录</Typography>
-                        {loadingHistory ? (
-                            <Box textAlign="center" py={3}>
-                                <CircularProgress />
-                            </Box>
-                        ) : history.length > 0 ? (
-                            <List>
-                                {history.map((item, index) => (
-                                    <ListItem
-                                        key={item._id || index}
+                        {success && !result && (
+                            <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
+                                {success}
+                            </Alert>
+                        )}
+
+                        {/* 结果展示 */}
+                        {result ? (
+                            <Fade in>
+                                <Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                        <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+                                        <Typography variant="subtitle2" color="textSecondary">
+                                            {tJimeng('result')}
+                                        </Typography>
+                                        <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
+                                            <Tooltip title={tJimeng('fullscreenPlayback')}>
+                                                <IconButton size="small" onClick={() => setFullscreenVideo(result)}>
+                                                    <FullscreenIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title={tJimeng('regenerate')}>
+                                                <IconButton size="small" onClick={handleGenerate} disabled={loading}>
+                                                    <RefreshIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Stack>
+                                    </Box>
+
+                                    <Card
                                         sx={{
-                                            border: '1px solid #e0e0e0',
-                                            borderRadius: 1,
-                                            mb: 1,
-                                            opacity: item.status === 'completed' ? 1 : 0.6,
+                                            borderRadius: 2,
+                                            overflow: 'hidden',
+                                            bgcolor: '#000',
                                         }}
                                     >
-                                        <ListItemText
-                                            primary={
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap',
-                                                        maxWidth: 400,
-                                                    }}
-                                                >
-                                                    {item.prompt}
-                                                </Typography>
-                                            }
-                                            secondary={
-                                                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 0.5 }}>
-                                                    <Chip
-                                                        size="small"
-                                                        label={item.status === 'completed' ? '已完成' : '处理中'}
-                                                        color={item.status === 'completed' ? 'success' : 'warning'}
-                                                    />
-                                                    <Typography variant="caption">
-                                                        {new Date(item.createdAt).toLocaleString()}
-                                                    </Typography>
-                                                </Box>
-                                            }
+                                        <CardMedia
+                                            component="video"
+                                            src={result}
+                                            controls
+                                            sx={{
+                                                maxHeight: 400,
+                                                objectFit: 'contain',
+                                            }}
                                         />
-                                        {item.status === 'completed' && item.videoUrls && item.videoUrls.length > 0 && (
-                                            <Button
-                                                size="small"
-                                                startIcon={<PlayArrowIcon />}
-                                                onClick={() => handlePlay(item.videoUrls[0])}
-                                            >
-                                                播放
-                                            </Button>
-                                        )}
-                                    </ListItem>
-                                ))}
-                            </List>
+                                    </Card>
+
+                                    {/* 多个视频结果 */}
+                                    {videoUrls.length > 1 && (
+                                        <Box sx={{ mt: 2 }}>
+                                            <Typography variant="caption" color="textSecondary" gutterBottom>
+                                                {tJimeng('otherResults')} ({videoUrls.length})
+                                            </Typography>
+                                            <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                                                {videoUrls.map((url, index) => (
+                                                    <Chip
+                                                        key={index}
+                                                        icon={<PlayArrowIcon />}
+                                                        label={`Video ${index + 1}`}
+                                                        onClick={() => handlePlay(url)}
+                                                        color={url === result ? 'primary' : 'default'}
+                                                        variant={url === result ? 'filled' : 'outlined'}
+                                                        size="small"
+                                                    />
+                                                ))}
+                                            </Stack>
+                                        </Box>
+                                    )}
+
+                                    {/* 使用的提示词 */}
+                                    <Box sx={{ mt: 2, p: 2, bgcolor: '#f8f9fa', borderRadius: 1 }}>
+                                        <Typography variant="caption" color="textSecondary">
+                                            {tJimeng('usedPrompt')}
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                            {prompt}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </Fade>
                         ) : (
-                            <Typography color="textSecondary">暂无历史记录</Typography>
+                            /* 空状态 */
+                            <Box
+                                sx={{
+                                    height: '100%',
+                                    minHeight: 400,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: '#f8f9fa',
+                                    borderRadius: 2,
+                                    border: '2px dashed #e0e0e0',
+                                }}
+                            >
+                                <VideocamIcon sx={{ fontSize: 64, color: '#bdbdbd', mb: 2 }} />
+                                <Typography variant="h6" color="textSecondary">
+                                    {tJimeng('inputDescriptionStartCreatingVideo')}
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+                                    {tJimeng('videoGenerationTakesTime')}
+                                </Typography>
+                            </Box>
                         )}
-                    </Box>
-                )}
-            </Paper>
+
+                        {/* 历史记录 */}
+                        {showHistory && (
+                            <Fade in>
+                                <Box sx={{ mt: 3 }}>
+                                    <Divider sx={{ my: 2 }} />
+                                    <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                                        {tJimeng('history')}
+                                    </Typography>
+
+                                    {loadingHistory ? (
+                                        <Box textAlign="center" py={4}>
+                                            <CircularProgress size={32} />
+                                        </Box>
+                                    ) : history.length > 0 ? (
+                                        <Stack spacing={1.5}>
+                                            {history.slice(0, 8).map((item, index) => (
+                                                <Card
+                                                    key={item._id || index}
+                                                    sx={{
+                                                        cursor: item.status === 'completed' ? 'pointer' : 'default',
+                                                        opacity: item.status === 'completed' ? 1 : 0.6,
+                                                        transition: 'all 0.2s',
+                                                        '&:hover': item.status === 'completed' ? {
+                                                            transform: 'translateX(4px)',
+                                                            boxShadow: 2
+                                                        } : {},
+                                                    }}
+                                                    onClick={() => item.status === 'completed' && item.videoUrls?.length > 0 && handlePlay(item.videoUrls[0])}
+                                                >
+                                                    <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                            <PlayArrowIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+                                                            <Typography
+                                                                variant="body2"
+                                                                sx={{
+                                                                    flex: 1,
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis',
+                                                                    whiteSpace: 'nowrap',
+                                                                }}
+                                                            >
+                                                                {item.prompt}
+                                                            </Typography>
+                                                            <Chip
+                                                                size="small"
+                                                                label={item.status === 'completed' ? tJimeng('status') : tJimeng('processing')}
+                                                                color={item.status === 'completed' ? 'success' : 'warning'}
+                                                                sx={{ height: 20, fontSize: '0.7rem' }}
+                                                            />
+                                                        </Box>
+                                                        <Typography variant="caption" color="textSecondary" sx={{ ml: 3.5 }}>
+                                                            {new Date(item.createdAt).toLocaleString()}
+                                                        </Typography>
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                        </Stack>
+                                    ) : (
+                                        <Typography color="textSecondary" textAlign="center" py={3}>
+                                            {tJimeng('noHistory')}
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </Fade>
+                        )}
+                    </Paper>
+                </Grid>
+            </Grid>
+
+            {/* 全屏播放对话框 */}
+            <Dialog
+                open={!!fullscreenVideo}
+                onClose={() => setFullscreenVideo(null)}
+                maxWidth="xl"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: 'black',
+                        borderRadius: 0,
+                    }
+                }}
+            >
+                <DialogActions sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}>
+                    <IconButton color="inherit" onClick={() => setFullscreenVideo(null)}>
+                        <CloseIcon />
+                    </IconButton>
+                </DialogActions>
+                <DialogContent sx={{ p: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {fullscreenVideo && (
+                        <video
+                            src={fullscreenVideo}
+                            controls
+                            autoPlay
+                            style={{ maxWidth: '100%', maxHeight: '90vh', outline: 'none' }}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
         </Container>
     );
 };

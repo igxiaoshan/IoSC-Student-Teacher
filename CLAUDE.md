@@ -186,8 +186,9 @@ OLLAMA_URL=http://localhost:11434
 OLLAMA_MODEL=deepseek-r1
 
 # 即梦AI (火山引擎)
-JIMENG_API_URL=https://visual.volcengine.com
-JIMENG_API_KEY=xxx
+JIMENG_API_URL=https://visual.volcengineapi.com
+VOLC_ACCESS_KEY=your_volc_access_key  # 火山引擎AccessKey
+VOLC_SECRET_KEY=your_volc_secret_key  # 火山引擎SecretKey
 
 # 其他配置参考 backend/.env.example
 ```

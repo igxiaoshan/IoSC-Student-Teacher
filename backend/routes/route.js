@@ -311,6 +311,6 @@ router.post('/student/:studentId/calendar/ai/study-plan', generateAIStudyPlan);
 router.use('/adminDashboard', adminDashboardRoutes);
 
 // 即梦AI路由
-router.use('/jimeng', require('./jimeng'));
+router.use('/api/jimeng', require('./jimeng'));
 
 module.exports = router;
