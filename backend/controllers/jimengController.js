@@ -8,24 +8,47 @@ const JimengGeneration = require('../models/JimengGeneration');
 const jimengConfig = require('../config/jimengConfig');
 
 /**
+ * 保存生成记录
+ */
+const saveGenerationRecord = async (userId, userType, type, taskId, prompt, params) => {
+    try {
+        // 只有当 userId 是有效的 ObjectId 时才保存记录
+        const mongoose = require('mongoose');
+        if (!userId || userId === 'anonymous' || !mongoose.Types.ObjectId.isValid(userId)) {
+            console.log('[DEBUG] userId无效，跳过保存记录:', userId);
+            return null;
+        }
+
+        const record = new JimengGeneration({
+            userId,
+            userType,
+            type,
+            taskId,
+            prompt,
+            params,
+            status: 'pending',
+        });
+        await record.save();
+        console.log('[DEBUG] 生成记录已保存:', record._id);
+        return record;
+    } catch (error) {
+        console.error('[DEBUG] 保存生成记录失败:', error.message);
+        return null;
+    }
+};
+
+/**
  * 文生图 - 提交任务
  * POST /api/jimeng/text-to-image
  */
 const generateImage = async (req, res) => {
     console.log('\n========== 文生图请求到达 ==========');
     console.log('请求body:', JSON.stringify(req.body, null, 2));
-    console.log('===================================\n');
 
     try {
-        const { prompt, options = {} } = req.body;
+        const { prompt, options = {}, userId, userType } = req.body;
 
-        console.log('\n[DEBUG] isConfigured()开始检查...');
-        const configured = jimengService.isConfigured();
-        console.log('[DEBUG] isConfigured()结果:', configured);
-        console.log('[DEBUG] ACCESS_KEY:', jimengConfig.ACCESS_KEY ? '[已设置]' : '[未设置]');
-        console.log('[DEBUG] SECRET_KEY:', jimengConfig.SECRET_KEY ? '[已设置]' : '[未设置]');
-        console.log('[DEBUG] API_KEY:', jimengConfig.API_KEY ? '[已设置]' : '[未设置]');
-        console.log('[DEBUG] getServiceInfo:', jimengService.getServiceInfo());
+        console.log('[DEBUG] isConfigured():', jimengService.isConfigured());
 
         if (!prompt || prompt.trim() === '') {
             return res.status(400).json({
@@ -34,16 +57,12 @@ const generateImage = async (req, res) => {
             });
         }
 
-        console.log('[DEBUG] userId:', userId);
-        console.log('[DEBUG] userType:', userType);
+        // 优先使用请求中的 userId，否则尝试从 req.user 获取
+        const finalUserId = userId || req.user?._id;
+        const finalUserType = userType || req.user?.role || 'Teacher';
 
-        if (!userId) {
-            console.log('[DEBUG] 缺少userId，返回401');
-            return res.status(401).json({
-                success: false,
-                message: '用户未认证',
-            });
-        }
+        console.log('[DEBUG] finalUserId:', finalUserId);
+        console.log('[DEBUG] finalUserType:', finalUserType);
 
         const serviceInfo = jimengService.getServiceInfo();
         if (!serviceInfo.imageEnabled) {
@@ -56,9 +75,9 @@ const generateImage = async (req, res) => {
         // 如果未配置API，使用模拟模式
         if (!jimengService.isConfigured()) {
             const mockResponse = jimengService.getMockResponse('image');
-            await jimengService.saveGenerationRecord(
-                userId,
-                userType,
+            await saveGenerationRecord(
+                finalUserId,
+                finalUserType,
                 'image',
                 mockResponse.data.task_id,
                 prompt,
@@ -74,12 +93,14 @@ const generateImage = async (req, res) => {
             });
         }
 
+        console.log('[DEBUG] 开始调用 jimengService.textToImage...');
         const result = await jimengService.textToImage(prompt, options);
+        console.log('[DEBUG] textToImage 返回:', result);
 
         if (result.success && result.taskId) {
-            await jimengService.saveGenerationRecord(
-                userId,
-                userType,
+            await saveGenerationRecord(
+                finalUserId,
+                finalUserType,
                 'image',
                 result.taskId,
                 prompt,
@@ -94,7 +115,8 @@ const generateImage = async (req, res) => {
             message: result.message,
         });
     } catch (error) {
-        console.error('文生图错误:', error);
+        console.error('文生图错误:', error.message);
+        console.error('错误详情:', error);
         res.status(500).json({
             success: false,
             message: error.message || '图片生成失败',
@@ -107,8 +129,11 @@ const generateImage = async (req, res) => {
  * POST /api/jimeng/text-to-video
  */
 const generateVideo = async (req, res) => {
+    console.log('\n========== 文生视频请求到达 ==========');
+    console.log('请求body:', JSON.stringify(req.body, null, 2));
+
     try {
-        const { prompt, options = {} } = req.body;
+        const { prompt, options = {}, userId, userType } = req.body;
 
         if (!prompt || prompt.trim() === '') {
             return res.status(400).json({
@@ -117,15 +142,12 @@ const generateVideo = async (req, res) => {
             });
         }
 
-        const userId = req.body.userId || req.user?._id;
-        const userType = req.body.userType || req.user?.role || 'Teacher';
+        // 优先使用请求中的 userId，否则尝试从 req.user 获取
+        const finalUserId = userId || req.user?._id;
+        const finalUserType = userType || req.user?.role || 'Teacher';
 
-        if (!userId) {
-            return res.status(401).json({
-                success: false,
-                message: '用户未认证',
-            });
-        }
+        console.log('[DEBUG] finalUserId:', finalUserId);
+        console.log('[DEBUG] finalUserType:', finalUserType);
 
         const serviceInfo = jimengService.getServiceInfo();
         if (!serviceInfo.videoEnabled) {
@@ -138,9 +160,9 @@ const generateVideo = async (req, res) => {
         // 如果未配置API，使用模拟模式
         if (!jimengService.isConfigured()) {
             const mockResponse = jimengService.getMockResponse('video');
-            await jimengService.saveGenerationRecord(
-                userId,
-                userType,
+            await saveGenerationRecord(
+                finalUserId,
+                finalUserType,
                 'video',
                 mockResponse.data.task_id,
                 prompt,
@@ -156,12 +178,14 @@ const generateVideo = async (req, res) => {
             });
         }
 
+        console.log('[DEBUG] 开始调用 jimengService.textToVideo...');
         const result = await jimengService.textToVideo(prompt, options);
+        console.log('[DEBUG] textToVideo 返回:', result);
 
         if (result.success && result.taskId) {
-            await jimengService.saveGenerationRecord(
-                userId,
-                userType,
+            await saveGenerationRecord(
+                finalUserId,
+                finalUserType,
                 'video',
                 result.taskId,
                 prompt,
@@ -176,7 +200,8 @@ const generateVideo = async (req, res) => {
             message: result.message,
         });
     } catch (error) {
-        console.error('文生视频错误:', error);
+        console.error('文生视频错误:', error.message);
+        console.error('错误详情:', error);
         res.status(500).json({
             success: false,
             message: error.message || '视频生成失败',
@@ -232,8 +257,8 @@ const getTaskStatus = async (req, res) => {
             return res.json({
                 success: true,
                 taskId,
-                status: mockResult.status,
-                progress: mockResult.status === 'generating' ? 0.5 : mockResult.status === 'done' ? 1 : 0,
+                status: mockResult.status === 'done' ? 'completed' : mockResult.status,
+                progress: mockResult.status === 'done' ? 1 : mockResult.status === 'generating' ? 0.5 : 0,
                 resultUrl: mockResult.imageUrls?.[0],
                 videoUrls: mockResult.videoUrls,
             });
@@ -263,10 +288,10 @@ const getTaskStatus = async (req, res) => {
         res.json({
             success: true,
             taskId,
-            status: result.status,
-            progress: result.status === 'generating' ? 0.5 : result.status === 'done' ? 1 : 0,
-            resultUrl: result.imageUrls?.[0],
-            videoUrls: result.videoUrls,
+            status: result.status === 'done' ? 'completed' : result.status,
+            progress: result.status === 'done' ? 1 : result.status === 'generating' ? 0.5 : 0,
+            resultUrl: result.imageUrls?.[0] || result.videoUrls?.[0],
+            videoUrls: result.videoUrls || [],
             message: result.message,
         });
     } catch (error) {

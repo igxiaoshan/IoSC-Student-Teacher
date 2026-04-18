@@ -1,54 +1,14 @@
 /**
  * 即梦AI服务
  * 封装即梦AI(文生图、文生视频)的API调用
- * API文档: https://www.volcengine.com/docs/85621/1616429
+ * API文档: https://www.volcengine.com/docs/85621/1388182
+ * 使用 @volcengine/openapi 的 Signer 进行签名
  */
 
 const axios = require('axios');
-const crypto = require('crypto');
+const { Signer } = require('@volcengine/openapi');
 const jimengConfig = require('../config/jimengConfig');
 const JimengGeneration = require('../models/JimengGeneration');
-
-// 缓存解码后的Secret Key
-let decodedSecretKey = null;
-
-/**
- * 获取解码后的Secret Key
- * 如果Secret Key是Base64编码的，则解码后返回
- */
-function getDecodedSecretKey() {
-    if (decodedSecretKey !== null) {
-        return decodedSecretKey;
-    }
-
-    const secretKey = jimengConfig.SECRET_KEY;
-    if (!secretKey) {
-        return secretKey;
-    }
-
-    // 检查是否是Base64编码 (简单检查：包含=或只包含Base64字符)
-    const isBase64 = /^[A-Za-z0-9+/]+=*$/.test(secretKey) && secretKey.length % 4 === 0;
-
-    if (isBase64) {
-        try {
-            const decoded = Buffer.from(secretKey, 'base64').toString('utf8');
-            // 验证解码后的内容不是空或乱码
-            if (decoded && decoded.length > 0) {
-                console.log('\n========== Secret Key解码 ==========');
-                console.log('原始Secret Key (Base64):', secretKey);
-                console.log('解码后Secret Key:', decoded);
-                console.log('===================================\n');
-                decodedSecretKey = decoded;
-                return decodedSecretKey;
-            }
-        } catch (e) {
-            console.log('Secret Key Base64解码失败，使用原始值:', e.message);
-        }
-    }
-
-    decodedSecretKey = secretKey;
-    return decodedSecretKey;
-}
 
 // 单例模式
 let jimengServiceInstance = null;
@@ -70,185 +30,48 @@ class JimengService {
     }
 
     /**
-     * 生成火山引擎签名
-     * 参考: https://www.volcengine.com/docs/6369/67268
-     */
-    generateSignature(method, path, queryStr, timestamp, body, signedHeaders) {
-        console.log('\n========== 签名计算开始 ==========');
-        console.log('1. 输入参数:');
-        console.log('   method:', method);
-        console.log('   path:', path);
-        console.log('   queryStr:', queryStr);
-        console.log('   timestamp:', timestamp);
-        console.log('   signedHeaders:', signedHeaders);
-        console.log('   body:', body);
-
-        // 1. 计算 content-sha256 (body hash)
-        const contentSha256 = crypto.createHash('sha256').update(body || '').digest('hex');
-        console.log('\n2. Content-SHA256:', contentSha256);
-
-        // 2. 构建 canonical request
-        // method + "\n" + path + "\n" + queryStr + "\n" + signedHeaders + "\n" + contentSha256
-        const canonicalRequest = [
-            method.toUpperCase(),
-            path,
-            queryStr,
-            signedHeaders,
-            contentSha256
-        ].join('\n');
-        console.log('\n3. Canonical Request:\n', canonicalRequest);
-
-        // 3. 计算 canonical request hash
-        const canonicalRequestHash = crypto.createHash('sha256').update(canonicalRequest).digest('hex');
-        console.log('\n4. Canonical Request Hash:', canonicalRequestHash);
-
-        // 4. 构建 string to sign
-        const algorithm = 'HMAC-SHA256';
-        const credentialScope = this.getCredentialScope(timestamp);
-        console.log('\n5. Algorithm:', algorithm);
-        console.log('   CredentialScope:', credentialScope);
-
-        const stringToSign = [
-            algorithm,
-            timestamp,
-            credentialScope,
-            canonicalRequestHash
-        ].join('\n');
-        console.log('\n6. String to Sign:\n', stringToSign);
-
-        // 5. 计算签名 (使用解码后的Secret Key)
-        const decodedSecret = getDecodedSecretKey();
-        console.log('\n7. SECRET_KEY (解码后用于签名):', decodedSecret);
-        const signature = crypto.createHmac('sha256', decodedSecret)
-            .update(stringToSign)
-            .digest('hex');
-        console.log('\n8. 最终签名:', signature);
-        console.log('========== 签名计算结束 ==========\n');
-
-        return {
-            algorithm,
-            credentialScope,
-            signature,
-            contentSha256,
-        };
-    }
-
-    /**
-     * 获取凭证范围
-     */
-    getCredentialScope(timestamp) {
-        // 日期格式: YYYYMMDD
-        const date = timestamp.slice(0, 8);
-        // 即梦AI 4.0: Region为cn-north-1，Service为cv
-        const region = 'cn-north-1';
-        const service = 'cv';
-        return `${date}/${region}/${service}/request`;
-    }
-
-    /**
-     * 获取认证头 - 即梦AI 4.0 签名认证
-     */
-    getAuthHeaders(method, path, queryParams, body) {
-        console.log('\n========== 获取认证头开始 ==========');
-        console.log('ACCESS_KEY:', jimengConfig.ACCESS_KEY);
-
-        // Volcengine API 需要 UTC 时间戳格式: YYYYMMDD'T'HHMMSS'Z'
-        const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-        console.log('生成的 timestamp:', timestamp);
-
-        // 构建 query string
-        const queryStr = Object.entries(queryParams)
-            .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
-            .join('&');
-        console.log('Query String:', queryStr);
-
-        // 计算 body 的 SHA256 (必须)
-        const contentSha256 = crypto.createHash('sha256').update(body || '').digest('hex');
-        console.log('Content-SHA256:', contentSha256);
-
-        // 使用 HMAC-SHA256 签名
-        const algorithm = 'HMAC-SHA256';
-        const credentialScope = this.getCredentialScope(timestamp);
-        console.log('CredentialScope:', credentialScope);
-
-        // SignedHeaders 必须包含: content-type;host;x-content-sha256;x-date
-        const signedHeaders = 'content-type;host;x-content-sha256;x-date';
-
-        // 构建 canonical request
-        const canonicalRequest = [
-            method.toUpperCase(),
-            path,
-            queryStr,
-            signedHeaders,
-            contentSha256
-        ].join('\n');
-
-        console.log('\nCanonical Request:\n', canonicalRequest);
-
-        // 计算 canonical request hash
-        const canonicalRequestHash = crypto.createHash('sha256').update(canonicalRequest).digest('hex');
-
-        // 构建 string to sign
-        const stringToSign = [
-            algorithm,
-            timestamp,
-            credentialScope,
-            canonicalRequestHash
-        ].join('\n');
-
-        console.log('\nString to Sign:\n', stringToSign);
-
-        // 使用解码后的 Secret Key 计算签名
-        const decodedSecret = getDecodedSecretKey();
-        console.log('\n使用 Secret Key 签名:', decodedSecret);
-
-        const signature = crypto.createHmac('sha256', decodedSecret)
-            .update(stringToSign)
-            .digest('hex');
-
-        console.log('最终签名:', signature);
-
-        // 构建 Authorization 头
-        const authHeader = `${algorithm} Credential=${jimengConfig.ACCESS_KEY}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
-        console.log('\n最终 Authorization:', authHeader);
-
-        console.log('========== 获取认证头结束 ==========\n');
-
-        return {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader,
-            'X-Date': timestamp,
-            'X-Content-SHA256': contentSha256,
-            'Host': 'visual.volcengineapi.com',
-        };
-    }
-
-    /**
-     * 调用火山引擎视觉API
+     * 使用SDK签名发送请求
      */
     async callVisualAPI(action, version, bodyParams) {
-        const path = '/';
-        const queryParams = {
-            Action: action,
-            Version: version,
+        const url = `${jimengConfig.API_URL}/`;
+        const body = JSON.stringify(bodyParams);
+
+        // 构建请求对象
+        const request = {
+            method: 'POST',
+            params: {
+                Action: action,
+                Version: version,
+            },
+            headers: {
+                'Content-Type': 'application/json',
+                'Host': 'visual.volcengineapi.com',
+            },
+            body: body,
+            pathname: '/',
+            region: 'cn-north-1',  // 必须指定 region
         };
 
-        const body = JSON.stringify(bodyParams);
-        const headers = this.getAuthHeaders('POST', path, queryParams, body);
+        // 创建签名器
+        const signer = new Signer(request, 'cv');
 
-        console.log('=== 即梦API调试信息 ===');
-        console.log('URL:', `${jimengConfig.API_URL}/?Action=${action}&Version=${version}`);
-        console.log('ACCESS_KEY:', jimengConfig.ACCESS_KEY);
-        console.log('Authorization:', headers.Authorization ? '[已设置]' : '[未设置]');
-        console.log('X-Date:', headers['X-Date']);
-        console.log('X-Content-SHA256:', headers['X-Content-SHA256']);
-        console.log('Host:', headers['Host']);
-        console.log('========================');
+        // 添加签名 (注意: SDK内部使用 credentials.secretKey)
+        signer.addAuthorization({
+            accessKeyId: jimengConfig.ACCESS_KEY,
+            secretKey: jimengConfig.SECRET_KEY,
+        }, new Date());
 
-        const url = `${jimengConfig.API_URL}/?Action=${action}&Version=${version}`;
+        console.log('\n========== 即梦API请求 ==========');
+        console.log('URL:', url);
+        console.log('Headers:', request.headers);
+        console.log('=================================\n');
 
         try {
-            const response = await axios.post(url, body, { headers, timeout: 30000 });
+            const response = await axios.post(url, body, {
+                headers: request.headers,
+                params: request.params,
+                timeout: 30000,
+            });
             return response.data;
         } catch (error) {
             if (error.response) {
@@ -260,22 +83,22 @@ class JimengService {
 
     /**
      * 文生图 - 提交任务
-     * 即梦4.0 API
-     * https://www.volcengine.com/docs/85621/1616429
+     * 即梦3.0 API
      */
     async textToImage(prompt, options = {}) {
         if (!jimengConfig.isImageEnabled()) {
             throw new Error('文生图功能未启用或未配置');
         }
 
+        // 文生图3.0参数
         const params = {
-            req_key: 'jimeng_t2i_v40',  // 即梦4.0模型
+            req_key: 'high_aes_general_v30l_zt2i',
+            // req_key: 'jimeng_t2i_v30',
             prompt: prompt,
-            width: options.width || 1024,
-            height: options.height || 1024,
-            scale: options.scale || 0.7,  // 文本影响程度 (0-1)
-            seed: options.seed ?? -1,  // -1 表示随机种子
-            logo_info: { add_logo: false },  // 默认不添加水印
+            use_pre_llm: options.use_pre_llm !== false,
+            seed: options.seed ?? -1,
+            width: options.width || 1328,
+            height: options.height || 1328,
         };
 
         try {
@@ -303,15 +126,14 @@ class JimengService {
 
     /**
      * 文生图 - 查询任务状态
-     * 即梦4.0 API
+     * 即梦3.0 API
      */
     async getImageTaskResult(taskId) {
         const params = {
-            req_key: 'jimeng_t2i_v40',
+            req_key: 'jimeng_t2i_v30',
             task_id: taskId,
             req_json: JSON.stringify({
                 return_url: true,
-                logo_info: { add_logo: false }
             }),
         };
 
@@ -322,10 +144,18 @@ class JimengService {
                 params
             );
 
+            // API返回 image_url (下划线)
+            const imageUrl = response.data?.image_url || response.data?.image_urls?.[0] || null;
+
+            console.log('\n========== 文生图查询结果 ==========');
+            console.log('image_url:', imageUrl);
+            console.log('status:', response.data?.status);
+            console.log('===================================\n');
+
             return {
                 code: response.code,
                 status: response.data?.status,
-                imageUrls: response.data?.image_urls || [],
+                imageUrls: imageUrl ? [imageUrl] : [],
                 message: response.message,
             };
         } catch (error) {
@@ -336,19 +166,16 @@ class JimengService {
 
     /**
      * 文生视频 - 提交任务
-     * 即梦视频3.0 API (720P/1080P)
-     * https://www.volcengine.com/docs/85621/1616429
+     * 即梦视频3.0 API
      */
     async textToVideo(prompt, options = {}) {
         if (!jimengConfig.isVideoEnabled()) {
             throw new Error('文生视频功能未启用或未配置');
         }
 
-        // 根据分辨率选择req_key
         const resolution = options.resolution || '720p';
         const reqKey = resolution === '1080p' ? 'jimeng_t2v_v30_1080p' : 'jimeng_t2v_v30';
 
-        // 帧数计算：frames = 24 * 秒数 + 1，支持5秒(121)和10秒(241)
         const duration = options.duration || 5;
         const frames = duration === 10 ? 241 : 121;
 
@@ -402,10 +229,18 @@ class JimengService {
                 params
             );
 
+            // API返回 video_url (下划线)
+            const videoUrl = response.data?.video_url || response.data?.video_urls?.[0] || null;
+
+            console.log('\n========== 文生视频查询结果 ==========');
+            console.log('video_url:', videoUrl);
+            console.log('status:', response.data?.status);
+            console.log('=====================================\n');
+
             return {
                 code: response.code,
                 status: response.data?.status,
-                videoUrls: response.data?.video_urls || [],
+                videoUrls: videoUrl ? [videoUrl] : [],
                 message: response.message,
             };
         } catch (error) {
@@ -470,10 +305,23 @@ class JimengService {
      * 获取用户的历史生成记录
      */
     async getUserHistory(userId, type = null, limit = 20) {
-        const query = { userId };
+        const mongoose = require('mongoose');
+        const query = {};
+
+        // 处理 userId：如果是有效的 ObjectId 字符串，转换为 ObjectId
+        if (userId) {
+            if (mongoose.Types.ObjectId.isValid(userId)) {
+                query.userId = new mongoose.Types.ObjectId(userId);
+            } else {
+                query.userId = userId;
+            }
+        }
+
         if (type) {
             query.type = type;
         }
+
+        console.log('[DEBUG] getUserHistory query:', JSON.stringify(query));
 
         return JimengGeneration.find(query)
             .sort({ createdAt: -1 })
@@ -500,7 +348,7 @@ class JimengService {
     getModels() {
         return {
             image: [
-                { id: 'jimeng_t2i_v40', name: '即梦文生图4.0', description: '最新文生图模型4.0版本' },
+                { id: 'jimeng_t2i_v30', name: '即梦文生图3.0', description: '文生图3.0版本，支持高清大图' },
             ],
             video: [
                 { id: 'jimeng_t2v_v30', name: '即梦视频3.0 (720P)', description: '高清视频生成，推荐性价比之选' },

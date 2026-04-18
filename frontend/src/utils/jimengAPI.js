@@ -13,24 +13,32 @@ const apiClient = axios.create({
 // 即梦AI API封装
 export const jimengAPI = {
     // 文生图
-    textToImage: (prompt, options = {}) =>
-        apiClient.post('/api/jimeng/text-to-image', { prompt, options }),
+    textToImage: (prompt, options = {}, userId = null, userType = null) => {
+        const data = { prompt, options };
+        if (userId) data.userId = userId;
+        if (userType) data.userType = userType;
+        return apiClient.post('/api/jimeng/text-to-image', data);
+    },
 
     // 文生视频
-    textToVideo: (prompt, options = {}) =>
-        apiClient.post('/api/jimeng/text-to-video', { prompt, options }),
+    textToVideo: (prompt, options = {}, userId = null, userType = null) => {
+        const data = { prompt, options };
+        if (userId) data.userId = userId;
+        if (userType) data.userType = userType;
+        return apiClient.post('/api/jimeng/text-to-video', data);
+    },
 
     // 查询任务状态
-    getTaskStatus: (taskId) =>
-        apiClient.get(`/api/jimeng/task/${taskId}`),
+    getTaskStatus: (taskId, type = 'image') =>
+        apiClient.get(`/api/jimeng/task/${taskId}`, { params: { type } }),
 
     // 获取模型列表
     getModels: () =>
         apiClient.get('/api/jimeng/models'),
 
     // 获取用户历史记录
-    getUserHistory: (userId, params = {}) =>
-        apiClient.get(`/api/jimeng/history/${userId}`, { params }),
+    getUserHistory: (userId, type = null) =>
+        apiClient.get(`/api/jimeng/history/${userId}`, { params: { type } }),
 
     // 获取服务状态
     getStatus: () =>

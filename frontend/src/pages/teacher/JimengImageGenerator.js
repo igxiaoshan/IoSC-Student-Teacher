@@ -104,7 +104,9 @@ const JimengImageGenerator = () => {
         setProgress(0);
 
         try {
-            const response = await jimengAPI.textToImage(prompt, options);
+            const userId = currentUser?._id;
+            const userType = currentUser?.role;
+            const response = await jimengAPI.textToImage(prompt, options, userId, userType);
 
             if (response.data.success) {
                 setTaskId(response.data.taskId);

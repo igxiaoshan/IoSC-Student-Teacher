@@ -105,7 +105,9 @@ const JimengVideoGenerator = () => {
         setProgress(0);
 
         try {
-            const response = await jimengAPI.textToVideo(prompt, options);
+            const userId = currentUser?._id;
+            const userType = currentUser?.role;
+            const response = await jimengAPI.textToVideo(prompt, options, userId, userType);
 
             if (response.data.success) {
                 setTaskId(response.data.taskId);
