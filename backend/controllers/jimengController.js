@@ -359,6 +359,55 @@ const getUserHistory = async (req, res) => {
 };
 
 /**
+ * 代理获取媒体资源（解决跨域问题）
+ * GET /api/jimeng/proxy
+ */
+const proxyMedia = async (req, res) => {
+    try {
+        const { url } = req.query;
+
+        if (!url) {
+            return res.status(400).json({
+                success: false,
+                message: '缺少URL参数',
+            });
+        }
+
+        console.log('[DEBUG] 代理请求媒体:', url);
+
+        // 设置超时
+        const axios = require('axios');
+        const response = await axios.get(url, {
+            responseType: 'arraybuffer',
+            timeout: 60000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Referer': 'http://localhost:3000/',
+            },
+        });
+
+        // 获取内容类型
+        const contentType = response.headers['content-type'] || 'application/octet-stream';
+
+        // 设置响应头
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+
+        // 发送数据
+        res.send(response.data);
+    } catch (error) {
+        console.error('代理媒体失败:', error.message);
+        res.status(500).json({
+            success: false,
+            message: '获取媒体失败: ' + error.message,
+        });
+    }
+};
+
+/**
  * 获取服务状态
  * GET /api/jimeng/status
  */
@@ -388,4 +437,5 @@ module.exports = {
     getModels,
     getUserHistory,
     getStatus,
+    proxyMedia,
 };

@@ -144,6 +144,11 @@ class JimengService {
                 params
             );
 
+            // 检查API返回状态
+            if (response.code !== 10000) {
+                throw new Error(response.message || `API错误: ${response.code}`);
+            }
+
             // API返回 image_url (下划线)
             const imageUrl = response.data?.image_url || response.data?.image_urls?.[0] || null;
 
@@ -228,6 +233,11 @@ class JimengService {
                 '2022-08-31',
                 params
             );
+
+            // 检查API返回状态
+            if (response.code !== 10000) {
+                throw new Error(response.message || `API错误: ${response.code}`);
+            }
 
             // API返回 video_url (下划线)
             const videoUrl = response.data?.video_url || response.data?.video_urls?.[0] || null;

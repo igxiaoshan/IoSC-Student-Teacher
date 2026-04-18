@@ -6,6 +6,7 @@ const {
     getModels,
     getUserHistory,
     getStatus,
+    proxyMedia,
 } = require('../controllers/jimengController');
 
 /**
@@ -29,5 +30,8 @@ router.get('/models', getModels);
 
 // 获取用户历史记录
 router.get('/history/:userId', getUserHistory);
+
+// 代理获取媒体资源（解决跨域问题）
+router.get('/proxy', proxyMedia);
 
 module.exports = router;

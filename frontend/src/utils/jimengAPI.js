@@ -43,6 +43,9 @@ export const jimengAPI = {
     // 获取服务状态
     getStatus: () =>
         apiClient.get('/api/jimeng/status'),
+
+    // 代理获取媒体URL（解决跨域问题）
+    getProxyUrl: (mediaUrl) => `${BASE_URL}/api/jimeng/proxy?url=${encodeURIComponent(mediaUrl)}`,
 };
 
 export default jimengAPI;

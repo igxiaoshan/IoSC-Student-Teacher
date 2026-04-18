@@ -57,6 +57,8 @@ const JimengVideoGenerator = () => {
     const [loadingHistory, setLoadingHistory] = useState(false);
     const [videoUrls, setVideoUrls] = useState([]);
     const [fullscreenVideo, setFullscreenVideo] = useState(null);
+    const [videoBlobUrl, setVideoBlobUrl] = useState(null);
+    const [loadingVideo, setLoadingVideo] = useState(false);
 
     // 参数选项 - 即梦3.0视频版本
     const [options, setOptions] = useState({
@@ -123,6 +125,48 @@ const JimengVideoGenerator = () => {
         }
     };
 
+    // 播放视频 - 使用Blob URL避免跨域
+    const handlePlay = async (url) => {
+        if (!url) return;
+        setResult(url);
+
+        // 如果已经是Blob URL，直接使用
+        if (url.startsWith('blob:')) {
+            setVideoBlobUrl(url);
+            return;
+        }
+
+        // 清理旧的Blob URL
+        if (videoBlobUrl) {
+            URL.revokeObjectURL(videoBlobUrl);
+            setVideoBlobUrl(null);
+        }
+
+        setLoadingVideo(true);
+        const proxyUrl = jimengAPI.getProxyUrl(url);
+        try {
+            const response = await fetch(proxyUrl);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            setVideoBlobUrl(blobUrl);
+        } catch (err) {
+            console.error('加载视频失败:', err);
+            // 降级：直接使用代理URL
+            setVideoBlobUrl(proxyUrl);
+        } finally {
+            setLoadingVideo(false);
+        }
+    };
+
+    // 组件卸载时清理Blob URL
+    React.useEffect(() => {
+        return () => {
+            if (videoBlobUrl && videoBlobUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(videoBlobUrl);
+            }
+        };
+    }, [videoBlobUrl]);
+
     // 轮询任务状态
     const pollTaskStatus = useCallback(async (taskId) => {
         const poll = async () => {
@@ -136,7 +180,10 @@ const JimengVideoGenerator = () => {
                 if (data.status === 'completed') {
                     setVideoUrls(data.videoUrls || []);
                     if (data.videoUrls && data.videoUrls.length > 0) {
-                        setResult(data.videoUrls[0]);
+                        const videoUrl = data.videoUrls[0];
+                        setResult(videoUrl);
+                        // 触发加载 Blob URL 避免跨域
+                        handlePlay(videoUrl);
                     }
                     setSuccess(tJimeng('generationSuccess'));
                     return;
@@ -182,12 +229,6 @@ const JimengVideoGenerator = () => {
             fetchHistory();
         }
         setShowHistory(!showHistory);
-    };
-
-    // 播放视频
-    const handlePlay = (url) => {
-        if (!url) return;
-        setResult(url);
     };
 
     // 示例提示词
@@ -435,7 +476,7 @@ const JimengVideoGenerator = () => {
                                         </Typography>
                                         <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
                                             <Tooltip title={tJimeng('fullscreenPlayback')}>
-                                                <IconButton size="small" onClick={() => setFullscreenVideo(result)}>
+                                                <IconButton size="small" onClick={() => { handlePlay(result); setFullscreenVideo(result); }}>
                                                     <FullscreenIcon />
                                                 </IconButton>
                                             </Tooltip>
@@ -452,14 +493,40 @@ const JimengVideoGenerator = () => {
                                             borderRadius: 2,
                                             overflow: 'hidden',
                                             bgcolor: '#000',
+                                            position: 'relative',
+                                            paddingTop: '56.25%', // 16:9 aspect ratio
                                         }}
                                     >
-                                        <CardMedia
-                                            component="video"
-                                            src={result}
+                                        {loadingVideo && (
+                                            <Box sx={{
+                                                position: 'absolute',
+                                                top: '50%',
+                                                left: '50%',
+                                                transform: 'translate(-50%, -50%)',
+                                                zIndex: 2,
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: 1,
+                                            }}>
+                                                <CircularProgress size={40} sx={{ color: '#fff' }} />
+                                                <Typography sx={{ color: '#fff', fontSize: 12 }}>加载视频中...</Typography>
+                                            </Box>
+                                        )}
+                                        <video
+                                            src={videoBlobUrl || result}
                                             controls
-                                            sx={{
-                                                maxHeight: 400,
+                                            autoPlay
+                                            crossOrigin="anonymous"
+                                            onError={(e) => {
+                                                console.error('视频加载失败:', e);
+                                            }}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
                                                 objectFit: 'contain',
                                             }}
                                         />
@@ -613,7 +680,7 @@ const JimengVideoGenerator = () => {
                 <DialogContent sx={{ p: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {fullscreenVideo && (
                         <video
-                            src={fullscreenVideo}
+                            src={videoBlobUrl || fullscreenVideo}
                             controls
                             autoPlay
                             style={{ maxWidth: '100%', maxHeight: '90vh', outline: 'none' }}
