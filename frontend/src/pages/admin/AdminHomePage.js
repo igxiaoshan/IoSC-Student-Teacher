@@ -24,14 +24,14 @@ import { BlueButton, GreenButton } from '../../components/buttonStyles';
 
 import SystemStatusPanel from '../../components/dashboard/SystemStatusPanel';
 import BusinessMetricsPanel from '../../components/dashboard/BusinessMetricsPanel';
-
 import DashboardFilters from '../../components/dashboard/DashboardFilters';
-
 import { exportDashboardData, exportDashboardJSON } from '../../utils/dataExport';
+import { useTranslation } from '../../hooks/useTranslation';
 
 const AdminHomePage = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { tAdmin, tDashboard } = useTranslation();
     const { studentsList } = useSelector((state) => state.student);
     const { sclassesList } = useSelector((state) => state.sclass);
     const { teachersList } = useSelector((state) => state.teacher);
@@ -40,7 +40,7 @@ const AdminHomePage = () => {
 
     const adminID = safeGet(currentUser, '_id');
 
-    // 新增状态管理
+    // State management
     const [dashboardData, setDashboardData] = useState(null);
     const [timeRange, setTimeRange] = useState('month');
     const [loading, setLoading] = useState(false);
@@ -122,61 +122,61 @@ const AdminHomePage = () => {
 
     const keyMetricsCards = [
         {
-            title: '总用户数',
+            title: tAdmin('totalUsers'),
             value: totalUsers,
             change: '+5.2%',
             icon: <PeopleIcon />,
             color: 'primary'
         },
         {
-            title: '活跃用户',
+            title: tAdmin('activeUsers'),
             value: activeUsers,
             change: calculateActiveUserChange(),
             icon: <TrendingUpIcon />,
             color: 'success'
         },
         {
-            title: '系统健康度',
+            title: tAdmin('systemHealth'),
             value: '99.9%',
-            change: '稳定',
+            change: tAdmin('stable'),
             icon: <SpeedIcon />,
             color: 'info'
         },
         {
-            title: '内存使用率',
+            title: tAdmin('memoryUsage'),
             value: dashboardData?.system?.memory?.usagePercentage ?
                 `${dashboardData.system.memory.usagePercentage.toFixed(1)}%` : '0%',
-            change: dashboardData?.system?.memory?.usagePercentage < 80 ? '正常' : '偏高',
+            change: dashboardData?.system?.memory?.usagePercentage < 80 ? tAdmin('normal') : tAdmin('high'),
             icon: <MemoryIcon />,
             color: dashboardData?.system?.memory?.usagePercentage < 80 ? 'success' : 'warning'
         }
     ];
 
-    // 第二行指标卡片配置
+    // Second row metrics cards
     const secondRowMetricsCards = [
         {
-            title: '总班级数',
+            title: tDashboard('totalClasses'),
             value: numberOfClasses || 0,
             change: '+2.1%',
             icon: <SchoolIcon />,
             color: 'primary'
         },
         {
-            title: '总学生数',
+            title: tDashboard('totalStudents'),
             value: numberOfStudents || 0,
             change: '+8.5%',
             icon: <GroupsIcon />,
             color: 'success'
         },
         {
-            title: '总教师数',
+            title: tDashboard('totalTeachers'),
             value: numberOfTeachers || 0,
             change: '+1.2%',
             icon: <PersonOutlineIcon />,
             color: 'info'
         },
         {
-            title: '运营费用',
+            title: tAdmin('operatingExpenses'),
             value: '$10,000',
             change: '-3.2%',
             icon: <AttachMoneyIcon />,
@@ -188,17 +188,17 @@ const AdminHomePage = () => {
         <>
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
                 <Grid container spacing={3}>
-                    {/* 页面标题 */}
+                    {/* Page Title */}
                     <Grid item xs={12}>
                         <Typography variant="h4" component="h1" gutterBottom>
-                            管理员仪表板
+                            {tAdmin('adminDashboard')}
                         </Typography>
                         <Typography variant="body1" color="textSecondary" gutterBottom>
-                            实时监控系统运行状态和业务关键指标
+                            {tAdmin('dashboardSubtitle')}
                         </Typography>
                     </Grid>
 
-                    {/* 过滤器组件 */}
+                    {/* Filters */}
                     <Grid item xs={12}>
                         <DashboardFilters
                             timeRange={timeRange}

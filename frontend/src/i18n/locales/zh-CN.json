@@ -80,7 +80,11 @@
     "student": "学生",
     "studentIdPlaceholder": "请输入学号",
     "studentIdRequired": "学号是必填项",
-    "guestLogin": "游客登录"
+    "guestLogin": "游客登录",
+    "pleaseWait": "请稍候",
+    "adminDesc": "以管理员身份登录，管理和监督学校运营。",
+    "studentDesc": "访问学习资料，查看考勤记录，跟踪学习进度。",
+    "teacherDesc": "管理您的班级、作业和学生表现。"
   },
   "navigation": {
     "dashboard": "仪表盘",
@@ -132,10 +136,6 @@
     "className": "班级",
     "grade": "年级",
     "gender": "性别",
-    "Emergency Contact": "紧急联系人",
-    "Email": "邮箱",
-    "Address": "地址",
-    "Phone": "联系电话",
     "birthDate": "出生日期",
     "enrollmentDate": "入学日期",
     "guardianName": "监护人姓名",
@@ -146,6 +146,8 @@
     "courseManagement": "课程管理",
     "learningAssistant": "学习助手",
     "practiceAssistant": "练习助手",
+    "aiImageGenerator": "AI文生图",
+    "aiVideoGenerator": "AI文生视频",
     "subjectSelection": "科目选择",
     "male": "男",
     "female": "女",
@@ -180,7 +182,12 @@
     "noAttendanceRecord": "未找到考勤记录",
     "unknownSchool": "未知学校",
     "personalInfo": "个人信息",
-    "school": "学校"
+    "school": "学校",
+    "courseCalendar": "课程日历",
+    "logout": "退出登录",
+    "profile": "个人资料",
+    "users": "用户",
+    "practicalExerciseGenerator": "实训练习生成"
   },
   "teacher": {
     "teacherInfo": "教师信息",
@@ -214,6 +221,8 @@
     "aiTools": "AI工具",
     "aiAssessment": "AI评估生成",
     "aiCourseware": "课件生成",
+    "aiImageGenerator": "AI文生图",
+    "aiVideoGenerator": "AI文生视频",
     "complaintManagement": "投诉管理",
     "viewComplaints": "查看投诉",
     "studentProgress": "学生进度",
@@ -270,7 +279,21 @@
     "subjectSelectionSuccess": "科目选择成功！",
     "subjectSelectionFailed": "科目选择失败"
   },
-  "admin": {
+  "hero": {
+    "welcome": "欢迎使用",
+    "schoolManagement": "学校管理",
+    "system": "系统",
+    "description": "通过一个集成平台简化您学校的各项流程。无缝录取学生和教职工，跟踪考勤，监控学业表现，并自动化沟通——所有功能集于一处。"
+  },
+  "popup": {
+    "comingSoon": "功能即将上线，敬请期待！"
+  },
+  "auth": {
+    "empowerEducation": "赋能教育",
+    "empowerEducationDesc": "管理今天，为明天更聪明的明天做准备，每一位学生都很重要。",
+    "networkError": "网络错误"
+  },
+    "admin": {
     "adminDashboard": "管理员仪表盘",
     "adminPanel": "管理面板",
     "systemOverview": "系统概览",
@@ -283,7 +306,7 @@
     "totalUsers": "用户总数",
     "activeUsers": "活跃用户",
     "newRegistrations": "新注册用户",
-    "systemHealth": "系统健康状态",
+    "systemHealth": "系统健康度",
     "recentActivities": "最近活动",
     "quickStats": "快速统计",
     "manageUsers": "管理用户",
@@ -293,7 +316,13 @@
     "importData": "导入数据",
     "exportData": "导出数据",
     "bulkOperations": "批量操作",
-    "advancedSettings": "高级设置"
+    "advancedSettings": "高级设置",
+    "operatingExpenses": "运营费用",
+    "memoryUsage": "内存使用率",
+    "stable": "稳定",
+    "normal": "正常",
+    "high": "偏高",
+    "dashboardSubtitle": "实时监控系统运行状态和业务关键指标"
   },
   "table": {
     "serialNumber": "序号",

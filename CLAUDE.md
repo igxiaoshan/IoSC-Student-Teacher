@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with this repository.
 
 ## Project Overview
 
@@ -80,39 +80,93 @@ npm run setup-mirrors
 │   └── validation/       # 请求验证
 ├── frontend/             # React SPA
 │   ├── src/pages/        # 页面组件 (admin, student, teacher)
+│   │   └── */            # 各角色有自己的 Dashboard + SideBar
 │   ├── src/redux/        # Redux store 和 slices
 │   │   ├── userRelated/  # 用户状态管理
 │   │   ├── studentRelated/
 │   │   └── teacherRelated/
 │   ├── src/components/   # 共享组件
 │   └── src/utils/        # 前端工具函数
-├── docs/                 # 项目文档
 ├── electron-main.js      # Electron 主进程
 └── preload.js            # Electron 预加载脚本
 ```
 
-### 核心架构特点
+### 前端角色模块模式
 
-1. **角色系统**: Admin, Teacher, Student 三种角色，各自有独立的 Dashboard
-2. **路由保护**: 前端使用 Redux `currentRole` 控制路由访问
-3. **状态管理**: Redux Toolkit + React-Redux，按功能模块组织 slices
-4. **API 通信**: Axios 封装在 `*Handle.js` 文件中
-5. **AI 集成**:
-   - Dify API 用于课件生成、评估、对话
-   - Ollama 本地模型支持 (deepseek-r1)
-   - 流式响应支持 SSE
+每个角色（Admin/Teacher/Student）都有独立的模块：
+
+```
+pages/{role}/
+  ├── {Role}Dashboard.js    # 主容器，包含路由和侧边栏
+  ├── {Role}SideBar.js      # 导航侧边栏
+  ├── {Role}HomePage.js     # 首页
+  ├── {Role}Profile.js      # 个人资料
+  └── [功能页面].js          # 如 StudentSubjects, TeacherClassDetails
+```
+
+新增页面需要在 `{Role}Dashboard.js` 中添加路由，在 `{Role}SideBar.js` 中添加导航项。
 
 ### 后端路由组织
 
 - 主要路由在 `backend/routes/route.js` 统一挂载
-- AI 相关路由: `/api/chat`, `/api/feedback`
+- 路由模块使用 `router.use()` 挂载子路由
 - RESTful API 设计，使用 controllers 分离业务逻辑
 
-### 数据模型
+### 状态管理模式
 
-- **核心模型**: Student, Teacher, Admin, Sclass (班级), Subject
-- **业务模型**: Exam, Question, Answer, Notice, Complain
-- **AI 相关**: Courseware, Assessment, KnowledgeBase, StudentLearning
+- Redux Toolkit + React-Redux
+- 用户状态: `src/redux/userRelated/userHandle.js`
+- 各角色状态按 `*Related/` 目录组织
+- API 调用统一封装在 `*Handle.js` 文件中
+
+### API 封装模式
+
+前端 API 调用使用 Axios 封装：
+
+```javascript
+// apiConfig.js - 基础配置和通用方法
+export const api = { get, post, put, delete, patch };
+
+// 特定模块封装 (如 difyAPI.js, jimengAPI.js)
+export const moduleAPI = {
+  method: (data) => api.post('/endpoint', data),
+};
+```
+
+## AI 集成架构
+
+项目支持多种 AI 服务集成，使用单例模式的服务类封装：
+
+### 已集成的 AI 服务
+
+| 服务 | 配置文件 | 服务文件 | 用途 |
+|------|----------|----------|------|
+| Dify | `backend/config/difyConfig.js` | `backend/services/difyService.js` | 课件生成、评估、对话 |
+| Ollama | `backend/config/ollamaConfig.js` | `backend/services/ollamaService.js` | 本地模型支持 |
+| 即梦AI | `backend/config/jimengConfig.js` | `backend/services/jimengService.js` | 文生图、文生视频 |
+
+### 新增 AI 服务模式
+
+1. 在 `backend/config/` 创建配置模块
+2. 在 `backend/services/` 创建服务类（单例模式）
+3. 在 `backend/controllers/` 创建控制器
+4. 在 `backend/routes/` 创建路由文件
+5. 在 `backend/routes/route.js` 中注册路由
+6. 前端 `frontend/src/utils/` 创建 API 封装
+7. 前端页面组件放在对应角色的 pages 目录下
+
+## 数据模型
+
+### 核心模型
+- **User**: Admin, Teacher, Student 的基类
+- **Sclass**: 班级
+- **Subject**: 科目
+
+### 业务模型
+- **Exam, Question, Answer**: 考试相关
+- **Notice, Complain**: 通知和投诉
+- **Courseware, Assessment**: AI 课件和评估
+- **JimengGeneration**: 即梦AI生成记录
 
 ## Configuration
 
@@ -131,6 +185,10 @@ DIFY_TEACHER_LESSON_APP_ID=xxx
 OLLAMA_URL=http://localhost:11434
 OLLAMA_MODEL=deepseek-r1
 
+# 即梦AI (火山引擎)
+JIMENG_API_URL=https://visual.volcengine.com
+JIMENG_API_KEY=xxx
+
 # 其他配置参考 backend/.env.example
 ```
 
@@ -140,9 +198,16 @@ OLLAMA_MODEL=deepseek-r1
 REACT_APP_BASE_URL=http://localhost:5000
 ```
 
+## i18n 国际化
+
+- 翻译文件: `frontend/src/i18n/locales/`
+- 使用 `useTranslation` hook 获取翻译函数
+- tTeacher(), tStudent(), tCommon() 等按角色分类
+
 ## Important Notes
 
 1. **网络问题**: 如果遇到 API 连接问题，检查 `frontend/.env` 的 `REACT_APP_BASE_URL` 是否配置正确
 2. **删除功能**: 生产环境默认禁用删除功能，需要在 `userHandle.js` 和相关页面中手动启用
 3. **Electron 打包**: 使用 `electron-builder`，配置在根目录 `package.json` 的 `build` 字段
-4. **AI 功能**: 需要配置有效的 Dify API Key 或本地 Ollama 服务
+4. **AI 功能**: 需要配置有效的 Dify API Key、本地 Ollama 服务或即梦AI API Key
+5. **模拟模式**: AI 服务未配置时会返回模拟数据用于开发测试

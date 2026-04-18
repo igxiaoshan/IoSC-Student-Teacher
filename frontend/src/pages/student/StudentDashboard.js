@@ -22,6 +22,8 @@ import StudentComplain from './StudentComplain';
 import StudentCalendar from './StudentCalendar';
 import LearningAssistant from './LearningAssistant';
 import PracticeAssistant from './PracticeAssistant';
+import JimengImageGenerator from './JimengImageGenerator';
+import JimengVideoGenerator from './JimengVideoGenerator';
 import Logout from '../Logout'
 import AccountMenu from '../../components/AccountMenu';
 import { AppBar, Drawer } from '../../components/styles';
@@ -91,6 +93,8 @@ const StudentDashboard = () => {
                         {/* AI学习助手路由 */}
                         <Route path="/Student/learning-assistant" element={<LearningAssistant />} />
                         <Route path="/Student/practice-assistant" element={<PracticeAssistant />} />
+                        <Route path="/Student/jimeng-image" element={<JimengImageGenerator />} />
+                        <Route path="/Student/jimeng-video" element={<JimengVideoGenerator />} />
 
                         <Route path="/logout" element={<Logout />} />
                     </Routes>

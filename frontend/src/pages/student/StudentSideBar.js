@@ -13,10 +13,12 @@ import SchoolIcon from '@mui/icons-material/School';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import QuizIcon from '@mui/icons-material/Quiz';
+import ImageIcon from '@mui/icons-material/Image';
+import VideocamIcon from '@mui/icons-material/Videocam';
 
 const StudentSideBar = () => {
     const location = useLocation();
-    const { tNav, tStudent } = useTranslation();
+    const { tNav, tStudent, tCommon } = useTranslation();
     return (
         <>
             <React.Fragment>
@@ -48,7 +50,7 @@ const StudentSideBar = () => {
                     <ListItemIcon>
                         <CalendarTodayIcon color={location.pathname.startsWith("/Student/calendar") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="课程日历" />
+                    <ListItemText primary={tStudent('courseCalendar')} />
                 </ListItemButton>
                 {/* <ListItemButton component={Link} to="/Student/complain">
                     <ListItemIcon>
@@ -66,31 +68,43 @@ const StudentSideBar = () => {
                     <ListItemIcon>
                         <SmartToyIcon color={location.pathname.startsWith("/Student/learning-assistant") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="在线学习助手" />
+                    <ListItemText primary={tStudent('learningAssistant')} />
                 </ListItemButton>
                 <ListItemButton component={Link} to="/Student/practice-assistant">
                     <ListItemIcon>
                         <QuizIcon color={location.pathname.startsWith("/Student/practice-assistant") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="练习评测助手" />
+                    <ListItemText primary={tStudent('practiceAssistant')} />
+                </ListItemButton>
+                <ListItemButton component={Link} to="/Student/jimeng-image">
+                    <ListItemIcon>
+                        <ImageIcon color={location.pathname.startsWith("/Student/jimeng-image") ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary={tStudent('aiImageGenerator')} />
+                </ListItemButton>
+                <ListItemButton component={Link} to="/Student/jimeng-video">
+                    <ListItemIcon>
+                        <VideocamIcon color={location.pathname.startsWith("/Student/jimeng-video") ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary={tStudent('aiVideoGenerator')} />
                 </ListItemButton>
             </React.Fragment>
             <Divider sx={{ my: 1 }} />
             <React.Fragment>
                 <ListSubheader component="div" inset>
-                    用户
+                    {tNav('users')}
                 </ListSubheader>
                 <ListItemButton component={Link} to="/Student/profile">
                     <ListItemIcon>
                         <AccountCircleOutlinedIcon color={location.pathname.startsWith("/Student/profile") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="个人资料" />
+                    <ListItemText primary={tCommon('profile')} />
                 </ListItemButton>
                 <ListItemButton component={Link} to="/logout">
                     <ListItemIcon>
                         <ExitToAppIcon color={location.pathname.startsWith("/logout") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="退出登录" />
+                    <ListItemText primary={tCommon('logout')} />
                 </ListItemButton>
             </React.Fragment>
         </>

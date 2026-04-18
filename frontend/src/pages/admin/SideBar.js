@@ -16,7 +16,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 
 const SideBar = () => {
     const location = useLocation();
-    const { tNav, tAdmin, tStudent, tClass } = useTranslation();
+    const { tNav, tAdmin, tStudent, tClass, tCommon } = useTranslation();
     const [classMenuOpen, setClassMenuOpen] = React.useState(false);
     const [studentMenuOpen, setStudentMenuOpen] = React.useState(false);
 
@@ -138,19 +138,19 @@ const SideBar = () => {
             <Divider sx={{ my: 1 }} />
             <React.Fragment>
                 <ListSubheader component="div" inset>
-                    用户
+                    {tNav('users')}
                 </ListSubheader>
                 <ListItemButton component={Link} to="/Admin/profile">
                     <ListItemIcon>
                         <AccountCircleOutlinedIcon color={location.pathname.startsWith("/Admin/profile") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="个人资料" />
+                    <ListItemText primary={tNav('profile')} />
                 </ListItemButton>
                 <ListItemButton component={Link} to="/logout">
                     <ListItemIcon>
                         <ExitToAppIcon color={location.pathname.startsWith("/logout") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="退出登录" />
+                    <ListItemText primary={tCommon('logout')} />
                 </ListItemButton>
             </React.Fragment>
         </>

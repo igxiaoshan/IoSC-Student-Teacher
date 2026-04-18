@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Skill(claude-api)"
+      "Skill(claude-api)",
+      "WebSearch",
+      "mcp__grok-search__web_search",
+      "mcp__grok-search__web_fetch",
+      "Skill(update-config)",
+      "mcp__context7__resolve-library-id",
+      "mcp__fetch__fetch"
     ]
   }
 }

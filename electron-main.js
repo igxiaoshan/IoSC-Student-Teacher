@@ -42,11 +42,13 @@ function startBackendServer() {
       CORS_ORIGIN: `http://localhost:${APP_CONFIG.FRONTEND_PORT}`
     };
 
-    // 启动后端进程
+    // 启动后端进程 - 注意 cwd 和 script 路径要匹配
+    // 如果 cwd 是 backend 目录，则 script 只需传 index.js
+    // 如果 cwd 是项目根目录，则 script 需要传 backend/index.js
     const backendScript = path.join(APP_CONFIG.BACKEND_PATH, 'index.js');
     backendProcess = spawn('node', [backendScript], {
       env,
-      cwd: APP_CONFIG.BACKEND_PATH,
+      cwd: path.dirname(APP_CONFIG.BACKEND_PATH), // 设为 backend 的父目录（项目根目录）
       stdio: ['pipe', 'pipe', 'pipe']
     });
 

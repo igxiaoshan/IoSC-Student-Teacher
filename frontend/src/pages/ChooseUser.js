@@ -13,10 +13,12 @@ import styled from 'styled-components';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser } from '../redux/userRelated/userHandle';
 import Popup from '../components/Popup';
+import { useTranslation } from '../hooks/useTranslation';
 
 const ChooseUser = ({ visitor }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { tAuth } = useTranslation();
   const password = 'zxc';
 
   const { status, currentUser, currentRole } = useSelector((state) => state.user);
@@ -82,9 +84,9 @@ const ChooseUser = ({ visitor }) => {
               <IconCircle>
                 <AccountCircle fontSize="large" />
               </IconCircle>
-              <UserTitle>管理员</UserTitle>
+              <UserTitle>{tAuth('admin')}</UserTitle>
               <UserDesc>
-                以管理员身份登录，管理和监督学校运营。
+                {tAuth('adminDesc')}
               </UserDesc>
             </UserCard>
           </Grid>
@@ -93,9 +95,9 @@ const ChooseUser = ({ visitor }) => {
               <IconCircle>
                 <School fontSize="large" />
               </IconCircle>
-              <UserTitle>学生</UserTitle>
+              <UserTitle>{tAuth('student')}</UserTitle>
               <UserDesc>
-                访问学习资料，查看考勤记录，跟踪学习进度。
+                {tAuth('studentDesc')}
               </UserDesc>
             </UserCard>
           </Grid>
@@ -104,9 +106,9 @@ const ChooseUser = ({ visitor }) => {
               <IconCircle>
                 <Group fontSize="large" />
               </IconCircle>
-              <UserTitle>教师</UserTitle>
+              <UserTitle>{tAuth('teacher')}</UserTitle>
               <UserDesc>
-                管理您的班级、作业和学生表现。
+                {tAuth('teacherDesc')}
               </UserDesc>
             </UserCard>
           </Grid>
@@ -115,7 +117,7 @@ const ChooseUser = ({ visitor }) => {
 
       <Backdrop sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }} open={loader}>
         <CircularProgress color="inherit" />
-        请稍候
+        {tAuth('pleaseWait')}
       </Backdrop>
       <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
     </PageWrapper>

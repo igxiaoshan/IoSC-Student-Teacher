@@ -9,6 +9,8 @@ import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined
 
 import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import ImageIcon from '@mui/icons-material/Image';
+import VideocamIcon from '@mui/icons-material/Videocam';
 import BuildIcon from '@mui/icons-material/Build';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import { useSelector } from 'react-redux';
@@ -16,7 +18,7 @@ import { getSafeClassName } from '../../utils/safeAccess';
 
 const TeacherSideBar = () => {
     const { currentUser } = useSelector((state) => state.user);
-    const { tNav, tTeacher, tClass } = useTranslation();
+    const { tNav, tTeacher, tClass, tCommon } = useTranslation();
     const sclassName = getSafeClassName(currentUser?.teachSclass) || tClass('unassignedClass');
 
     const location = useLocation();
@@ -57,7 +59,19 @@ const TeacherSideBar = () => {
                     <ListItemIcon>
                         <BuildIcon color={location.pathname.startsWith("/Teacher/practical-exercise") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="实训练习生成" />
+                    <ListItemText primary={tTeacher('practicalExerciseGenerator')} />
+                </ListItemButton>
+                <ListItemButton component={Link} to="/Teacher/jimeng-image">
+                    <ListItemIcon>
+                        <ImageIcon color={location.pathname.startsWith("/Teacher/jimeng-image") ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary={tTeacher('aiImageGenerator')} />
+                </ListItemButton>
+                <ListItemButton component={Link} to="/Teacher/jimeng-video">
+                    <ListItemIcon>
+                        <VideocamIcon color={location.pathname.startsWith("/Teacher/jimeng-video") ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary={tTeacher('aiVideoGenerator')} />
                 </ListItemButton>
                 {/* <ListItemButton component={Link} to="/Teacher/analytics">
                     <ListItemIcon>
@@ -69,19 +83,19 @@ const TeacherSideBar = () => {
             <Divider sx={{ my: 1 }} />
             <React.Fragment>
                 <ListSubheader component="div" inset>
-                    用户
+                    {tNav('users')}
                 </ListSubheader>
                 <ListItemButton component={Link} to="/Teacher/profile">
                     <ListItemIcon>
                         <AccountCircleOutlinedIcon color={location.pathname.startsWith("/Teacher/profile") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="个人资料" />
+                    <ListItemText primary={tCommon('profile')} />
                 </ListItemButton>
                 <ListItemButton component={Link} to="/logout">
                     <ListItemIcon>
                         <ExitToAppIcon color={location.pathname.startsWith("/logout") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary="退出登录" />
+                    <ListItemText primary={tCommon('logout')} />
                 </ListItemButton>
             </React.Fragment>
         </>

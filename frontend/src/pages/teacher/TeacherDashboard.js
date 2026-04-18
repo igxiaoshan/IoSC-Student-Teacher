@@ -27,6 +27,8 @@ import StudentExamMarks from '../admin/studentRelated/StudentExamMarks';
 import EnhancedAICoursewareGenerator from './EnhancedAICoursewareGenerator';
 import PracticalExerciseGenerator from './PracticalExerciseGenerator';
 import StudentAnalytics from './StudentAnalytics';
+import JimengImageGenerator from './JimengImageGenerator';
+import JimengVideoGenerator from './JimengVideoGenerator';
 
 const TeacherDashboard = () => {
     const [open, setOpen] = useState(true);
@@ -95,6 +97,8 @@ const TeacherDashboard = () => {
                         {/* AI功能路由 */}
                         <Route path="/Teacher/ai-courseware" element={<EnhancedAICoursewareGenerator />} />
                         <Route path="/Teacher/practical-exercise" element={<PracticalExerciseGenerator />} />
+                        <Route path="/Teacher/jimeng-image" element={<JimengImageGenerator />} />
+                        <Route path="/Teacher/jimeng-video" element={<JimengVideoGenerator />} />
                         <Route path="/Teacher/analytics" element={<StudentAnalytics />} />
 
                         <Route path="/logout" element={<Logout />} />

@@ -4,8 +4,11 @@ import { Container, Grid, Box } from '@mui/material';
 import styled from 'styled-components';
 import Students from '../assets/student.jpg';
 import { IndigoButton, WhiteWithIndigoBorderButton } from '../components/buttonStyles';
+import { useTranslation } from '../hooks/useTranslation';
 
 const Homepage = () => {
+  const { t, tCommon } = useTranslation();
+
   return (
     <FullHeightContainer>
       <ResponsiveGrid container>
@@ -13,21 +16,21 @@ const Homepage = () => {
         <Grid item xs={12} md={6}>
           <ContentBox>
             <StyledTitle>
-              欢迎使用 <br />
-              <PurpleText>学校管理</PurpleText> <br />
-              系统
+              {t("hero.welcome")} <br />
+              <PurpleText>{t("hero.schoolManagement")}</PurpleText> <br />
+              {t("hero.system")}
             </StyledTitle>
             <StyledText>
-                通过一个集成平台简化您学校的各项流程。无缝录取学生和教职工，跟踪考勤，监控学业表现，并自动化沟通——所有功能集于一处。
+              {t("hero.description")}
             </StyledText>
             <StyledLink to="/choose">
               <IndigoButton variant="contained" fullWidth>
-                登录
+                {tCommon("login")}
               </IndigoButton>
             </StyledLink>
             <StyledLink to="/Adminregister">
               <WhiteWithIndigoBorderButton variant="outlined" fullWidth>
-                注册
+                {tCommon("register")}
               </WhiteWithIndigoBorderButton>
             </StyledLink>
           </ContentBox>

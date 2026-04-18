@@ -117,7 +117,7 @@ const LoginPage = ({ role }) => {
             setLoader(false)
         }
         else if (status === 'error') {
-            setMessage("网络错误")
+            setMessage(tAuth('networkError'))
             setShowPopup(true)
             setLoader(false)
             setGuestLoader(false)
@@ -144,10 +144,10 @@ const LoginPage = ({ role }) => {
                             <LanguageSwitcher />
                         </Box>
                         <Typography variant="h4" sx={{ mb: 2, color: "#2c2143" }}>
-                            {role} 登录
+                            {tAuth('loginTitle')}
                         </Typography>
                         <Typography variant="h7">
-                            欢迎回来！请输入您的详细信息!
+                            {tAuth('welcomeBack')}
                         </Typography>
                         <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 2 }}>
                             {role === "Student" ? (
@@ -251,11 +251,11 @@ const LoginPage = ({ role }) => {
                             {role === "Admin" &&
                                 <Grid container>
                                     <Grid>
-                                        还没有账户？
+                                        {tAuth('noAccount')}
                                     </Grid>
                                     <Grid item sx={{ ml: 2 }}>
                                         <StyledLink to="/Adminregister">
-                                            注册
+                                            {tCommon('register')}
                                         </StyledLink>
                                     </Grid>
                                 </Grid>
@@ -284,10 +284,10 @@ const LoginPage = ({ role }) => {
                     >
                     <Box>
                         <Typography variant="h4" fontWeight="bold" gutterBottom>
-                            赋能教育
+                            {tAuth('empowerEducation')}
                         </Typography>
                         <Typography variant="subtitle1">
-                            "管理今天，为明天更聪明的明天做准备，每一位学生都很重要。"
+                            {tAuth('empowerEducationDesc')}
                         </Typography>
                     </Box>
 
@@ -299,7 +299,7 @@ const LoginPage = ({ role }) => {
                 open={guestLoader}
             >
                 <CircularProgress color="primary" />
-                请稍等
+                {tCommon('loading')}
             </Backdrop>
             <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
         </ThemeProvider>
