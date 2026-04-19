@@ -73,6 +73,12 @@ const TeacherSideBar = () => {
                     </ListItemIcon>
                     <ListItemText primary={tTeacher('aiVideoGenerator')} />
                 </ListItemButton>
+                <ListItemButton component={Link} to="/Teacher/knowledge-video">
+                    <ListItemIcon>
+                        <AutoAwesomeIcon color={location.pathname.startsWith("/Teacher/knowledge-video") ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary={tTeacher('knowledgeVideoGenerator')} />
+                </ListItemButton>
                 {/* <ListItemButton component={Link} to="/Teacher/analytics">
                     <ListItemIcon>
                         <AnalyticsIcon color={location.pathname.startsWith("/Teacher/analytics") ? 'primary' : 'inherit'} />

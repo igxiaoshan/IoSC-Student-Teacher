@@ -313,4 +313,7 @@ router.use('/adminDashboard', adminDashboardRoutes);
 // 即梦AI路由
 router.use('/api/jimeng', require('./jimeng'));
 
+// 知识视频生成路由
+router.use('/api/knowledge', require('./knowledgeVideo'));
+
 module.exports = router;

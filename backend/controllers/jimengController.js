@@ -3,6 +3,7 @@
  * 处理文生图和文生视频的请求
  */
 
+const axios = require('axios');
 const jimengService = require('../services/jimengService');
 const JimengGeneration = require('../models/JimengGeneration');
 const jimengConfig = require('../config/jimengConfig');
@@ -375,37 +376,107 @@ const proxyMedia = async (req, res) => {
 
         console.log('[DEBUG] 代理请求媒体:', url);
 
-        // 设置超时
-        const axios = require('axios');
-        const response = await axios.get(url, {
-            responseType: 'arraybuffer',
+        // ✅ 透传 Range（关键！）
+        const headers = {
+            'User-Agent': 'Mozilla/5.0',
+            'Referer': 'http://localhost:3000/',
+        };
+
+        if (req.headers.range) {
+            headers['Range'] = req.headers.range;
+        }
+
+        // ✅ 使用 stream（不要 arraybuffer）
+        const response = await axios({
+            method: 'GET',
+            url,
+            responseType: 'stream',
             timeout: 60000,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Referer': 'http://localhost:3000/',
-            },
+            headers,
         });
 
-        // 获取内容类型
-        const contentType = response.headers['content-type'] || 'application/octet-stream';
+        // ✅ 设置响应状态（200 / 206）
+        res.status(response.status);
 
-        // 设置响应头
-        res.setHeader('Content-Type', contentType);
+        // ✅ 透传关键头（非常重要）
+        const passHeaders = [
+            'content-type',
+            'content-length',
+            'accept-ranges',
+            'content-range',
+        ];
+
+        passHeaders.forEach((key) => {
+            const value = response.headers[key];
+            if (value) {
+                res.setHeader(key, value);
+            }
+        });
+
+        // ✅ 解决跨域
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
+
+        // ✅ 可选缓存
         res.setHeader('Cache-Control', 'public, max-age=86400');
 
-        // 发送数据
-        res.send(response.data);
+        // ✅ 流式返回（核心）
+        response.data.pipe(res);
+
     } catch (error) {
         console.error('代理媒体失败:', error.message);
+
         res.status(500).json({
             success: false,
             message: '获取媒体失败: ' + error.message,
         });
     }
 };
+// const proxyMedia = async (req, res) => {
+//     try {
+//         const { url } = req.query;
+
+//         if (!url) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: '缺少URL参数',
+//             });
+//         }
+
+//         console.log('[DEBUG] 代理请求媒体:', url);
+
+//         // 设置超时
+//         const axios = require('axios');
+//         const response = await axios.get(url, {
+//             responseType: 'arraybuffer',
+//             timeout: 60000,
+//             headers: {
+//                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+//                 'Referer': 'http://localhost:3000/',
+//             },
+//         });
+
+//         // 获取内容类型
+//         const contentType = response.headers['content-type'] || 'application/octet-stream';
+
+//         // 设置响应头
+//         res.setHeader('Content-Type', contentType);
+//         res.setHeader('Access-Control-Allow-Origin', '*');
+//         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+//         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+//         res.setHeader('Cache-Control', 'public, max-age=86400');
+
+//         // 发送数据
+//         res.send(response.data);
+//     } catch (error) {
+//         console.error('代理媒体失败:', error.message);
+//         res.status(500).json({
+//             success: false,
+//             message: '获取媒体失败: ' + error.message,
+//         });
+//     }
+// };
 
 /**
  * 获取服务状态

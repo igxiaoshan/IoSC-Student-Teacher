@@ -126,37 +126,43 @@ const JimengVideoGenerator = () => {
     };
 
     // 播放视频 - 使用Blob URL避免跨域
-    const handlePlay = async (url) => {
+    const handlePlay = (url) => {
         if (!url) return;
-        setResult(url);
 
-        // 如果已经是Blob URL，直接使用
-        if (url.startsWith('blob:')) {
-            setVideoBlobUrl(url);
-            return;
-        }
-
-        // 清理旧的Blob URL
-        if (videoBlobUrl) {
-            URL.revokeObjectURL(videoBlobUrl);
-            setVideoBlobUrl(null);
-        }
-
-        setLoadingVideo(true);
-        const proxyUrl = jimengAPI.getProxyUrl(url);
-        try {
-            const response = await fetch(proxyUrl);
-            const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            setVideoBlobUrl(blobUrl);
-        } catch (err) {
-            console.error('加载视频失败:', err);
-            // 降级：直接使用代理URL
-            setVideoBlobUrl(proxyUrl);
-        } finally {
-            setLoadingVideo(false);
-        }
+        const proxyUrl = `/api/jimeng/proxy?url=${encodeURIComponent(url)}`;
+        setVideoBlobUrl(proxyUrl);
     };
+    // const handlePlay = async (url) => {
+    //     if (!url) return;
+    //     setResult(url);
+
+    //     // 如果已经是Blob URL，直接使用
+    //     if (url.startsWith('blob:')) {
+    //         setVideoBlobUrl(url);
+    //         return;
+    //     }
+
+    //     // 清理旧的Blob URL
+    //     if (videoBlobUrl) {
+    //         URL.revokeObjectURL(videoBlobUrl);
+    //         setVideoBlobUrl(null);
+    //     }
+
+    //     setLoadingVideo(true);
+    //     const proxyUrl = jimengAPI.getProxyUrl(url);
+    //     try {
+    //         const response = await fetch(proxyUrl);
+    //         const blob = await response.blob();
+    //         const blobUrl = URL.createObjectURL(blob);
+    //         setVideoBlobUrl(blobUrl);
+    //     } catch (err) {
+    //         console.error('加载视频失败:', err);
+    //         // 降级：直接使用代理URL
+    //         setVideoBlobUrl(proxyUrl);
+    //     } finally {
+    //         setLoadingVideo(false);
+    //     }
+    // };
 
     // 组件卸载时清理Blob URL
     React.useEffect(() => {
@@ -415,37 +421,37 @@ const JimengVideoGenerator = () => {
                         {/* 进度显示 */}
                         {taskId && (taskStatus === 'pending' || taskStatus === 'processing' ||
                             taskStatus === 'in_queue' || taskStatus === 'generating') && (
-                            <Fade in>
-                                <Box sx={{ mt: 3 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                        <CircularProgress size={16} sx={{ color: '#f5576c' }} />
-                                        <Typography variant="body2" color="textSecondary">
-                                            {taskStatus === 'in_queue' ? tJimeng('queue') :
-                                             taskStatus === 'generating' ? tJimeng('generatingVideo') : tJimeng('processing')}
-                                        </Typography>
-                                        <Typography variant="body2" color="textSecondary" sx={{ ml: 'auto' }}>
-                                            {Math.round(progress * 100)}%
+                                <Fade in>
+                                    <Box sx={{ mt: 3 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                            <CircularProgress size={16} sx={{ color: '#f5576c' }} />
+                                            <Typography variant="body2" color="textSecondary">
+                                                {taskStatus === 'in_queue' ? tJimeng('queue') :
+                                                    taskStatus === 'generating' ? tJimeng('generatingVideo') : tJimeng('processing')}
+                                            </Typography>
+                                            <Typography variant="body2" color="textSecondary" sx={{ ml: 'auto' }}>
+                                                {Math.round(progress * 100)}%
+                                            </Typography>
+                                        </Box>
+                                        <LinearProgress
+                                            variant="determinate"
+                                            value={progress * 100}
+                                            sx={{
+                                                height: 6,
+                                                borderRadius: 3,
+                                                bgcolor: '#e0e0e0',
+                                                '& .MuiLinearProgress-bar': {
+                                                    borderRadius: 3,
+                                                    background: 'linear-gradient(90deg, #f093fb 0%, #f5576c 100%)',
+                                                }
+                                            }}
+                                        />
+                                        <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                                            {tJimeng('videoGenerationTakesTime')}
                                         </Typography>
                                     </Box>
-                                    <LinearProgress
-                                        variant="determinate"
-                                        value={progress * 100}
-                                        sx={{
-                                            height: 6,
-                                            borderRadius: 3,
-                                            bgcolor: '#e0e0e0',
-                                            '& .MuiLinearProgress-bar': {
-                                                borderRadius: 3,
-                                                background: 'linear-gradient(90deg, #f093fb 0%, #f5576c 100%)',
-                                            }
-                                        }}
-                                    />
-                                    <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
-                                        {tJimeng('videoGenerationTakesTime')}
-                                    </Typography>
-                                </Box>
-                            </Fade>
-                        )}
+                                </Fade>
+                            )}
                     </Paper>
                 </Grid>
 

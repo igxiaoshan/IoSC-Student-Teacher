@@ -29,6 +29,7 @@ import PracticalExerciseGenerator from './PracticalExerciseGenerator';
 import StudentAnalytics from './StudentAnalytics';
 import JimengImageGenerator from './JimengImageGenerator';
 import JimengVideoGenerator from './JimengVideoGenerator';
+import TeacherKnowledgeVideoGenerator from './TeacherKnowledgeVideoGenerator';
 
 const TeacherDashboard = () => {
     const [open, setOpen] = useState(true);
@@ -99,6 +100,7 @@ const TeacherDashboard = () => {
                         <Route path="/Teacher/practical-exercise" element={<PracticalExerciseGenerator />} />
                         <Route path="/Teacher/jimeng-image" element={<JimengImageGenerator />} />
                         <Route path="/Teacher/jimeng-video" element={<JimengVideoGenerator />} />
+                        <Route path="/Teacher/knowledge-video" element={<TeacherKnowledgeVideoGenerator />} />
                         <Route path="/Teacher/analytics" element={<StudentAnalytics />} />
 
                         <Route path="/logout" element={<Logout />} />

@@ -82,11 +82,11 @@ const StudentSideBar = () => {
                     </ListItemIcon>
                     <ListItemText primary={tStudent('aiImageGenerator')} />
                 </ListItemButton>
-                <ListItemButton component={Link} to="/Student/jimeng-video">
+                <ListItemButton component={Link} to="/Student/knowledge-video">
                     <ListItemIcon>
-                        <VideocamIcon color={location.pathname.startsWith("/Student/jimeng-video") ? 'primary' : 'inherit'} />
+                        <VideocamIcon color={location.pathname.startsWith("/Student/knowledge-video") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
-                    <ListItemText primary={tStudent('aiVideoGenerator')} />
+                    <ListItemText primary={tStudent('knowledgeVideo')} />
                 </ListItemButton>
             </React.Fragment>
             <Divider sx={{ my: 1 }} />

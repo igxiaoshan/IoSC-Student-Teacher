@@ -398,10 +398,11 @@ class JimengService {
                     imageUrls: [`https://picsum.photos/1024/1024?random=${taskId}`],
                 };
             } else {
+                // 使用用户提供的公开视频
                 return {
                     status: 'done',
                     code: 10000,
-                    videoUrls: ['https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4'],
+                    videoUrls: ['https://qn-oss.onepark.com.cn:8008/aikeInfoQos/test/%E5%BE%AE%E4%BF%A1%E8%A7%86%E9%A2%912025-09-27_143522_758.mp4?e=1916810886&token=4HWY0PoaObUJpqbSTacwB9AkjaFezSlaf8G2csOT:Xe7GzJZ2Zn1yjvio5_PzwepFIXI='],
                 };
             }
         }
