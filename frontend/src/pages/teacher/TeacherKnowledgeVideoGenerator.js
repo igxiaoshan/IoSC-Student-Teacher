@@ -101,12 +101,13 @@ const TeacherKnowledgeVideoGenerator = () => {
             return;
         }
 
-        // 尝试通过代理加载视频
         setLoadingVideo(true);
-        const proxyUrl = jimengAPI.getProxyUrl(url);
+
+        // 如果是本地代理URL，直接fetch；否则走CDN代理逻辑
+        const fetchUrl = url.startsWith('/api/') ? `${window.location.origin}${url}` : jimengAPI.getProxyUrl(url);
 
         try {
-            const response = await fetch(proxyUrl);
+            const response = await fetch(fetchUrl);
             if (response.ok) {
                 const blob = await response.blob();
                 const blobUrl = URL.createObjectURL(blob);
@@ -116,8 +117,8 @@ const TeacherKnowledgeVideoGenerator = () => {
             }
             throw new Error(`HTTP ${response.status}`);
         } catch (err) {
-            console.error('代理加载失败，尝试直接播放:', err);
-            // 降级：直接使用原始URL
+            console.error('视频加载失败:', err);
+            // 降级：直接使用URL
             setVideoBlobUrl(url);
         } finally {
             setLoadingVideo(false);

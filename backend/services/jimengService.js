@@ -36,6 +36,11 @@ class JimengService {
         const url = `${jimengConfig.API_URL}/`;
         const body = JSON.stringify(bodyParams);
 
+        console.log('[DEBUG] 即梦API配置检查:');
+        console.log('[DEBUG] ACCESS_KEY:', jimengConfig.ACCESS_KEY ? jimengConfig.ACCESS_KEY.substring(0, 4) + '...' : 'undefined');
+        console.log('[DEBUG] SECRET_KEY:', jimengConfig.SECRET_KEY ? jimengConfig.SECRET_KEY.substring(0, 4) + '...' : 'undefined');
+        console.log('[DEBUG] API_URL:', jimengConfig.API_URL);
+
         // 构建请求对象
         const request = {
             method: 'POST',
@@ -49,21 +54,21 @@ class JimengService {
             },
             body: body,
             pathname: '/',
-            region: 'cn-north-1',  // 必须指定 region
+            region: 'cn-north-1',
         };
 
         // 创建签名器
         const signer = new Signer(request, 'cv');
 
-        // 添加签名 (注意: SDK内部使用 credentials.secretKey)
+        // 添加签名
         signer.addAuthorization({
             accessKeyId: jimengConfig.ACCESS_KEY,
             secretKey: jimengConfig.SECRET_KEY,
-        }, new Date());
+        });
 
         console.log('\n========== 即梦API请求 ==========');
         console.log('URL:', url);
-        console.log('Headers:', request.headers);
+        console.log('Headers:', JSON.stringify(request.headers, null, 2));
         console.log('=================================\n');
 
         try {
@@ -398,11 +403,11 @@ class JimengService {
                     imageUrls: [`https://picsum.photos/1024/1024?random=${taskId}`],
                 };
             } else {
-                // 使用用户提供的公开视频
+                // 真实视频URL（由API返回）
                 return {
                     status: 'done',
                     code: 10000,
-                    videoUrls: ['https://qn-oss.onepark.com.cn:8008/aikeInfoQos/test/%E5%BE%AE%E4%BF%A1%E8%A7%86%E9%A2%912025-09-27_143522_758.mp4?e=1916810886&token=4HWY0PoaObUJpqbSTacwB9AkjaFezSlaf8G2csOT:Xe7GzJZ2Zn1yjvio5_PzwepFIXI='],
+                    videoUrls: [],
                 };
             }
         }

@@ -4,14 +4,84 @@
  */
 
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 const jimengService = require('../services/jimengService');
 const difyConfig = require('../config/difyConfig');
 const JimengGeneration = require('../models/JimengGeneration');
 
+// 视频存储目录
+const VIDEO_STORAGE_DIR = path.join(__dirname, '..', 'videos');
+
+// 确保视频目录存在
+if (!fs.existsSync(VIDEO_STORAGE_DIR)) {
+    fs.mkdirSync(VIDEO_STORAGE_DIR, { recursive: true });
+}
+
+/**
+ * 下载视频到本地
+ * @param {string} videoUrl - 视频URL
+ * @param {string} taskId - 任务ID
+ * @returns {Promise<string>} 本地文件路径
+ */
+const downloadVideoToLocal = async (videoUrl, taskId) => {
+    try {
+        console.log('[下载] 开始下载视频:', videoUrl);
+
+        // 生成文件名
+        const fileName = `${taskId}_${Date.now()}.mp4`;
+        const filePath = path.join(VIDEO_STORAGE_DIR, fileName);
+
+        // 下载视频 - 模拟浏览器请求头
+        this.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': '*/*',
+            'Accept-Encoding': 'identity;q=1, *;q=0',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'Referer': 'https://jimeng.jianying.com/',
+            'Origin': 'https://jimeng.jianying.com',
+            'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'Sec-Fetch-Dest': 'video',
+            'Sec-Fetch-Mode': 'no-cors',
+            'Sec-Fetch-Site': 'cross-site',
+            'Range': 'bytes=0-'
+        };
+
+        const response = await axios({
+            method: 'GET',
+            url: videoUrl,
+            responseType: 'stream',
+            headers,
+            timeout: 120000, // 视频下载较慢，设置2分钟超时
+        });
+
+        // 保存文件
+        const writer = fs.createWriteStream(filePath);
+        response.data.pipe(writer);
+
+        return new Promise((resolve, reject) => {
+            writer.on('finish', () => {
+                console.log('[下载] 视频下载完成:', filePath);
+                resolve(filePath);
+            });
+            writer.on('error', (err) => {
+                console.error('[下载] 写入文件失败:', err);
+                reject(err);
+            });
+        });
+
+    } catch (error) {
+        console.error('[下载] 视频下载失败:', error.message);
+        throw error;
+    }
+};
+
 /**
  * 保存知识视频生成记录
  */
-const saveKnowledgeVideoRecord = async (userId, userType, taskId, keyword, prompt, knowledgeSource) => {
+const saveKnowledgeVideoRecord = async (userId, userType, taskId, keyword, prompt, knowledgeSource, localFilePath = null) => {
     try {
         const mongoose = require('mongoose');
         if (!userId || userId === 'anonymous' || !mongoose.Types.ObjectId.isValid(userId)) {
@@ -30,12 +100,38 @@ const saveKnowledgeVideoRecord = async (userId, userType, taskId, keyword, promp
                 videoPrompt: prompt,
             },
             status: 'pending',
+            localFilePath, // 本地文件路径
         });
         await record.save();
         console.log('[DEBUG] 知识视频记录已保存:', record._id);
         return record;
     } catch (error) {
         console.error('[DEBUG] 保存知识视频记录失败:', error.message);
+        return null;
+    }
+};
+
+/**
+ * 更新知识视频记录状态
+ */
+const updateKnowledgeVideoRecord = async (taskId, status, localFilePath = null, resultUrl = null) => {
+    try {
+        const updateData = { status };
+        if (localFilePath) updateData.localFilePath = localFilePath;
+        // 如果传入了resultUrl（可能是代理URL或CDN URL），则存储它
+        if (resultUrl) updateData.resultUrl = resultUrl;
+        if (status === 'completed') updateData.completedAt = new Date();
+
+        const record = await JimengGeneration.findOneAndUpdate(
+            { taskId },
+            updateData,
+            { new: true }
+        );
+
+        console.log('[DEBUG] 知识视频记录已更新:', record?._id);
+        return record;
+    } catch (error) {
+        console.error('[DEBUG] 更新知识视频记录失败:', error.message);
         return null;
     }
 };
@@ -124,7 +220,10 @@ const queryDifyKnowledge = async (keyword, subject) => {
  * 1. 查询Dify知识库获取知识内容
  * 2. 有内容 -> 用Dify内容生成视频prompt
  * 3. 无内容 -> 用原生词条生成视频prompt
- * 4. 调用即梦API生成视频（当前使用模拟模式）
+ * 4. 调用即梦API生成视频
+ * 5. 轮询获取视频URL
+ * 6. 下载视频到本地
+ * 7. 保存本地路径到MongoDB
  */
 const generateKnowledgeVideo = async (req, res) => {
     try {
@@ -159,16 +258,26 @@ const generateKnowledgeVideo = async (req, res) => {
             console.error('[知识库] 查询异常:', difyError.message);
         }
 
-        // Step 2: 生成视频prompt
-        let videoPrompt;
-        if (knowledgeContent && knowledgeContent.length > 0) {
-            // 有知识库内容，用前500字符作为prompt
-            videoPrompt = knowledgeContent.substring(0, 500);
-            console.log('[视频生成] 使用Dify知识库内容生成视频');
+        // Step 2: 生成视频prompt（根据userType添加角色前缀）
+        let rolePrompt = '';
+        let videoPrompt = '';
+
+        // 根据用户类型设置角色前缀
+        if (userType === 'Teacher') {
+            rolePrompt = '你是一名资深讲师，你需要教授以下教学内容，请生成一个生动形象的教学视频：';
+        } else {
+            rolePrompt = '你是一名学生，你需要学习以下知识内容，请生成一个帮助理解的学习视频：';
+        }
+
+        if (knowledgeSource === 'dify' && knowledgeContent) {
+            // 有知识库内容
+            const content = knowledgeContent.substring(0, 400);
+            videoPrompt = `${rolePrompt}\n\n【知识点】${keyword}\n【详细内容】${content}`;
+            console.log('[视频生成] 使用Dify知识库内容，添加角色前缀');
         } else {
             // 无知识库内容，用原生词条
-            videoPrompt = `教学视频：${keyword}，生动形象地讲解这个知识点的概念、原理和应用示例`;
-            console.log('[视频生成] 使用原生词条生成视频');
+            videoPrompt = `${rolePrompt}\n\n【知识点】${keyword}，生动形象地讲解这个知识点的概念、原理和应用示例`;
+            console.log('[视频生成] 使用原生词条，添加角色前缀');
         }
 
         console.log('[视频生成] 最终prompt:', videoPrompt.substring(0, 100) + '...');
@@ -182,24 +291,87 @@ const generateKnowledgeVideo = async (req, res) => {
             });
         }
 
-        // Step 4: 直接使用模拟模式（API额度到期）
-        // TODO: API额度恢复后，改为调用真实API
-        const mockResponse = jimengService.getMockResponse('video');
-        const taskId = mockResponse.data.task_id;
+        // Step 4: 调用即梦AI生成视频
+        const videoResult = await jimengService.textToVideo(videoPrompt, {
+            duration: 5,
+            resolution: '720p',
+            aspect_ratio: '16:9',
+        });
 
-        console.log('[视频生成] 使用模拟模式, taskId:', taskId);
+        console.log('[视频生成] 提交成功, taskId:', videoResult.taskId);
 
-        // 保存记录
-        await saveKnowledgeVideoRecord(userId, userType, taskId, keyword, videoPrompt, knowledgeSource);
+        // 保存记录（pending状态）
+        const record = await saveKnowledgeVideoRecord(userId, userType, videoResult.taskId, keyword, videoPrompt, knowledgeSource);
+
+        // Step 5: 轮询获取视频URL
+        console.log('[视频生成] 开始轮询获取视频URL...');
+        let videoUrl = null;
+        let pollCount = 0;
+        const maxPolls = 60; // 最多轮询60次（5分钟）
+
+        while (pollCount < maxPolls) {
+            try {
+                const taskResult = await jimengService.getVideoTaskResult(videoResult.taskId);
+                console.log(`[视频生成] 轮询${pollCount + 1}: status=${taskResult.status}`);
+
+                if (taskResult.status === 'done' && taskResult.videoUrls && taskResult.videoUrls.length > 0) {
+                    videoUrl = taskResult.videoUrls[0];
+                    console.log('[视频生成] 获取到视频URL:', videoUrl);
+                    break;
+                }
+
+                if (taskResult.status === 'failed') {
+                    console.log('[视频生成] 视频生成失败');
+                    await updateKnowledgeVideoRecord(videoResult.taskId, 'failed');
+                    return res.status(500).json({
+                        success: false,
+                        message: '视频生成失败',
+                    });
+                }
+
+                // 等待5秒后继续轮询
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                pollCount++;
+            } catch (pollError) {
+                console.error('[视频生成] 轮询出错:', pollError.message);
+                pollCount++;
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+        }
+
+        if (!videoUrl) {
+            console.log('[视频生成] 轮询超时，未获取到视频URL');
+            return res.status(500).json({
+                success: false,
+                message: '获取视频超时',
+            });
+        }
+
+        // Step 6: 下载视频到本地
+        console.log('[视频生成] 开始下载视频到本地...');
+        let localFilePath = null;
+        try {
+            localFilePath = await downloadVideoToLocal(videoUrl, videoResult.taskId);
+            console.log('[视频生成] 视频下载完成:', localFilePath);
+        } catch (downloadError) {
+            console.error('[视频生成] 视频下载失败:', downloadError.message);
+            // 下载失败但视频URL已获取，记录错误但不中断流程
+        }
+
+        // Step 7: 更新记录状态
+        // 优先使用本地路径存储 resultUrl，这样前端查询时可以直接使用
+        const finalResultUrl = localFilePath ? `/api/knowledge/video/${record?._id}` : videoUrl;
+        await updateKnowledgeVideoRecord(videoResult.taskId, 'completed', localFilePath, finalResultUrl);
 
         res.json({
             success: true,
-            taskId: taskId,
-            status: 'pending',
-            message: '知识视频任务已提交(模拟模式)',
-            mock: true,
+            taskId: videoResult.taskId,
+            status: 'completed',
+            message: '视频生成成功',
             knowledgeSource,
-            videoPrompt: knowledgeSource === 'dify' ? '[Dify知识库内容]' : '[原生词条]',
+            recordId: record?._id,
+            videoUrl: localFilePath ? `/api/knowledge/video/${record?._id}` : videoUrl, // 本地视频返回代理URL
+            originalUrl: videoUrl, // 原始CDN URL
         });
 
     } catch (error) {
@@ -254,7 +426,80 @@ const getKnowledgeVideoHistory = async (req, res) => {
     }
 };
 
+/**
+ * 代理播放本地视频
+ * GET /api/knowledge/video/:recordId
+ */
+const serveLocalVideo = async (req, res) => {
+    try {
+        const { recordId } = req.params;
+
+        console.log('[DEBUG] 请求本地视频, recordId:', recordId);
+
+        const record = await JimengGeneration.findById(recordId);
+        if (!record) {
+            return res.status(404).json({
+                success: false,
+                message: '视频记录不存在',
+            });
+        }
+
+        if (!record.localFilePath) {
+            return res.status(404).json({
+                success: false,
+                message: '本地视频文件不存在',
+            });
+        }
+
+        // 检查文件是否存在
+        if (!fs.existsSync(record.localFilePath)) {
+            return res.status(404).json({
+                success: false,
+                message: '视频文件已被删除',
+            });
+        }
+
+        // 获取文件信息
+        const stat = fs.statSync(record.localFilePath);
+        const fileSize = stat.size;
+        const range = req.headers.range;
+
+        // 设置响应头
+        res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Content-Length', fileSize);
+        res.setHeader('Content-Disposition', `inline; filename="${path.basename(record.localFilePath)}"`);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+
+        if (range) {
+            // 支持范围请求（拖动进度条）
+            const parts = range.replace(/bytes=/, '').split('-');
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+            const chunkSize = end - start + 1;
+
+            res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
+            res.setHeader('Accept-Ranges', 'bytes');
+            res.status(206);
+
+            const stream = fs.createReadStream(record.localFilePath, { start, end });
+            stream.pipe(res);
+        } else {
+            res.status(200);
+            const stream = fs.createReadStream(record.localFilePath);
+            stream.pipe(res);
+        }
+
+    } catch (error) {
+        console.error('播放本地视频失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '播放视频失败',
+        });
+    }
+};
+
 module.exports = {
     generateKnowledgeVideo,
     getKnowledgeVideoHistory,
+    serveLocalVideo,
 };

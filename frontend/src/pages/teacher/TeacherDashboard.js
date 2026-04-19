@@ -30,6 +30,7 @@ import StudentAnalytics from './StudentAnalytics';
 import JimengImageGenerator from './JimengImageGenerator';
 import JimengVideoGenerator from './JimengVideoGenerator';
 import TeacherKnowledgeVideoGenerator from './TeacherKnowledgeVideoGenerator';
+import VideoProxyDemo from './VideoProxyDemo';
 
 const TeacherDashboard = () => {
     const [open, setOpen] = useState(true);
@@ -101,6 +102,7 @@ const TeacherDashboard = () => {
                         <Route path="/Teacher/jimeng-image" element={<JimengImageGenerator />} />
                         <Route path="/Teacher/jimeng-video" element={<JimengVideoGenerator />} />
                         <Route path="/Teacher/knowledge-video" element={<TeacherKnowledgeVideoGenerator />} />
+                        <Route path="/Teacher/video-proxy-demo" element={<VideoProxyDemo />} />
                         <Route path="/Teacher/analytics" element={<StudentAnalytics />} />
 
                         <Route path="/logout" element={<Logout />} />

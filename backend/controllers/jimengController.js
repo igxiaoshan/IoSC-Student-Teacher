@@ -376,63 +376,144 @@ const proxyMedia = async (req, res) => {
 
         console.log('[DEBUG] 代理请求媒体:', url);
 
-        // ✅ 透传 Range（关键！）
         const headers = {
-            'User-Agent': 'Mozilla/5.0',
-            'Referer': 'http://localhost:3000/',
+            // ✅ 核心伪装
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36',
+
+            'Accept': 'video/webm,video/apng,video/*,*/*;q=0.8',
+            'Accept-Language': 'zh-CN,zh;q=0.9',
+
+            // ⭐⭐⭐关键（解决403）
+            'Referer': 'https://www.doubao.com/',
+            'Origin': 'https://www.doubao.com',
+
+            'Connection': 'keep-alive',
         };
 
+        // ✅ 透传 Range（必须）
         if (req.headers.range) {
             headers['Range'] = req.headers.range;
         }
 
-        // ✅ 使用 stream（不要 arraybuffer）
         const response = await axios({
             method: 'GET',
             url,
             responseType: 'stream',
             timeout: 60000,
             headers,
+            validateStatus: () => true, // ⭐避免axios直接throw 403
         });
 
-        // ✅ 设置响应状态（200 / 206）
+        console.log('[DEBUG] CDN状态:', response.status);
+
+        // ⭐ 关键：状态码透传
         res.status(response.status);
 
-        // ✅ 透传关键头（非常重要）
-        const passHeaders = [
-            'content-type',
-            'content-length',
-            'accept-ranges',
-            'content-range',
-        ];
-
-        passHeaders.forEach((key) => {
-            const value = response.headers[key];
-            if (value) {
-                res.setHeader(key, value);
-            }
+        // 透传响应头
+        Object.keys(response.headers).forEach((key) => {
+            res.setHeader(key, response.headers[key]);
         });
 
-        // ✅ 解决跨域
+        // CORS
         res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
+        res.setHeader('Access-Control-Allow-Headers', 'Range');
+        res.setHeader('Access-Control-Allow-Methods', 'GET');
 
-        // ✅ 可选缓存
-        res.setHeader('Cache-Control', 'public, max-age=86400');
-
-        // ✅ 流式返回（核心）
+        // 流返回
         response.data.pipe(res);
 
     } catch (error) {
-        console.error('代理媒体失败:', error.message);
-
-        res.status(500).json({
-            success: false,
-            message: '获取媒体失败: ' + error.message,
-        });
+        console.error('代理失败:', error.message);
+        res.status(500).send('代理失败');
     }
 };
+// const proxyMedia = async (req, res) => {
+//     try {
+//         const { url } = req.query;
+
+//         if (!url) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: '缺少URL参数',
+//             });
+//         }
+
+//         console.log('[DEBUG] 代理请求媒体:', url);
+
+//         // 从URL中提取host
+//         const urlObj = new URL(url);
+//         const host = urlObj.host;
+
+//         // 模拟浏览器请求头
+//         const headers = {
+//             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+//             'Accept': '*/*',
+//             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+//             'Host': host, // CDN验证需要Host头
+//         };
+
+//         // 透传Range头
+//         if (req.headers.range) {
+//             headers['Range'] = req.headers.range;
+//         }
+
+//         console.log('[DEBUG] 代理请求头:', JSON.stringify(headers));
+
+//         const response = await axios({
+//             method: 'GET',
+//             url,
+//             responseType: 'stream',
+//             timeout: 60000,
+//             headers,
+//         });
+
+//         console.log('[DEBUG] CDN响应状态:', response.status);
+//         console.log('[DEBUG] CDN响应头:', JSON.stringify(response.headers));
+
+//         // 设置响应状态
+//         res.status(response.status);
+
+//         // 透传关键响应头
+//         const passHeaders = [
+//             'content-type',
+//             'content-length',
+//             'accept-ranges',
+//             'content-range',
+//             'content-disposition',
+//             'cache-control',
+//             'expires',
+//             'etag',
+//             'last-modified',
+//         ];
+
+//         passHeaders.forEach((key) => {
+//             const value = response.headers[key];
+//             if (value) {
+//                 res.setHeader(key, value);
+//             }
+//         });
+
+//         // 解决跨域
+//         res.setHeader('Access-Control-Allow-Origin', '*');
+//         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+//         res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range, Accept');
+
+//         // 流式返回
+//         response.data.pipe(res);
+
+//     } catch (error) {
+//         console.error('代理媒体失败:', error.message);
+//         if (error.response) {
+//             console.error('CDN错误状态:', error.response.status);
+//             console.error('CDN错误头:', JSON.stringify(error.response.headers));
+//         }
+
+//         res.status(500).json({
+//             success: false,
+//             message: '获取媒体失败: ' + error.message,
+//         });
+//     }
+// };
 // const proxyMedia = async (req, res) => {
 //     try {
 //         const { url } = req.query;
