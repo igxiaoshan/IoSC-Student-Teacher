@@ -96,33 +96,16 @@ const TeacherKnowledgeVideoGenerator = () => {
         if (!url) return;
         setResult(url);
 
+        // blob URL 直接使用
         if (url.startsWith('blob:')) {
             setVideoBlobUrl(url);
             return;
         }
 
-        setLoadingVideo(true);
-
-        // 如果是本地代理URL，直接fetch；否则走CDN代理逻辑
-        const fetchUrl = url.startsWith('/api/') ? `${window.location.origin}${url}` : jimengAPI.getProxyUrl(url);
-
-        try {
-            const response = await fetch(fetchUrl);
-            if (response.ok) {
-                const blob = await response.blob();
-                const blobUrl = URL.createObjectURL(blob);
-                setVideoBlobUrl(blobUrl);
-                setLoadingVideo(false);
-                return;
-            }
-            throw new Error(`HTTP ${response.status}`);
-        } catch (err) {
-            console.error('视频加载失败:', err);
-            // 降级：直接使用URL
-            setVideoBlobUrl(url);
-        } finally {
-            setLoadingVideo(false);
-        }
+        // CDN URL 或本地代理 URL：直接使用，让浏览器自动处理请求和 Referer
+        // 不再通过 fetch 下载 blob，因为 CDN 链接会很快过期
+        setVideoBlobUrl(null); // 清除之前的 blob URL
+        setLoadingVideo(false);
     };
 
     // 轮询任务状态
@@ -143,9 +126,11 @@ const TeacherKnowledgeVideoGenerator = () => {
                     if (data.videoUrls && data.videoUrls.length > 0) {
                         handlePlay(data.videoUrls[0]);
                     }
-                    setSuccess('教学视频生成成功！');
+                    // 立即显示成功消息和视频，不要做其他延迟操作
+                    setSuccess('教学视频生成成功！请尽快播放，视频链接有时效性');
+                    // 异步加载历史记录，不阻塞视频播放
                     if (showHistory) {
-                        fetchHistory();
+                        setTimeout(() => fetchHistory(), 100);
                     }
                     return;
                 } else if (data.status === 'failed') {
@@ -216,8 +201,39 @@ const TeacherKnowledgeVideoGenerator = () => {
 
     // 点击历史记录
     const handleHistoryClick = (item) => {
-        if (item.status === 'completed' && item.resultUrl) {
+        if (item.status !== 'completed') return;
+
+        // 优先使用本地文件路径
+        if (item.localFilePath) {
+            handlePlay(`/api/knowledge/video/${item._id}`);
+            return;
+        }
+
+        // 使用 resultUrl（可能是CDN URL或本地代理URL）
+        if (item.resultUrl) {
+            // 检查是否是CDN URL
+            if (item.resultUrl.startsWith('http') && item.resultUrl.includes('aigc-cloud.com')) {
+                // CDN URL 检查是否过期
+                try {
+                    const url = new URL(item.resultUrl);
+                    const dyQ = url.searchParams.get('dy_q');
+                    if (dyQ) {
+                        const expireTime = parseInt(dyQ) * 1000;
+                        const now = Date.now();
+                        if (now > expireTime) {
+                            setError('该视频链接已过期，请重新生成');
+                            return;
+                        }
+                    }
+                } catch (e) {}
+            }
             handlePlay(item.resultUrl);
+            return;
+        }
+
+        // 使用 playableUrl
+        if (item.playableUrl) {
+            handlePlay(item.playableUrl);
         }
     };
 

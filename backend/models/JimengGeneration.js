@@ -67,6 +67,12 @@ const jimengGenerationSchema = new mongoose.Schema({
         default: null,
     },
 
+    // 本地文件路径（视频下载到本地后存储）
+    localFilePath: {
+        type: String,
+        default: null,
+    },
+
     // 任务完成时间
     completedAt: {
         type: Date,

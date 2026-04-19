@@ -231,12 +231,22 @@ const getTaskStatus = async (req, res) => {
 
         // 如果任务已完成且有结果，直接返回
         if (record && record.status === 'completed') {
+            // 如果 videoUrls 为空但 resultUrl 存在，使用 resultUrl
+            const videoUrls = record.videoUrls && record.videoUrls.length > 0
+                ? record.videoUrls
+                : (record.resultUrl ? [record.resultUrl] : []);
+            // 构建可播放URL
+            const playableUrl = record.localFilePath
+                ? `/api/knowledge/video/${record._id}`
+                : (record.resultUrl || null);
             return res.json({
                 success: true,
                 taskId,
                 status: 'completed',
                 resultUrl: record.resultUrl,
-                videoUrls: record.videoUrls,
+                videoUrls,
+                playableUrl,
+                localFilePath: record.localFilePath,
                 createdAt: record.createdAt,
                 completedAt: record.completedAt,
             });

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { generateKnowledgeVideo, getKnowledgeVideoHistory, serveLocalVideo } = require('../controllers/knowledgeVideo-controller');
+const { generateKnowledgeVideo, getKnowledgeVideoHistory, serveLocalVideo, proxyVideoStream } = require('../controllers/knowledgeVideo-controller');
 
 /**
  * 知识视频生成路由
@@ -14,5 +14,8 @@ router.get('/video-history/:userId', getKnowledgeVideoHistory);
 
 // 代理播放本地视频
 router.get('/video/:recordId', serveLocalVideo);
+
+// 流式代理播放CDN视频（解决防盗链403）
+router.get('/proxy-video', proxyVideoStream);
 
 module.exports = router;
