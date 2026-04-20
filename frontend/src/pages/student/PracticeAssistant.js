@@ -679,6 +679,14 @@ const PracticeAssistant = () => {
                         const userAnswer = answers[questionId];
                         const evaluation = evaluations[questionId];
 
+                        // 安全获取答案正确性：优先使用 evaluation，否则根据选项判断
+                        const correctOption = question.options?.find(opt => opt.isCorrect);
+                        const isCorrectlyAnswered = evaluation?.isCorrect === true ||
+                            (correctOption && userAnswer &&
+                                (userAnswer === correctOption.text ||
+                                 userAnswer === correctOption.label ||
+                                 userAnswer.toLowerCase().trim() === correctOption.text?.toLowerCase().trim()));
+
                         return (
                             <Card key={questionId} sx={{ mb: 2 }}>
                                 <CardContent>
@@ -688,8 +696,8 @@ const PracticeAssistant = () => {
                                             题目 {index + 1}
                                         </Typography>
                                         <Chip
-                                            label={evaluation?.isCorrect ? '正确' : '错误'}
-                                            color={evaluation?.isCorrect ? 'success' : 'error'}
+                                            label={isCorrectlyAnswered ? '正确' : '错误'}
+                                            color={isCorrectlyAnswered ? 'success' : 'error'}
                                             size="small"
                                         />
                                     </Box>
@@ -702,32 +710,57 @@ const PracticeAssistant = () => {
                                     {/* 选项（如果是选择题） */}
                                     {question.options && question.options.length > 0 && (
                                         <Box sx={{ mb: 2 }}>
-                                            {question.options.map((option, optIndex) => (
-                                                <Box key={optIndex} sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    mb: 1,
-                                                    p: 1,
-                                                    borderRadius: 1,
-                                                    bgcolor: option.isCorrect ? 'success.light' :
-                                                            (userAnswer === option.text || userAnswer === option.label) ? 'error.light' : 'transparent',
-                                                    color: option.isCorrect ? 'success.contrastText' :
-                                                           (userAnswer === option.text || userAnswer === option.label) ? 'error.contrastText' : 'inherit'
-                                                }}>
-                                                    <Typography variant="body2">
-                                                        {option.label || String.fromCharCode(65 + optIndex)}. {option.text}
-                                                        {option.isCorrect && ' ✓ (正确答案)'}
-                                                        {(userAnswer === option.text || userAnswer === option.label) && !option.isCorrect && ' ✗ (你的答案)'}
-                                                    </Typography>
-                                                </Box>
-                                            ))}
+                                            {question.options.map((option, optIndex) => {
+                                                // 判断用户是否选择了这个选项
+                                                const isUserSelected = userAnswer &&
+                                                    (userAnswer === option.text ||
+                                                     userAnswer === option.label ||
+                                                     userAnswer.toLowerCase().trim() === option.text?.toLowerCase().trim());
+                                                // 判断这个选项是否正确
+                                                const isOptionCorrect = option.isCorrect;
+
+                                                // 确定背景颜色：
+                                                // 1. 正确答案 -> 绿色背景
+                                                // 2. 用户选错且选了这个选项 -> 红色背景
+                                                // 3. 用户没选这个选项且它不正确 -> 透明
+                                                let bgcolor = 'transparent';
+                                                if (isOptionCorrect) {
+                                                    bgcolor = 'success.light';
+                                                } else if (isUserSelected && !isOptionCorrect) {
+                                                    bgcolor = 'error.light';
+                                                }
+
+                                                let textColor = 'inherit';
+                                                if (isOptionCorrect) {
+                                                    textColor = 'success.contrastText';
+                                                } else if (isUserSelected && !isOptionCorrect) {
+                                                    textColor = 'error.contrastText';
+                                                }
+
+                                                return (
+                                                    <Box key={optIndex} sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        mb: 1,
+                                                        p: 1,
+                                                        borderRadius: 1,
+                                                        bgcolor
+                                                    }}>
+                                                        <Typography variant="body2" sx={{ color: textColor }}>
+                                                            {option.label || String.fromCharCode(65 + optIndex)}. {option.text}
+                                                            {isOptionCorrect && ' ✓ (正确答案)'}
+                                                            {isUserSelected && !isOptionCorrect && ' ✗ (你的答案)'}
+                                                        </Typography>
+                                                    </Box>
+                                                );
+                                            })}
                                         </Box>
                                     )}
 
                                     {/* 你的答案 */}
                                     <Box sx={{ mb: 2 }}>
                                         <Typography variant="body2" color="text.secondary">你的答案：</Typography>
-                                        <Typography variant="body1" color={evaluation?.isCorrect ? 'success.main' : 'error.main'}>
+                                        <Typography variant="body1" color={isCorrectlyAnswered ? 'success.main' : 'error.main'}>
                                             {userAnswer || '未作答'}
                                         </Typography>
                                     </Box>

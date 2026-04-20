@@ -1,4 +1,41 @@
 const axios = require('axios');
+const crypto = require('crypto');
+
+// 响应缓存类
+class ResponseCache {
+    constructor(ttl = 3600000) { // 默认1小时
+        this.cache = new Map();
+        this.ttl = ttl;
+    }
+
+    generateKey(data) {
+        return crypto.createHash('md5').update(JSON.stringify(data)).digest('hex');
+    }
+
+    get(key) {
+        const item = this.cache.get(key);
+        if (!item) return null;
+        if (Date.now() > item.expire) {
+            this.cache.delete(key);
+            return null;
+        }
+        return item.value;
+    }
+
+    set(key, value) {
+        // 限制缓存大小
+        if (this.cache.size >= 500) {
+            // 删除最早的10个条目
+            const keysToDelete = Array.from(this.cache.keys()).slice(0, 10);
+            keysToDelete.forEach(k => this.cache.delete(k));
+        }
+        this.cache.set(key, { value, expire: Date.now() + this.ttl });
+    }
+
+    clear() {
+        this.cache.clear();
+    }
+}
 
 class DifyService {
     constructor() {
@@ -13,6 +50,7 @@ class DifyService {
         this.healthCheckInterval = 30000; // 30秒检查一次
         this.consecutiveFailures = 0; // 连续失败次数
         this.maxConsecutiveFailures = 3; // 最大连续失败次数
+        this.responseCache = new ResponseCache(3600000); // 1小时缓存
     }
 
     // 检查Dify服务健康状态
@@ -1554,7 +1592,22 @@ ${studyGoals || '提高整体成绩'}
             focus_areas
         } = inputData;
 
+        // 构建缓存key
+        const cacheKey = this.responseCache.generateKey({
+            method: 'generateLessonPlan',
+            ...inputData
+        });
+
+        // 检查缓存
+        const cachedResult = this.responseCache.get(cacheKey);
+        if (cachedResult) {
+            console.log('[缓存] 命中 generateLessonPlan，返回缓存结果');
+            return cachedResult;
+        }
+
         const systemPrompt = `你是一名专业的教学设计专家，负责根据提供的信息生成详细的课件内容。
+
+【重要】请先从知识库中检索与"${course_title}"相关的教学内容，并在生成课件时充分利用检索到的知识。
 
 课程信息：
 - 科目：${subject_name}
@@ -1567,10 +1620,14 @@ ${studyGoals || '提高整体成绩'}
 - 课程时长：${duration}分钟
 - 重点领域：${focus_areas}
 
+请按以下步骤操作：
+1. 首先检索知识库，获取与课程相关的教学内容
+2. 结合检索到的内容和提供的课程信息，生成课件内容
+
 请生成一个完整的课件内容，包括：
 1. 课程介绍
 2. 学习目标
-3. 知识点详解
+3. 知识点详解（应包含从知识库检索到的相关教学内容）
 4. 教学活动设计
 5. 练习题目
 6. 课程总结
@@ -1616,11 +1673,17 @@ ${studyGoals || '提高整体成绩'}
                 user: teacher_name || 'teacher'
             });
 
-            return {
+            const result = {
                 success: true,
                 answer: response.answer || response.data || '',
                 data: response
             };
+
+            // 缓存结果
+            this.responseCache.set(cacheKey, result);
+            console.log('[缓存] 已缓存 generateLessonPlan 结果');
+
+            return result;
         } catch (error) {
             console.error('Dify课件生成失败:', error);
             throw new Error(`Dify课件生成失败: ${error.message}`);
@@ -2375,8 +2438,23 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
             exercise_type
         } = inputData;
 
+        // 构建缓存key
+        const cacheKey = this.responseCache.generateKey({
+            method: 'generatePracticalExercise',
+            ...inputData
+        });
+
+        // 检查缓存
+        const cachedResult = this.responseCache.get(cacheKey);
+        if (cachedResult) {
+            console.log('[缓存] 命中 generatePracticalExercise，返回缓存结果');
+            return cachedResult;
+        }
+
         // 构建实训练习生成的提示词
-        const systemPrompt = `你是一名专业的${subject_name}实训指导教师，擅长设计高质量的实训练习。请根据以下要求生成实训练习内容：
+        const systemPrompt = `你是一名专业的${subject_name}实训指导教师，擅长设计高质量的实训练习。
+
+【重要】请先从知识库中检索与"${exercise_title}"相关的实训内容，并在生成实训练习时充分利用检索到的知识。
 
 课件信息：
 - 课件标题：${courseware_title}
@@ -2392,6 +2470,10 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
 - 关注领域：${focus_areas.join('、')}
 - 目标技能：${target_skills.join('、')}
 - 实训类型：${exercise_type}
+
+请按以下步骤操作：
+1. 首先检索知识库，获取与实训相关的教学内容和实例
+2. 结合检索到的内容和提供的实训要求，生成实训练习
 
 请生成结构化的实训练习，包含：
 1. 题目描述和要求
@@ -2453,13 +2535,19 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
                     exerciseType: exercise_type
                 });
 
-                return {
+                const result = {
                     success: true,
                     data: exerciseContent,
                     source: 'dify',
                     conversation_id: response.conversation_id,
                     rawResponse: response.answer // 保留原始响应用于多元化解析
                 };
+
+                // 缓存结果
+                this.responseCache.set(cacheKey, result);
+                console.log('[缓存] 已缓存 generatePracticalExercise 结果');
+
+                return result;
             } else {
                 throw new Error('Dify返回的响应格式不正确');
             }

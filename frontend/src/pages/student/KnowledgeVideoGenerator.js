@@ -108,8 +108,9 @@ const KnowledgeVideoGenerator = () => {
 
         setLoadingVideo(true);
 
-        // 如果是本地代理URL，直接fetch；否则走CDN代理逻辑
-        const fetchUrl = url.startsWith('/api/') ? `${window.location.origin}${url}` : jimengAPI.getProxyUrl(url);
+        // 如果是本地代理URL，使用后端地址拼接；否则走CDN代理逻辑
+        const backendUrl = process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+        const fetchUrl = url.startsWith('/api/') ? `${backendUrl}${url}` : jimengAPI.getProxyUrl(url);
 
         try {
             const response = await fetch(fetchUrl);

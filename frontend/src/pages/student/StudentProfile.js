@@ -3,16 +3,27 @@ import styled from 'styled-components';
 import { Card, CardContent, Typography, Grid, Box, Avatar, Container, Paper } from '@mui/material';
 import { useSelector } from 'react-redux';
 import { useTranslation } from '../../hooks/useTranslation';
+import { safeGet } from '../../utils/safeAccess';
 
 const StudentProfile = () => {
   const { currentUser, response, error } = useSelector((state) => state.user);
-  const { tStudent, tClass } = useTranslation();
+  const { tStudent, tClass, tCommon } = useTranslation();
 
   if (response) { console.log(response) }
   else if (error) { console.log(error) }
 
-  const sclassName = currentUser?.sclassName?.sclassName || tClass('unassignedClass')
-  const studentSchool = currentUser?.school?.schoolName || tStudent('unknownSchool')
+  const sclassName = safeGet(currentUser, 'sclassName.sclassName') || tClass('unassignedClass')
+  const studentSchool = safeGet(currentUser, 'school.schoolName') || tStudent('unknownSchool')
+
+  // 安全获取用户信息，使用翻译作为默认值
+  const genderText = safeGet(currentUser, 'gender') ?
+    (currentUser.gender === 'Male' ? tStudent('male') : currentUser.gender === 'Female' ? tStudent('female') : currentUser.gender)
+    : tCommon('none');
+  const birthDateText = safeGet(currentUser, 'birthDate') || tCommon('none');
+  const emailText = safeGet(currentUser, 'email') || tCommon('none');
+  const phoneText = safeGet(currentUser, 'phone') || tCommon('none');
+  const addressText = safeGet(currentUser, 'address') || tCommon('none');
+  const emergencyContactText = safeGet(currentUser, 'emergencyContact') || tCommon('none');
 
   return (
     <>
@@ -22,21 +33,21 @@ const StudentProfile = () => {
             <Grid item xs={12}>
               <Box display="flex" justifyContent="center">
                 <Avatar alt="Student Avatar" sx={{ width: 150, height: 150 }}>
-                  {String(currentUser.name).charAt(0)}
+                  {String(safeGet(currentUser, 'name') || 'S').charAt(0)}
                 </Avatar>
               </Box>
             </Grid>
             <Grid item xs={12}>
               <Box display="flex" justifyContent="center">
                 <Typography variant="h5" component="h2" textAlign="center">
-                  {currentUser.name}
+                  {safeGet(currentUser, 'name') || tCommon('none')}
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={12}>
               <Box display="flex" justifyContent="center">
                 <Typography variant="subtitle1" component="p" textAlign="center">
-                  {tStudent('studentId')}: {currentUser.rollNum}
+                  {tStudent('studentId')}: {safeGet(currentUser, 'rollNum') || tCommon('none')}
                 </Typography>
               </Box>
             </Grid>
@@ -64,32 +75,32 @@ const StudentProfile = () => {
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle1" component="p">
-                  <strong>{tStudent('birthDate')}:</strong> January 1, 2000
+                  <strong>{tStudent('birthDate')}:</strong> {birthDateText}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle1" component="p">
-                  <strong>{tStudent('gender')}:</strong> Male
+                  <strong>{tStudent('gender')}:</strong> {genderText}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle1" component="p">
-                  <strong>{tStudent('Email')}:</strong> john.doe@example.com
+                  <strong>{tStudent('Email')}:</strong> {emailText}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle1" component="p">
-                  <strong>{tStudent('Phone')}:</strong> (123) 456-7890
+                  <strong>{tStudent('Phone')}:</strong> {phoneText}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle1" component="p">
-                  <strong>{tStudent('Address')}:</strong> 123 Main Street, City, Country
+                  <strong>{tStudent('Address')}:</strong> {addressText}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle1" component="p">
-                  <strong>{tStudent('Emergency Contact')}:</strong> (987) 654-3210
+                  <strong>{tStudent('Emergency Contact')}:</strong> {emergencyContactText}
                 </Typography>
               </Grid>
             </Grid>

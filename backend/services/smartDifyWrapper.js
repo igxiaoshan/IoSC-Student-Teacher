@@ -1,6 +1,9 @@
 /**
  * 智能Dify服务包装器
  * 提供更好的错误处理、超时管理和回退机制
+ *
+ * 注意: 缓存机制已集成到 DifyService 中，通过 responseCache 实现
+ * 相同请求在 TTL 有效期内会直接返回缓存结果
  */
 
 const DifyService = require('./difyService');
@@ -19,6 +22,14 @@ class SmartDifyWrapper {
             quick: { retries: 2, delay: 1000 },
             patient: { retries: 3, delay: 5000 }
         };
+    }
+
+    // 清除响应缓存
+    clearCache() {
+        if (this.difyService.responseCache) {
+            this.difyService.responseCache.clear();
+            console.log('[智能包装器] 响应缓存已清除');
+        }
     }
 
     async generatePracticalExerciseWithFallback(inputData, options = {}) {

@@ -94,16 +94,21 @@ const TeacherKnowledgeVideoGenerator = () => {
     // 处理视频播放
     const handlePlay = async (url) => {
         if (!url) return;
-        setResult(url);
 
         // blob URL 直接使用
         if (url.startsWith('blob:')) {
             setVideoBlobUrl(url);
+            setResult(url);
             return;
         }
 
-        // CDN URL 或本地代理 URL：直接使用，让浏览器自动处理请求和 Referer
-        // 不再通过 fetch 下载 blob，因为 CDN 链接会很快过期
+        // 相对路径（本地代理URL）需要拼接完整的后端地址
+        if (url.startsWith('/api/')) {
+            const backendUrl = process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+            url = `${backendUrl}${url}`;
+        }
+
+        setResult(url);
         setVideoBlobUrl(null); // 清除之前的 blob URL
         setLoadingVideo(false);
     };

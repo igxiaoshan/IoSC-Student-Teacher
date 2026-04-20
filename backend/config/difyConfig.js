@@ -60,7 +60,21 @@ const difyConfig = {
         retries: 3,
         retryDelay: 1000
     },
-    
+
+    // 缓存配置
+    cache: {
+        enabled: true,
+        ttl: 3600,        // 缓存有效期(秒)
+        maxSize: 500      // 最大缓存条数
+    },
+
+    // 性能配置
+    performance: {
+        timeout: 60000,    // 默认超时(ms)
+        retries: 3,       // 重试次数
+        retryDelay: 2000   // 重试延迟(ms)
+    },
+
     // 响应模式
     responseMode: {
         streaming: 'streaming',

@@ -45,9 +45,9 @@ const getStudentSubjects = async (req, res) => {
             allSubjects.push(...classSubjectsFormatted);
         }
 
-        // 获取学生选择的科目
+        // 获取学生选择的科目（过滤掉subject为null的无效记录）
         const selectedSubjects = student.selectedSubjects
-            .filter(sub => status === 'all' || sub.status === status)
+            .filter(sub => sub.subject && (status === 'all' || sub.status === status))
             .map(sub => ({
                 _id: sub.subject._id,
                 subName: sub.subject.subName,
@@ -130,9 +130,11 @@ const getAvailableSubjects = async (req, res) => {
             .populate('teacher', 'name')
             .sort({ subjectType: 1, subName: 1 });
 
-        // 排除已选择的科目
+        // 排除已选择的科目（过滤掉subject为null的无效记录）
         if (excludeSelected) {
-            const selectedSubjectIds = student.selectedSubjects.map(sub => sub.subject._id.toString());
+            const selectedSubjectIds = student.selectedSubjects
+                .filter(sub => sub.subject)
+                .map(sub => sub.subject._id.toString());
             availableSubjects = availableSubjects.filter(
                 subject => !selectedSubjectIds.includes(subject._id.toString())
             );

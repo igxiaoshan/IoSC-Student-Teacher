@@ -97,9 +97,9 @@ const askLearningAssistant = async (req, res) => {
             });
         }
 
-        // 验证学生是否选择了该科目
+        // 验证学生是否选择了该科目（过滤掉subject为null的无效记录）
         const hasSelectedSubject = student.selectedSubjects.some(
-            selectedSub => selectedSub.subject._id.toString() === subjectId
+            selectedSub => selectedSub.subject && selectedSub.subject._id.toString() === subjectId
         );
 
         if (!hasSelectedSubject) {
@@ -268,9 +268,9 @@ const generatePracticeQuestions = async (req, res) => {
             });
         }
 
-        // 验证学生是否选择了该科目
+        // 验证学生是否选择了该科目（过滤掉subject为null的无效记录）
         const hasSelectedSubject = student.selectedSubjects.some(
-            selectedSub => selectedSub.subject._id.toString() === subjectId
+            selectedSub => selectedSub.subject && selectedSub.subject._id.toString() === subjectId
         );
 
         if (!hasSelectedSubject) {
