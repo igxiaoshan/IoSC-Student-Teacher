@@ -16,7 +16,12 @@ import {
     getBatchRequest,
     getBatchSuccess,
     setFilters,
-    clearError
+    clearError,
+    getOverviewRequest,
+    getOverviewSuccess,
+    triggerAttendanceRefresh,
+    triggerGradesRefresh,
+    resetRefreshTrigger
 } from './sclassSlice';
 import { handleReduxError } from '../../utils/errorHandler';
 
@@ -208,4 +213,36 @@ export const createClass = (classData) => async (dispatch) => {
 // 清除错误信息
 export const clearClassError = () => (dispatch) => {
     dispatch(clearError());
+}
+
+// 获取班级概览统计
+export const getClassOverviewStats = (classId) => async (dispatch) => {
+    dispatch(getOverviewRequest());
+
+    try {
+        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/ClassOverviewStats/${classId}`);
+        if (result.data.success) {
+            dispatch(getOverviewSuccess(result.data.data));
+        } else {
+            dispatch(getError(result.data.message || '获取班级概览统计失败'));
+        }
+    } catch (error) {
+        console.error('获取班级概览统计错误:', error);
+        dispatch(getError(error.response?.data?.message || error.message || '网络错误'));
+    }
+}
+
+// 通知考勤更新（供其他页面调用）
+export const notifyAttendanceUpdate = () => (dispatch) => {
+    dispatch(triggerAttendanceRefresh());
+}
+
+// 通知成绩更新（供其他页面调用）
+export const notifyGradeUpdate = () => (dispatch) => {
+    dispatch(triggerGradesRefresh());
+}
+
+// 重置刷新触发器
+export const clearRefreshTrigger = (type) => (dispatch) => {
+    dispatch(resetRefreshTrigger(type));
 }

@@ -12,7 +12,7 @@ import {
     Warning as WarningIcon, KeyboardArrowDown, KeyboardArrowUp
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { getClassStudents } from '../../redux/sclassRelated/sclassHandle';
+import { getClassStudents, notifyAttendanceUpdate } from '../../redux/sclassRelated/sclassHandle';
 import { useTranslation } from '../../hooks/useTranslation';
 import { safeGet } from '../../utils/safeAccess';
 import api from '../../utils/apiConfig';
@@ -102,6 +102,8 @@ const TeacherAttendanceManagement = () => {
             setMessage({ type: 'success', text: '考勤录入成功！' });
             setAttendanceData({});
             fetchStats();
+            // 通知其他页面刷新数据
+            dispatch(notifyAttendanceUpdate());
         } catch (err) {
             setMessage({ type: 'error', text: '录入失败：' + (err.response?.data?.message || err.message) });
         } finally {

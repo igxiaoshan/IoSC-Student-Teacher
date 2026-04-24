@@ -2,8 +2,9 @@ import { useEffect } from "react";
 import * as React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom'
-import { getClassStudents } from "../../redux/sclassRelated/sclassHandle";
+import { getClassStudents, getClassOverviewStats } from "../../redux/sclassRelated/sclassHandle";
 import { useTranslation } from '../../hooks/useTranslation';
+import useTeacherClassData from '../../hooks/useTeacherClassData';
 import {
     Paper, Box, Typography, ButtonGroup, Button, Popper, Grow, ClickAwayListener,
     MenuList, MenuItem, Grid, Card, CardContent, Chip, Avatar, Divider, IconButton,
@@ -19,7 +20,7 @@ const TeacherClassDetails = () => {
     const navigate = useNavigate()
     const dispatch = useDispatch();
     const { tStudent, tTeacher, tClass, tCommon, tDashboard } = useTranslation();
-    const { sclassStudents, loading, error, getresponse } = useSelector((state) => state.sclass);
+    const { sclassStudents, loading, error, getresponse, classOverviewStats, overviewLoading } = useSelector((state) => state.sclass);
 
     const { currentUser } = useSelector((state) => state.user);
     const classID = safeGet(currentUser, 'teachSclass._id');
@@ -27,9 +28,28 @@ const TeacherClassDetails = () => {
     const className = safeGet(currentUser, 'teachSclass.sclassName', tClass('unassignedClass'));
     const subjectName = safeGet(currentUser, 'teachSubject.subName', tTeacher('unassignedSubject'));
 
+    // 使用共享数据 hook 监听刷新触发器
+    const { refreshTriggers } = useTeacherClassData(classID, {
+        autoFetch: false,
+        fetchStudents: false,
+        fetchOverview: false // hook 只监听刷新触发器，不自动获取
+    });
+
+    // 组件自行管理数据获取
     useEffect(() => {
-        dispatch(getClassStudents(classID));
+        if (classID) {
+            dispatch(getClassStudents(classID));
+            dispatch(getClassOverviewStats(classID));
+        }
     }, [dispatch, classID])
+
+    // 监听考勤/成绩更新，刷新数据
+    useEffect(() => {
+        if (refreshTriggers.attendance || refreshTriggers.grades) {
+            dispatch(getClassStudents(classID));
+            dispatch(getClassOverviewStats(classID));
+        }
+    }, [refreshTriggers.attendance, refreshTriggers.grades, dispatch, classID]);
 
     if (error) {
         console.log(error)
@@ -48,12 +68,14 @@ const TeacherClassDetails = () => {
         };
     })
 
-    // 统计数据
+    // 使用真实统计数据（从 API 获取）
     const classStats = {
-        totalStudents: studentRows.length,
-        presentToday: Math.floor(studentRows.length * 0.92),
-        avgScore: 85.5,
-        completedLessons: 24
+        totalStudents: classOverviewStats?.totalStudents || studentRows.length,
+        presentToday: classOverviewStats?.presentToday || 0,
+        avgScore: classOverviewStats?.avgScore ? classOverviewStats.avgScore.toFixed(1) : '-',
+        completedLessons: classOverviewStats?.completedLessons || 0,
+        attendanceRate: classOverviewStats?.attendanceRate ? (classOverviewStats.attendanceRate * 100).toFixed(1) : 0,
+        passRate: classOverviewStats?.passRate ? (classOverviewStats.passRate * 100).toFixed(1) : 0
     };
 
     const StudentsButtonHaver = ({ row }) => {

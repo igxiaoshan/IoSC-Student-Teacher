@@ -12,7 +12,7 @@ import {
     ArrowUpward as ArrowUpIcon, ArrowDownward as ArrowDownIcon
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { getClassStudents } from '../../redux/sclassRelated/sclassHandle';
+import { getClassStudents, notifyGradeUpdate } from '../../redux/sclassRelated/sclassHandle';
 import { useTranslation } from '../../hooks/useTranslation';
 import { safeGet } from '../../utils/safeAccess';
 import api from '../../utils/apiConfig';
@@ -102,6 +102,8 @@ const TeacherGradeManagement = () => {
             setMessage({ type: 'success', text: '成绩录入成功！' });
             setGradeData({});
             fetchStats();
+            // 通知其他页面刷新数据
+            dispatch(notifyGradeUpdate());
         } catch (err) {
             setMessage({ type: 'error', text: '录入失败：' + (err.response?.data?.message || err.message) });
         } finally {

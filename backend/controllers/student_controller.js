@@ -557,6 +557,87 @@ const getStudentProgress = async (req, res) => {
     }
 };
 
+// 获取班级概览统计（用于班级详情页面）
+const getClassOverviewStats = async (req, res) => {
+    const classId = req.params.id;
+
+    try {
+        const students = await Student.find({ sclassName: classId })
+            .populate('attendance.subName', 'subName sessions')
+            .populate('examResult.subName', 'subName');
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const stats = {
+            totalStudents: students.length,
+            presentToday: 0,
+            avgScore: 0,
+            completedLessons: 0,
+            attendanceRate: 0,
+            passRate: 0
+        };
+
+        let totalPresent = 0;
+        let totalAbsent = 0;
+        let totalScore = 0;
+        let gradeCount = 0;
+        let passCount = 0;
+
+        for (const student of students) {
+            // 今日考勤
+            const todayAttendance = student.attendance.find(a => {
+                const recordDate = new Date(a.date);
+                recordDate.setHours(0, 0, 0, 0);
+                return recordDate.getTime() === today.getTime();
+            });
+            if (todayAttendance && todayAttendance.status === 'Present') {
+                stats.presentToday++;
+            }
+
+            // 总考勤统计
+            for (const record of student.attendance) {
+                if (record.status === 'Present') {
+                    totalPresent++;
+                } else {
+                    totalAbsent++;
+                }
+            }
+
+            // 成绩统计
+            for (const result of student.examResult) {
+                totalScore += result.marksObtained;
+                gradeCount++;
+                if (result.marksObtained >= 60) {
+                    passCount++;
+                }
+            }
+        }
+
+        stats.avgScore = gradeCount > 0 ? Math.round((totalScore / gradeCount) * 10) / 10 : 0;
+        stats.attendanceRate = (totalPresent + totalAbsent) > 0
+            ? Math.round((totalPresent / (totalPresent + totalAbsent)) * 100) / 100
+            : 0;
+        stats.passRate = gradeCount > 0 ? Math.round((passCount / gradeCount) * 100) / 100 : 0;
+
+        // 已完成课程数（基于考勤记录估算）
+        const uniqueDates = new Set();
+        for (const student of students) {
+            for (const record of student.attendance) {
+                uniqueDates.add(record.date.toISOString().split('T')[0]);
+            }
+        }
+        stats.completedLessons = uniqueDates.size;
+
+        return res.json({
+            success: true,
+            data: stats
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 
 module.exports = {
     studentRegister,
@@ -579,4 +660,5 @@ module.exports = {
     getClassAttendanceStats,
     getClassGradeStats,
     getStudentProgress,
+    getClassOverviewStats,
 };

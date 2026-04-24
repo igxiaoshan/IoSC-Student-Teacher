@@ -8,7 +8,8 @@ const {
     deleteStudentsByClass, updateExamResult,
     clearAllStudentsAttendanceBySubject, clearAllStudentsAttendance,
     removeStudentAttendanceBySubject, removeStudentAttendance,
-    batchAttendance, getClassAttendanceStats, getClassGradeStats, getStudentProgress
+    batchAttendance, getClassAttendanceStats, getClassGradeStats, getStudentProgress,
+    getClassOverviewStats
 } = require('../controllers/student_controller.js');
 
 // 注册和登录
@@ -36,5 +37,6 @@ router.post('/BatchAttendance', batchAttendance);
 router.get('/ClassAttendanceStats', getClassAttendanceStats);
 router.get('/ClassGradeStats', getClassGradeStats);
 router.get('/StudentProgress', getStudentProgress);
+router.get('/ClassOverviewStats/:id', getClassOverviewStats);
 
 module.exports = router;

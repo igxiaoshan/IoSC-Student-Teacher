@@ -8,6 +8,25 @@ const initialState = {
     subjectsList: [],
     subjectDetails: [],
     classStatistics: null,
+    // 班级概览统计（用于班级详情页面）
+    classOverviewStats: {
+        totalStudents: 0,
+        presentToday: 0,
+        avgScore: 0,
+        completedLessons: 0,
+        attendanceRate: 0,
+        passRate: 0
+    },
+    // 数据更新时间戳（用于跨页面数据同步）
+    lastDataUpdate: {
+        attendance: null,
+        grades: null
+    },
+    // 刷新触发器（用于通知其他页面刷新数据）
+    refreshTriggers: {
+        attendance: false,
+        grades: false
+    },
     pagination: {
         currentPage: 1,
         totalPages: 0,
@@ -25,6 +44,7 @@ const initialState = {
     subloading: false,
     statsLoading: false,
     batchLoading: false,
+    overviewLoading: false,
     error: null,
     response: null,
     getresponse: null,
@@ -146,6 +166,35 @@ const sclassSlice = createSlice({
             state.getresponse = null;
             state.batchResponse = null;
         },
+        // 班级概览统计相关
+        getOverviewRequest: (state) => {
+            state.overviewLoading = true;
+            state.error = null;
+        },
+        getOverviewSuccess: (state, action) => {
+            state.classOverviewStats = {
+                ...state.classOverviewStats,
+                ...action.payload
+            };
+            state.overviewLoading = false;
+            state.error = null;
+        },
+        // 刷新触发器相关
+        triggerAttendanceRefresh: (state) => {
+            state.refreshTriggers.attendance = true;
+            state.lastDataUpdate.attendance = Date.now();
+        },
+        triggerGradesRefresh: (state) => {
+            state.refreshTriggers.grades = true;
+            state.lastDataUpdate.grades = Date.now();
+        },
+        resetRefreshTrigger: (state, action) => {
+            if (action.payload === 'attendance') {
+                state.refreshTriggers.attendance = false;
+            } else if (action.payload === 'grades') {
+                state.refreshTriggers.grades = false;
+            }
+        },
     },
 });
 
@@ -169,7 +218,12 @@ export const {
     setFilters,
     resetFilters,
     clearError,
-    clearResponse
+    clearResponse,
+    getOverviewRequest,
+    getOverviewSuccess,
+    triggerAttendanceRefresh,
+    triggerGradesRefresh,
+    resetRefreshTrigger
 } = sclassSlice.actions;
 
 export const sclassReducer = sclassSlice.reducer;
