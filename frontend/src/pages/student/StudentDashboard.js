@@ -25,6 +25,7 @@ import PracticeAssistant from './PracticeAssistant';
 import JimengImageGenerator from './JimengImageGenerator';
 import JimengVideoGenerator from './JimengVideoGenerator';
 import KnowledgeVideoGenerator from './KnowledgeVideoGenerator';
+import StudentMistakeBook from './StudentMistakeBook';
 import Logout from '../Logout'
 import AccountMenu from '../../components/AccountMenu';
 import { AppBar, Drawer } from '../../components/styles';
@@ -94,6 +95,7 @@ const StudentDashboard = () => {
                         {/* AI学习助手路由 */}
                         <Route path="/Student/learning-assistant" element={<LearningAssistant />} />
                         <Route path="/Student/practice-assistant" element={<PracticeAssistant />} />
+                        <Route path="/Student/mistake-book" element={<StudentMistakeBook />} />
                         <Route path="/Student/jimeng-image" element={<JimengImageGenerator />} />
                         <Route path="/Student/jimeng-video" element={<JimengVideoGenerator />} />
                         <Route path="/Student/knowledge-video" element={<KnowledgeVideoGenerator />} />

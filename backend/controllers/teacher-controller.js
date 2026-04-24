@@ -3,12 +3,29 @@ const Teacher = require('../models/teacherSchema.js');
 const Subject = require('../models/subjectSchema.js');
 
 const teacherRegister = async (req, res) => {
-    const { name, email, password, role, school, teachSubject, teachSclass } = req.body;
+    const {
+        name, email, password, role, school, teachSubject, teachSclass,
+        phone, address, qualification, experience, teacherType, position
+    } = req.body;
     try {
         const salt = await bcrypt.genSalt(10);
         const hashedPass = await bcrypt.hash(password, salt);
 
-        const teacher = new Teacher({ name, email, password: hashedPass, role, school, teachSubject, teachSclass });
+        const teacher = new Teacher({
+            name,
+            email,
+            password: hashedPass,
+            role,
+            school,
+            teachSubject,
+            teachSclass,
+            phone: phone || '',
+            address: address || '',
+            qualification: qualification || '',
+            experience: experience || 0,
+            teacherType: teacherType || 'full-time',
+            position: position || 'teacher'
+        });
 
         const existingTeacherByEmail = await Teacher.findOne({ email });
 

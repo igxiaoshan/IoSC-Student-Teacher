@@ -3,9 +3,11 @@ import { Box, Avatar, Menu, MenuItem, ListItemIcon, Divider, IconButton, Tooltip
 import { Settings, Logout } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useTranslation } from '../hooks/useTranslation';
 
 const AccountMenu = () => {
     const [anchorEl, setAnchorEl] = useState(null);
+    const { tCommon } = useTranslation();
 
     const open = Boolean(anchorEl);
 
@@ -20,7 +22,7 @@ const AccountMenu = () => {
     return (
         <>
             <Box sx={{ display: 'flex', alignItems: 'center', textAlign: 'center' }}>
-                <Tooltip title="帐户设置">
+                <Tooltip title={tCommon('accountSettings')}>
                     <IconButton
                         onClick={handleClick}
                         size="small"
@@ -51,7 +53,7 @@ const AccountMenu = () => {
                 <MenuItem>
                     <Avatar />
                     <Link to={`/${currentRole}/profile`}>
-                        个人资料
+                        {tCommon('profile')}
                     </Link>
                 </MenuItem>
                 <Divider />
@@ -59,14 +61,14 @@ const AccountMenu = () => {
                     <ListItemIcon>
                         <Settings fontSize="small" />
                     </ListItemIcon>
-                    帐户设置
+                    {tCommon('accountSettings')}
                 </MenuItem>
                 <MenuItem>
                     <ListItemIcon>
                         <Logout fontSize="small" />
                     </ListItemIcon>
                     <Link to="/logout">
-                        登出
+                        {tCommon('logout')}
                     </Link>
                 </MenuItem>
             </Menu>

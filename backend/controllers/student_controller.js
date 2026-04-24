@@ -275,6 +275,288 @@ const removeStudentAttendance = async (req, res) => {
     }
 };
 
+// 批量考勤录入
+const batchAttendance = async (req, res) => {
+    const { students, subName, date } = req.body;
+    // students: [{ studentId, status }, ...]
+
+    try {
+        const subject = await Subject.findById(subName);
+        if (!subject) {
+            return res.status(404).json({ message: 'Subject not found' });
+        }
+
+        const results = [];
+        const errors = [];
+
+        for (const item of students) {
+            try {
+                const student = await Student.findById(item.studentId);
+                if (!student) {
+                    errors.push({ studentId: item.studentId, error: 'Student not found' });
+                    continue;
+                }
+
+                const existingAttendance = student.attendance.find(
+                    (a) =>
+                        a.date.toDateString() === new Date(date).toDateString() &&
+                        a.subName.toString() === subName
+                );
+
+                if (existingAttendance) {
+                    existingAttendance.status = item.status;
+                } else {
+                    student.attendance.push({ date, status: item.status, subName });
+                }
+
+                await student.save();
+                results.push({ studentId: item.studentId, success: true });
+            } catch (err) {
+                errors.push({ studentId: item.studentId, error: err.message });
+            }
+        }
+
+        return res.json({
+            success: true,
+            processed: results.length,
+            failed: errors.length,
+            results,
+            errors
+        });
+    } catch (error) {
+        res.status(500).json(error);
+    }
+};
+
+// 获取班级考勤统计
+const getClassAttendanceStats = async (req, res) => {
+    const { classId, subjectId, startDate, endDate } = req.query;
+
+    try {
+        const students = await Student.find({ sclassName: classId })
+            .populate('attendance.subName', 'subName sessions');
+
+        const stats = {
+            totalStudents: students.length,
+            totalPresent: 0,
+            totalAbsent: 0,
+            attendanceByDate: {},
+            studentStats: []
+        };
+
+        const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const end = endDate ? new Date(endDate) : new Date();
+
+        for (const student of students) {
+            let presentCount = 0;
+            let absentCount = 0;
+
+            for (const record of student.attendance) {
+                const recordDate = new Date(record.date);
+                if (recordDate >= start && recordDate <= end) {
+                    if (!subjectId || record.subName._id.toString() === subjectId) {
+                        if (record.status === 'Present') {
+                            presentCount++;
+                            stats.totalPresent++;
+                        } else {
+                            absentCount++;
+                            stats.totalAbsent++;
+                        }
+
+                        const dateKey = recordDate.toISOString().split('T')[0];
+                        if (!stats.attendanceByDate[dateKey]) {
+                            stats.attendanceByDate[dateKey] = { present: 0, absent: 0 };
+                        }
+                        if (record.status === 'Present') {
+                            stats.attendanceByDate[dateKey].present++;
+                        } else {
+                            stats.attendanceByDate[dateKey].absent++;
+                        }
+                    }
+                }
+            }
+
+            stats.studentStats.push({
+                studentId: student._id,
+                name: student.name,
+                rollNum: student.rollNum,
+                presentCount,
+                absentCount,
+                attendanceRate: presentCount + absentCount > 0
+                    ? Math.round((presentCount / (presentCount + absentCount)) * 100)
+                    : 0
+            });
+        }
+
+        stats.averageAttendanceRate = stats.totalPresent + stats.totalAbsent > 0
+            ? Math.round((stats.totalPresent / (stats.totalPresent + stats.totalAbsent)) * 100)
+            : 0;
+
+        return res.json(stats);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+};
+
+// 获取班级成绩统计
+const getClassGradeStats = async (req, res) => {
+    const { classId, subjectId } = req.query;
+
+    try {
+        const students = await Student.find({ sclassName: classId })
+            .populate('examResult.subName', 'subName');
+
+        const grades = [];
+        const stats = {
+            totalStudents: students.length,
+            average: 0,
+            min: 100,
+            max: 0,
+            passCount: 0,
+            failCount: 0,
+            distribution: {
+                excellent: 0, // 90+
+                good: 0,      // 80-89
+                average: 0,   // 70-79
+                pass: 0,      // 60-69
+                fail: 0       // <60
+            },
+            studentGrades: []
+        };
+
+        let totalScore = 0;
+        let count = 0;
+
+        for (const student of students) {
+            let studentGrade = null;
+
+            for (const result of student.examResult) {
+                if (!subjectId || result.subName._id.toString() === subjectId) {
+                    studentGrade = result.marksObtained;
+                    grades.push(result.marksObtained);
+
+                    totalScore += result.marksObtained;
+                    count++;
+
+                    if (result.marksObtained < stats.min) stats.min = result.marksObtained;
+                    if (result.marksObtained > stats.max) stats.max = result.marksObtained;
+
+                    if (result.marksObtained >= 60) {
+                        stats.passCount++;
+                    } else {
+                        stats.failCount++;
+                    }
+
+                    // 分布统计
+                    if (result.marksObtained >= 90) stats.distribution.excellent++;
+                    else if (result.marksObtained >= 80) stats.distribution.good++;
+                    else if (result.marksObtained >= 70) stats.distribution.average++;
+                    else if (result.marksObtained >= 60) stats.distribution.pass++;
+                    else stats.distribution.fail++;
+
+                    break;
+                }
+            }
+
+            stats.studentGrades.push({
+                studentId: student._id,
+                name: student.name,
+                rollNum: student.rollNum,
+                grade: studentGrade
+            });
+        }
+
+        stats.average = count > 0 ? Math.round((totalScore / count) * 100) / 100 : 0;
+        stats.passRate = count > 0 ? Math.round((stats.passCount / count) * 100) : 0;
+
+        return res.json(stats);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+};
+
+// 获取学生进度追踪
+const getStudentProgress = async (req, res) => {
+    const { classId, subjectId } = req.query;
+
+    try {
+        const students = await Student.find({ sclassName: classId })
+            .populate('attendance.subName', 'subName sessions')
+            .populate('examResult.subName', 'subName');
+
+        const progress = [];
+
+        for (const student of students) {
+            // 计算出勤率
+            let attendanceRecords = student.attendance;
+            if (subjectId) {
+                attendanceRecords = attendanceRecords.filter(
+                    a => a.subName._id.toString() === subjectId
+                );
+            }
+
+            const presentCount = attendanceRecords.filter(a => a.status === 'Present').length;
+            const totalSessions = attendanceRecords.length;
+            const attendanceRate = totalSessions > 0
+                ? Math.round((presentCount / totalSessions) * 100)
+                : 0;
+
+            // 获取成绩
+            let grade = null;
+            for (const result of student.examResult) {
+                if (!subjectId || result.subName._id.toString() === subjectId) {
+                    grade = result.marksObtained;
+                    break;
+                }
+            }
+
+            // 计算综合进度分数
+            const progressScore = Math.round((attendanceRate * 0.3) + ((grade || 0) * 0.7));
+
+            // 判断状态
+            let status = 'good';
+            let warnings = [];
+            if (attendanceRate < 70) {
+                status = 'warning';
+                warnings.push('出勤率偏低');
+            }
+            if (grade !== null && grade < 60) {
+                status = 'danger';
+                warnings.push('成绩不及格');
+            } else if (grade !== null && grade < 70) {
+                status = 'warning';
+                warnings.push('成绩需要提高');
+            }
+
+            progress.push({
+                studentId: student._id,
+                name: student.name,
+                rollNum: student.rollNum,
+                attendanceRate,
+                grade,
+                progressScore,
+                status,
+                warnings,
+                totalSessions,
+                presentCount
+            });
+        }
+
+        // 按进度分数排序
+        progress.sort((a, b) => a.progressScore - b.progressScore);
+
+        return res.json({
+            totalStudents: students.length,
+            goodCount: progress.filter(p => p.status === 'good').length,
+            warningCount: progress.filter(p => p.status === 'warning').length,
+            dangerCount: progress.filter(p => p.status === 'danger').length,
+            students: progress
+        });
+    } catch (error) {
+        res.status(500).json(error);
+    }
+};
+
 
 module.exports = {
     studentRegister,
@@ -292,4 +574,9 @@ module.exports = {
     clearAllStudentsAttendance,
     removeStudentAttendanceBySubject,
     removeStudentAttendance,
+
+    batchAttendance,
+    getClassAttendanceStats,
+    getClassGradeStats,
+    getStudentProgress,
 };

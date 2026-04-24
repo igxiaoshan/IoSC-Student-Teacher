@@ -6,11 +6,15 @@ import {
     Typography,
     Box,
     Avatar,
-    Divider
+    Divider,
+    Grid
 } from '@mui/material';
+import { useTranslation } from '../../hooks/useTranslation';
+import { safeGet } from '../../utils/safeAccess';
 
 const AdminProfile = () => {
     const { currentUser } = useSelector((state) => state.user);
+    const { tAdmin, tCommon } = useTranslation();
 
     return (
         <Box
@@ -31,32 +35,37 @@ const AdminProfile = () => {
             >
                 <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
                     <Avatar sx={{ width: 80, height: 80, mb: 2, bgcolor: '#7f56da' }}>
-                        {currentUser.name?.charAt(0).toUpperCase()}
+                        {safeGet(currentUser, 'name', 'A').charAt(0).toUpperCase()}
                     </Avatar>
                     <Typography variant="h5" fontWeight={600}>
-                        {currentUser.name}
+                        {safeGet(currentUser, 'name', tCommon('none'))}
                     </Typography>
                     <Typography variant="subtitle1" color="text.secondary">
-                        管理员
+                        {tAdmin('adminPanel')}
                     </Typography>
                 </Box>
 
                 <Divider sx={{ mb: 2 }} />
 
                 <CardContent>
-                    <Box mb={2}>
-                        <Typography variant="body1" fontWeight={500}>邮箱</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            {currentUser.email}
-                        </Typography>
-                    </Box>
-
-                    <Box mb={2}>
-                        <Typography variant="body1" fontWeight={500}>学校</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            {currentUser.schoolName}
-                        </Typography>
-                    </Box>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12}>
+                            <Box mb={2}>
+                                <Typography variant="body1" fontWeight={500}>{tCommon('email')}</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {safeGet(currentUser, 'email', tCommon('none'))}
+                                </Typography>
+                            </Box>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Box mb={2}>
+                                <Typography variant="body1" fontWeight={500}>{tAdmin('schoolManagement')}</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {safeGet(currentUser, 'schoolName', tCommon('none'))}
+                                </Typography>
+                            </Box>
+                        </Grid>
+                    </Grid>
                 </CardContent>
             </Card>
         </Box>

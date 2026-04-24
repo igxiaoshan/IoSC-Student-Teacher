@@ -1,16 +1,14 @@
-import { Container, Grid, Paper, Box, Typography, Button, Card, CardContent, CardActions, Chip, FormControl, Select, MenuItem } from '@mui/material'
+import { Container, Grid, Paper, Box, Typography, Avatar } from '@mui/material'
 import SeeNotice from '../../components/SeeNotice';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getAllSclasses } from '../../redux/sclassRelated/sclassHandle';
 import { getAllStudents } from '../../redux/studentRelated/studentHandle';
 import { getAllTeachers } from '../../redux/teacherRelated/teacherHandle';
 import { safeGet } from '../../utils/safeAccess';
+import MetricCard from '../../components/common/MetricCard';
 import {
-    Visibility as VisibilityIcon,
-    BarChart as BarChartIcon,
     TrendingUp as TrendingUpIcon,
     Speed as SpeedIcon,
     Memory as MemoryIcon,
@@ -20,27 +18,21 @@ import {
     PersonOutline as PersonOutlineIcon,
     AttachMoney as AttachMoneyIcon
 } from '@mui/icons-material';
-import { BlueButton, GreenButton } from '../../components/buttonStyles';
-
 import SystemStatusPanel from '../../components/dashboard/SystemStatusPanel';
 import BusinessMetricsPanel from '../../components/dashboard/BusinessMetricsPanel';
 import DashboardFilters from '../../components/dashboard/DashboardFilters';
-import { exportDashboardData, exportDashboardJSON } from '../../utils/dataExport';
+import { exportDashboardData } from '../../utils/dataExport';
 import { useTranslation } from '../../hooks/useTranslation';
 
 const AdminHomePage = () => {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
     const { tAdmin, tDashboard } = useTranslation();
     const { studentsList } = useSelector((state) => state.student);
     const { sclassesList } = useSelector((state) => state.sclass);
     const { teachersList } = useSelector((state) => state.teacher);
-
-    const { currentUser } = useSelector(state => state.user)
+    const { currentUser } = useSelector(state => state.user);
 
     const adminID = safeGet(currentUser, '_id');
-
-    // State management
     const [dashboardData, setDashboardData] = useState(null);
     const [timeRange, setTimeRange] = useState('month');
     const [loading, setLoading] = useState(false);
@@ -49,14 +41,9 @@ const AdminHomePage = () => {
         dispatch(getAllStudents(adminID));
         dispatch(getAllSclasses(adminID, "Sclass"));
         dispatch(getAllTeachers(adminID));
-
-        // 获取仪表板数据
-        if (adminID) {
-            fetchDashboardData();
-        }
+        if (adminID) fetchDashboardData();
     }, [adminID, dispatch, timeRange]);
 
-    // 获取仪表板数据
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
@@ -71,228 +58,69 @@ const AdminHomePage = () => {
         }
     };
 
-    // 导出数据功能
     const handleExportData = () => {
         if (!dashboardData) return;
-
-        // 导出CSV格式的分类数据
         exportDashboardData(dashboardData, timeRange);
     };
 
-    // 导出JSON格式的完整数据
-    const handleExportJSON = () => {
-        if (!dashboardData) return;
-        exportDashboardJSON(dashboardData, timeRange);
-    };
-
-    const numberOfStudents = studentsList && studentsList.length;
-    const numberOfClasses = sclassesList && sclassesList.length;
-    const numberOfTeachers = teachersList && teachersList.length;
-
-
-
-    // 关键指标卡片配置
-    // 计算活跃用户数（基于总用户数的合理比例）
+    const numberOfStudents = studentsList?.length || 0;
+    const numberOfClasses = sclassesList?.length || 0;
+    const numberOfTeachers = teachersList?.length || 0;
     const totalUsers = dashboardData?.userBehavior?.totalUsers || (numberOfStudents + numberOfTeachers);
-    const calculateActiveUsers = () => {
-        if (dashboardData?.userBehavior?.activeUsers) {
-            return dashboardData.userBehavior.activeUsers;
-        }
 
-        // 如果没有真实数据，基于总用户数计算活跃用户
-        // 一般活跃用户占总用户的60-80%
-        const baseActiveRate = 0.72; // 基础活跃率72%
-        const now = Date.now();
-        const variation = Math.sin(now / 30000) * 0.08 + Math.random() * 0.05; // ±8%的波动
-        const activeRate = Math.max(0.6, Math.min(0.85, baseActiveRate + variation));
+    const activeUsers = dashboardData?.userBehavior?.activeUsers ||
+        Math.floor(totalUsers * (0.6 + Math.random() * 0.25));
 
-        return Math.floor(totalUsers * activeRate);
-    };
-
-    const activeUsers = calculateActiveUsers();
-
-    // 计算活跃用户的变化趋势
-    const calculateActiveUserChange = () => {
-        const now = Date.now();
-        const baseChange = 12.1; // 基础增长率
-        const variation = Math.sin(now / 25000) * 5 + Math.random() * 3; // ±5%的波动
-        const change = baseChange + variation;
-        return change > 0 ? `+${change.toFixed(1)}%` : `${change.toFixed(1)}%`;
-    };
-
-    const keyMetricsCards = [
-        {
-            title: tAdmin('totalUsers'),
-            value: totalUsers,
-            change: '+5.2%',
-            icon: <PeopleIcon />,
-            color: 'primary'
-        },
-        {
-            title: tAdmin('activeUsers'),
-            value: activeUsers,
-            change: calculateActiveUserChange(),
-            icon: <TrendingUpIcon />,
-            color: 'success'
-        },
-        {
-            title: tAdmin('systemHealth'),
-            value: '99.9%',
-            change: tAdmin('stable'),
-            icon: <SpeedIcon />,
-            color: 'info'
-        },
-        {
-            title: tAdmin('memoryUsage'),
-            value: dashboardData?.system?.memory?.usagePercentage ?
-                `${dashboardData.system.memory.usagePercentage.toFixed(1)}%` : '0%',
-            change: dashboardData?.system?.memory?.usagePercentage < 80 ? tAdmin('normal') : tAdmin('high'),
-            icon: <MemoryIcon />,
-            color: dashboardData?.system?.memory?.usagePercentage < 80 ? 'success' : 'warning'
-        }
-    ];
-
-    // Second row metrics cards
-    const secondRowMetricsCards = [
-        {
-            title: tDashboard('totalClasses'),
-            value: numberOfClasses || 0,
-            change: '+2.1%',
-            icon: <SchoolIcon />,
-            color: 'primary'
-        },
-        {
-            title: tDashboard('totalStudents'),
-            value: numberOfStudents || 0,
-            change: '+8.5%',
-            icon: <GroupsIcon />,
-            color: 'success'
-        },
-        {
-            title: tDashboard('totalTeachers'),
-            value: numberOfTeachers || 0,
-            change: '+1.2%',
-            icon: <PersonOutlineIcon />,
-            color: 'info'
-        },
-        {
-            title: tAdmin('operatingExpenses'),
-            value: '$10,000',
-            change: '-3.2%',
-            icon: <AttachMoneyIcon />,
-            color: 'warning'
-        }
+    const metrics = [
+        { title: tAdmin('totalUsers'), value: totalUsers, change: '+5.2%', icon: <PeopleIcon />, color: 'primary' },
+        { title: tAdmin('activeUsers'), value: activeUsers, change: '+12.1%', icon: <TrendingUpIcon />, color: 'success' },
+        { title: tAdmin('systemHealth'), value: '99.9%', change: tAdmin('stable'), icon: <SpeedIcon />, color: 'info' },
+        { title: tAdmin('memoryUsage'), value: dashboardData?.system?.memory?.usagePercentage ? `${dashboardData.system.memory.usagePercentage.toFixed(1)}%` : '0%', change: tAdmin('normal'), icon: <MemoryIcon />, color: 'success' },
+        { title: tDashboard('totalClasses'), value: numberOfClasses, change: '+2.1%', icon: <SchoolIcon />, color: 'primary' },
+        { title: tDashboard('totalStudents'), value: numberOfStudents, change: '+8.5%', icon: <GroupsIcon />, color: 'success' },
+        { title: tDashboard('totalTeachers'), value: numberOfTeachers, change: '+1.2%', icon: <PersonOutlineIcon />, color: 'info' },
+        { title: tAdmin('operatingExpenses'), value: '$10,000', change: '-3.2%', icon: <AttachMoneyIcon />, color: 'warning' }
     ];
 
     return (
-        <>
-            <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-                <Grid container spacing={3}>
-                    {/* Page Title */}
-                    <Grid item xs={12}>
-                        <Typography variant="h4" component="h1" gutterBottom>
-                            {tAdmin('adminDashboard')}
-                        </Typography>
-                        <Typography variant="body1" color="textSecondary" gutterBottom>
-                            {tAdmin('dashboardSubtitle')}
-                        </Typography>
-                    </Grid>
-
-                    {/* Filters */}
-                    <Grid item xs={12}>
-                        <DashboardFilters
-                            timeRange={timeRange}
-                            onTimeRangeChange={setTimeRange}
-                            onRefresh={fetchDashboardData}
-                            onExport={handleExportData}
-                            loading={loading}
-                            lastUpdated={dashboardData?.lastUpdated}
-                        />
-                    </Grid>
-
-                    {/* 关键指标卡片 */}
-                    {keyMetricsCards.map((metric, index) => (
-                        <Grid item xs={12} sm={6} md={3} key={index}>
-                            <Card elevation={2}>
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <Box>
-                                            <Typography color="textSecondary" gutterBottom variant="body2">
-                                                {metric.title}
-                                            </Typography>
-                                            <Typography variant="h4" component="div">
-                                                {metric.value}
-                                            </Typography>
-                                            <Chip
-                                                label={metric.change}
-                                                color={metric.color}
-                                                size="small"
-                                                sx={{ mt: 1 }}
-                                            />
-                                        </Box>
-                                        <Box sx={{ color: `${metric.color}.main` }}>
-                                            {metric.icon}
-                                        </Box>
-                                    </Box>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    ))}
-
-                    {/* 第二行指标卡片 */}
-                    {secondRowMetricsCards.map((metric, index) => (
-                        <Grid item xs={12} sm={6} md={3} key={`second-row-${index}`}>
-                            <Card elevation={2}>
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <Box>
-                                            <Typography color="textSecondary" gutterBottom variant="body2">
-                                                {metric.title}
-                                            </Typography>
-                                            <Typography variant="h4" component="div">
-                                                {metric.value}
-                                            </Typography>
-                                            <Chip
-                                                label={metric.change}
-                                                color={metric.color}
-                                                size="small"
-                                                sx={{ mt: 1 }}
-                                            />
-                                        </Box>
-                                        <Box sx={{ color: `${metric.color}.main` }}>
-                                            {metric.icon}
-                                        </Box>
-                                    </Box>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    ))}
-
-                    {/* 业务指标面板 */}
-                    <Grid item xs={12} md={6}>
-                        <BusinessMetricsPanel
-                            data={dashboardData?.business}
-                            loading={loading}
-                        />
-                    </Grid>
-
-                    {/* 系统状态面板 */}
-                    <Grid item xs={12} md={6}>
-                        <SystemStatusPanel
-                            data={dashboardData?.system}
-                            loading={loading}
-                            onRefresh={fetchDashboardData}
-                        />
-                    </Grid>
-
-                    <Grid item xs={12} md={12} lg={12}>
-                        <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column' }}>
-                            <SeeNotice />
-                        </Paper>
-                    </Grid>
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+            <Grid container spacing={3}>
+                <Grid item xs={12}>
+                    <Typography variant="h4" component="h1" gutterBottom>{tAdmin('adminDashboard')}</Typography>
+                    <Typography variant="body1" color="textSecondary">{tAdmin('dashboardSubtitle')}</Typography>
                 </Grid>
-            </Container>
-        </>
+
+                <Grid item xs={12}>
+                    <DashboardFilters
+                        timeRange={timeRange}
+                        onTimeRangeChange={setTimeRange}
+                        onRefresh={fetchDashboardData}
+                        onExport={handleExportData}
+                        loading={loading}
+                        lastUpdated={dashboardData?.lastUpdated}
+                    />
+                </Grid>
+
+                {metrics.map((metric, index) => (
+                    <Grid item xs={12} sm={6} md={3} key={index}>
+                        <MetricCard {...metric} />
+                    </Grid>
+                ))}
+
+                <Grid item xs={12} md={6}>
+                    <BusinessMetricsPanel data={dashboardData?.business} loading={loading} />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                    <SystemStatusPanel data={dashboardData?.system} loading={loading} onRefresh={fetchDashboardData} />
+                </Grid>
+
+                <Grid item xs={12}>
+                    <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column' }}>
+                        <SeeNotice />
+                    </Paper>
+                </Grid>
+            </Grid>
+        </Container>
     );
 };
 

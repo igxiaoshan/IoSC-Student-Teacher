@@ -31,6 +31,9 @@ import JimengImageGenerator from './JimengImageGenerator';
 import JimengVideoGenerator from './JimengVideoGenerator';
 import TeacherKnowledgeVideoGenerator from './TeacherKnowledgeVideoGenerator';
 import VideoProxyDemo from './VideoProxyDemo';
+import TeacherAttendanceManagement from './TeacherAttendanceManagement';
+import TeacherGradeManagement from './TeacherGradeManagement';
+import TeacherStudentProgress from './TeacherStudentProgress';
 
 const TeacherDashboard = () => {
     const [open, setOpen] = useState(true);
@@ -92,6 +95,11 @@ const TeacherDashboard = () => {
 
                         <Route path="/Teacher/class" element={<TeacherClassDetails />} />
                         <Route path="/Teacher/class/student/:id" element={<TeacherViewStudent />} />
+
+                        {/* 考勤、成绩、进度管理 */}
+                        <Route path="/Teacher/attendance" element={<TeacherAttendanceManagement />} />
+                        <Route path="/Teacher/grades" element={<TeacherGradeManagement />} />
+                        <Route path="/Teacher/progress" element={<TeacherStudentProgress />} />
 
                         <Route path="/Teacher/class/student/attendance/:studentID/:subjectID" element={<StudentAttendance situation="Subject" />} />
                         <Route path="/Teacher/class/student/marks/:studentID/:subjectID" element={<StudentExamMarks situation="Subject" />} />

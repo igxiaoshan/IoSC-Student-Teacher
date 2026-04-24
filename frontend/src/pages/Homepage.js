@@ -1,9 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Container, Grid, Box } from '@mui/material';
+import { Container, Grid, Box, Typography, Button } from '@mui/material';
 import styled from 'styled-components';
 import Students from '../assets/student.jpg';
-import { IndigoButton, WhiteWithIndigoBorderButton } from '../components/buttonStyles';
 import { useTranslation } from '../hooks/useTranslation';
 
 const Homepage = () => {
@@ -29,9 +28,9 @@ const Homepage = () => {
               </IndigoButton>
             </StyledLink>
             <StyledLink to="/Adminregister">
-              <WhiteWithIndigoBorderButton variant="outlined" fullWidth>
+              <WhiteButton variant="outlined" fullWidth>
                 {tCommon("register")}
-              </WhiteWithIndigoBorderButton>
+              </WhiteButton>
             </StyledLink>
           </ContentBox>
         </Grid>
@@ -41,8 +40,6 @@ const Homepage = () => {
 };
 
 export default Homepage;
-
-// ---------------------- Styled Components ----------------------
 
 const FullHeightContainer = styled(Container)`
   height: 100vh;
@@ -54,10 +51,21 @@ const ResponsiveGrid = styled(Grid)`
   height: 100vh;
 
   .image-section {
-    background-image: url(${Students});
+    background-image: linear-gradient(135deg, rgba(25, 118, 210, 0.85) 0%, rgba(106, 76, 147, 0.85) 100%), url(${Students});
     background-size: cover;
     background-position: center;
     height: 100vh;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 200px;
+      background: linear-gradient(to top, rgba(0,0,0,0.3), transparent);
+    }
   }
 
   @media (max-width: 900px) {
@@ -84,7 +92,7 @@ const ContentBox = styled(Box)`
   background-color: #fff;
 
   @media (max-width: 900px) {
-    background-color: rgba(255, 255, 255, 0.49);
+    background-color: rgba(255, 255, 255, 0.85);
     padding: 40px 20px;
     text-align: center;
   }
@@ -103,7 +111,7 @@ const StyledTitle = styled.h1`
 `;
 
 const PurpleText = styled.span`
-  color:rgb(56, 48, 222);
+  color: #1976d2;
 `;
 
 const StyledText = styled.p`
@@ -115,11 +123,48 @@ const StyledText = styled.p`
 
 const StyledLink = styled(Link)`
   text-decoration: none;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   width: 80%;
   align-self: center;
 
   @media (max-width: 900px) {
     width: 100%;
+  }
+`;
+
+const IndigoButton = styled(Button)`
+  && {
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+    color: white;
+    padding: 14px 32px;
+    font-size: 1rem;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(25, 118, 210, 0.4);
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+      box-shadow: 0 6px 24px rgba(25, 118, 210, 0.5);
+      transform: translateY(-2px);
+    }
+  }
+`;
+
+const WhiteButton = styled(Button)`
+  && {
+    background-color: transparent;
+    color: #1976d2;
+    border: 2px solid #1976d2;
+    padding: 14px 32px;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background-color: rgba(25, 118, 210, 0.08);
+      border-color: #1565c0;
+      color: #1565c0;
+      transform: translateY(-2px);
+    }
   }
 `;

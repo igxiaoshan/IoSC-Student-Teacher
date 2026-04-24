@@ -14,13 +14,15 @@ import {
 import { PurpleButton } from '../../../components/buttonStyles';
 import Popup from '../../../components/Popup';
 import { safeGet } from '../../../utils/safeAccess';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 const StudentAttendance = ({ situation }) => {
     const dispatch = useDispatch();
     const { currentUser, userDetails, loading } = useSelector((state) => state.user);
     const { subjectsList } = useSelector((state) => state.sclass);
     const { response, error, statestatus } = useSelector((state) => state.student);
-    const params = useParams()
+    const params = useParams();
+    const { tTeacher, tStudent, tCommon } = useTranslation();
 
     const [studentID, setStudentID] = useState("");
     const [subjectName, setSubjectName] = useState("");
@@ -114,11 +116,11 @@ const StudentAttendance = ({ situation }) => {
                         >
                             <Stack spacing={1} sx={{ mb: 3 }}>
                                 <Typography variant="h4">
-                                    学生姓名: {userDetails.name}
+                                    {tStudent('studentName')}: {userDetails.name}
                                 </Typography>
                                 {currentUser.teachSubject &&
                                     <Typography variant="h4">
-                                        科目名称: {currentUser.teachSubject?.subName}
+                                        {tTeacher('subjectName')}: {currentUser.teachSubject?.subName}
                                     </Typography>
                                 }
                             </Stack>
@@ -127,12 +129,12 @@ const StudentAttendance = ({ situation }) => {
                                     {
                                         situation === "Student" &&
                                         <FormControl fullWidth>
-                                            <InputLabel id="demo-simple-select-label">选择科目</InputLabel>
+                                            <InputLabel id="demo-simple-select-label">{tTeacher('selectSubject')}</InputLabel>
                                             <Select
                                                 labelId="demo-simple-select-label"
                                                 id="demo-simple-select"
                                                 value={subjectName}
-                                                label="选择一个选项"
+                                                label={tTeacher('selectOption')}
                                                 onChange={changeHandler} required
                                             >
                                                 {subjectsList ?
@@ -143,29 +145,29 @@ const StudentAttendance = ({ situation }) => {
                                                     ))
                                                     :
                                                     <MenuItem value="Select Subject">
-                                                        添加考勤科目
+                                                        {tTeacher('addAttendanceSubject')}
                                                     </MenuItem>
                                                 }
                                             </Select>
                                         </FormControl>
                                     }
                                     <FormControl fullWidth>
-                                        <InputLabel id="demo-simple-select-label">考勤状态</InputLabel>
+                                        <InputLabel id="demo-simple-select-label">{tTeacher('attendanceStatus')}</InputLabel>
                                         <Select
                                             labelId="demo-simple-select-label"
                                             id="demo-simple-select"
                                             value={status}
-                                            label="选择一个选项"
+                                            label={tTeacher('selectOption')}
                                             onChange={(event) => setStatus(event.target.value)}
                                             required
                                         >
-                                            <MenuItem value="Present">出席</MenuItem>
-                                            <MenuItem value="Absent">缺席</MenuItem>
+                                            <MenuItem value="Present">{tTeacher('present')}</MenuItem>
+                                            <MenuItem value="Absent">{tTeacher('absent')}</MenuItem>
                                         </Select>
                                     </FormControl>
                                     <FormControl>
                                         <TextField
-                                            label="选择日期"
+                                            label={tTeacher('selectDate')}
                                             type="date"
                                             value={date}
                                             onChange={(event) => setDate(event.target.value)} required
@@ -184,7 +186,7 @@ const StudentAttendance = ({ situation }) => {
                                     type="submit"
                                     disabled={loader}
                                 >
-                                    {loader ? <CircularProgress size={24} color="inherit" /> : "提交"}
+                                    {loader ? <CircularProgress size={24} color="inherit" /> : tCommon('submit')}
                                 </PurpleButton>
                             </form>
                         </Box>

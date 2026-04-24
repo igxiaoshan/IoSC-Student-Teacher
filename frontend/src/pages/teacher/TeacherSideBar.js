@@ -8,6 +8,9 @@ import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 
 import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
+import EventIcon from '@mui/icons-material/Event';
+import GradeIcon from '@mui/icons-material/Grade';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ImageIcon from '@mui/icons-material/Image';
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -33,9 +36,27 @@ const TeacherSideBar = () => {
                 </ListItemButton>
                 <ListItemButton component={Link} to="/Teacher/class">
                     <ListItemIcon>
-                        <ClassOutlinedIcon color={location.pathname.startsWith("/Teacher/class") ? 'primary' : 'inherit'} />
+                        <ClassOutlinedIcon color={location.pathname.startsWith("/Teacher/class") && !location.pathname.includes("/Teacher/class/student") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
                     <ListItemText primary={`${sclassName}${tClass('classUnit')}`} />
+                </ListItemButton>
+                <ListItemButton component={Link} to="/Teacher/attendance">
+                    <ListItemIcon>
+                        <EventIcon color={location.pathname === "/Teacher/attendance" ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary={tTeacher('attendanceManagement') || '考勤管理'} />
+                </ListItemButton>
+                <ListItemButton component={Link} to="/Teacher/grades">
+                    <ListItemIcon>
+                        <GradeIcon color={location.pathname === "/Teacher/grades" ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary={tTeacher('gradeManagement') || '成绩管理'} />
+                </ListItemButton>
+                <ListItemButton component={Link} to="/Teacher/progress">
+                    <ListItemIcon>
+                        <TrendingUpIcon color={location.pathname === "/Teacher/progress" ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary={tTeacher('studentProgress') || '学生进度'} />
                 </ListItemButton>
                 {/* <ListItemButton component={Link} to="/Teacher/complain">
                     <ListItemIcon>

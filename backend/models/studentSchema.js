@@ -103,7 +103,7 @@ studentSchema.index({ 'selectedSubjects.subject': 1 });
 
 // 虚拟字段：获取活跃的科目
 studentSchema.virtual('activeSubjects').get(function() {
-    return this.selectedSubjects.filter(sub => sub.status === 'active');
+    return (this.selectedSubjects || []).filter(sub => sub.status === 'active');
 });
 
 // 实例方法：添加科目选择

@@ -15,6 +15,7 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import QuizIcon from '@mui/icons-material/Quiz';
 import ImageIcon from '@mui/icons-material/Image';
 import VideocamIcon from '@mui/icons-material/Videocam';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 const StudentSideBar = () => {
     const location = useLocation();
@@ -51,6 +52,12 @@ const StudentSideBar = () => {
                         <CalendarTodayIcon color={location.pathname.startsWith("/Student/calendar") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
                     <ListItemText primary={tStudent('courseCalendar')} />
+                </ListItemButton>
+                <ListItemButton component={Link} to="/Student/mistake-book">
+                    <ListItemIcon>
+                        <ErrorOutlineIcon color={location.pathname.startsWith("/Student/mistake-book") ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary={tStudent('mistakeBook') || '错题本'} />
                 </ListItemButton>
                 {/* <ListItemButton component={Link} to="/Student/complain">
                     <ListItemIcon>

@@ -13,13 +13,15 @@ import {
     Typography, Stack,
     TextField, CircularProgress, FormControl
 } from '@mui/material';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 const StudentExamMarks = ({ situation }) => {
     const dispatch = useDispatch();
     const { currentUser, userDetails, loading } = useSelector((state) => state.user);
     const { subjectsList } = useSelector((state) => state.sclass);
     const { response, error, statestatus } = useSelector((state) => state.student);
-    const params = useParams()
+    const params = useParams();
+    const { tTeacher, tStudent, tCommon } = useTranslation();
 
     const [studentID, setStudentID] = useState("");
     const [subjectName, setSubjectName] = useState("");
@@ -111,11 +113,11 @@ const StudentExamMarks = ({ situation }) => {
                         >
                             <Stack spacing={1} sx={{ mb: 3 }}>
                                 <Typography variant="h4">
-                                    学生姓名: {userDetails.name}
+                                    {tStudent('studentName')}: {userDetails.name}
                                 </Typography>
                                 {currentUser.teachSubject &&
                                     <Typography variant="h4">
-                                        科目名称: {currentUser.teachSubject?.subName}
+                                        {tTeacher('subjectName')}: {currentUser.teachSubject?.subName}
                                     </Typography>
                                 }
                             </Stack>
@@ -125,13 +127,13 @@ const StudentExamMarks = ({ situation }) => {
                                         situation === "Student" &&
                                         <FormControl fullWidth>
                                             <InputLabel id="demo-simple-select-label">
-                                                选择科目
+                                                {tTeacher('selectSubject')}
                                             </InputLabel>
                                             <Select
                                                 labelId="demo-simple-select-label"
                                                 id="demo-simple-select"
                                                 value={subjectName}
-                                                label="Choose an option"
+                                                label={tTeacher('selectOption')}
                                                 onChange={changeHandler} required
                                             >
                                                 {subjectsList ?
@@ -142,14 +144,14 @@ const StudentExamMarks = ({ situation }) => {
                                                     ))
                                                     :
                                                     <MenuItem value="Select Subject">
-                                                        添加成绩科目
+                                                        {tTeacher('addGradeSubject')}
                                                     </MenuItem>
                                                 }
                                             </Select>
                                         </FormControl>
                                     }
                                     <FormControl>
-                                        <TextField type="number" label='输入成绩'
+                                        <TextField type="number" label={tTeacher('enterGrade')}
                                             value={marksObtained} required
                                             onChange={(e) => setMarksObtained(e.target.value)}
                                             InputLabelProps={{
@@ -166,7 +168,7 @@ const StudentExamMarks = ({ situation }) => {
                                     type="submit"
                                     disabled={loader}
                                 >
-                                    {loader ? <CircularProgress size={24} color="inherit" /> : "提交"}
+                                    {loader ? <CircularProgress size={24} color="inherit" /> : tCommon('submit')}
                                 </BlueButton>
                             </form>
                         </Box>

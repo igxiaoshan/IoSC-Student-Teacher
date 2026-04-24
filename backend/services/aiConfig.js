@@ -15,6 +15,14 @@ module.exports = {
         timeout: 60000
     },
 
+    // Gemini API 配置 (OpenAI 兼容端点)
+    gemini: {
+        apiUrl: process.env.GEMINI_API_URL || 'https://jiuuij.de5.net/v1',
+        apiKey: process.env.GEMINI_API_KEY || '',
+        defaultModel: process.env.GEMINI_MODEL || 'gemini-3-flash-preview',
+        timeout: 60000
+    },
+
     // AI 功能开关
     features: {
         lessonPlanGeneration: process.env.AI_LESSON_PLAN !== 'false',
