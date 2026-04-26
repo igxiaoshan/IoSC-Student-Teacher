@@ -3,11 +3,11 @@ import {
     Container, Paper, Typography, Grid, Card, CardContent, Box,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     TextField, Button, Chip, Avatar, IconButton, Tooltip,
-    Skeleton, Alert, Divider, Collapse, LinearProgress, Tab, Tabs
+    Skeleton, Alert, Divider, Collapse, LinearProgress, Tab, Tabs,
+    useMediaQuery, useTheme, Hidden, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import {
     Event as EventIcon, Check as CheckIcon, Close as CloseIcon,
-    CalendarMonth as CalendarIcon, TrendingUp as TrendingUpIcon,
     Download as DownloadIcon, Refresh as RefreshIcon,
     Warning as WarningIcon, KeyboardArrowDown, KeyboardArrowUp
 } from '@mui/icons-material';
@@ -32,6 +32,8 @@ const TeacherAttendanceManagement = () => {
     const { tTeacher, tStudent, tCommon } = useTranslation();
     const { sclassStudents, loading } = useSelector((state) => state.sclass);
     const { currentUser } = useSelector((state) => state.user);
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     const classID = safeGet(currentUser, 'teachSclass._id');
     const subjectID = safeGet(currentUser, 'teachSubject._id');
@@ -179,16 +181,22 @@ const TeacherAttendanceManagement = () => {
     } : null;
 
     return (
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-            {/* 标题 */}
-            <Paper sx={{ p: 3, mb: 3 }}>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
+        <Container maxWidth={false} sx={{ mt: 2, mb: 4, px: { xs: 1, sm: 2, md: 3 } }}>
+            {/* 标题 - 响应式布局 */}
+            <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
+                <Box
+                    display="flex"
+                    flexDirection={{ xs: 'column', sm: 'row' }}
+                    alignItems={{ xs: 'flex-start', sm: 'center' }}
+                    justifyContent="space-between"
+                    gap={2}
+                >
                     <Box display="flex" alignItems="center">
-                        <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
+                        <Avatar sx={{ bgcolor: 'primary.main', mr: 2, display: { xs: 'none', sm: 'flex' } }}>
                             <EventIcon />
                         </Avatar>
                         <Box>
-                            <Typography variant="h5" fontWeight={600}>
+                            <Typography variant="h5" fontWeight={600} component="h1">
                                 {tTeacher('attendanceManagement')}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
@@ -196,9 +204,14 @@ const TeacherAttendanceManagement = () => {
                             </Typography>
                         </Box>
                     </Box>
-                    <Box display="flex" alignItems="center" gap={2}>
-                        <Chip label={`${startDate} ~ ${endDate}`} color="primary" variant="outlined" />
-                        <Button size="small" startIcon={<RefreshIcon />} onClick={fetchStats}>
+                    <Box display="flex" alignItems="center" gap={2} alignSelf={{ xs: 'flex-start', sm: 'center' }}>
+                        <Chip
+                            label={`${startDate} ~ ${endDate}`}
+                            color="primary"
+                            variant="outlined"
+                            size={isMobile ? 'small' : 'medium'}
+                        />
+                        <Button size="small" startIcon={<RefreshIcon />} onClick={fetchStats} variant="outlined">
                             {tCommon('refresh')}
                         </Button>
                     </Box>
@@ -221,29 +234,55 @@ const TeacherAttendanceManagement = () => {
                 </Alert>
             )}
 
-            {/* Tab 切换 */}
+            {/* Tab 切换 - 移动端使用下拉选择 */}
             <Paper sx={{ mb: 3 }}>
-                <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)}>
-                    <Tab label={tTeacher('addAttendance') || '考勤录入'} />
-                    <Tab label={tTeacher('attendanceStats') || '考勤统计'} />
-                    <Tab label={tTeacher('studentDetail') || '学生详情'} />
-                </Tabs>
+                <Hidden smDown implementation="css">
+                    <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} variant="fullWidth">
+                        <Tab label={tTeacher('addAttendance') || '考勤录入'} />
+                        <Tab label={tTeacher('attendanceStats') || '考勤统计'} />
+                        <Tab label={tTeacher('studentDetail') || '学生详情'} />
+                    </Tabs>
+                </Hidden>
+                <Hidden smUp implementation="css">
+                    <Box sx={{ p: 2 }}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>{tTeacher('selectTab') || '选择功能'}</InputLabel>
+                            <Select
+                                value={tabValue}
+                                label={tTeacher('selectTab') || '选择功能'}
+                                onChange={(e) => setTabValue(e.target.value)}
+                            >
+                                <MenuItem value={0}>{tTeacher('addAttendance') || '考勤录入'}</MenuItem>
+                                <MenuItem value={1}>{tTeacher('attendanceStats') || '考勤统计'}</MenuItem>
+                                <MenuItem value={2}>{tTeacher('studentDetail') || '学生详情'}</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </Hidden>
             </Paper>
 
             {/* Tab 1: 考勤录入 */}
             <Collapse in={tabValue === 0}>
                 <Grid container spacing={3}>
-                    <Grid item xs={12} md={7}>
-                        <Paper sx={{ p: 2 }}>
-                            <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                    <Grid item xs={12} lg={7}>
+                        <Paper sx={{ p: { xs: 1, sm: 2 } }}>
+                            <Box
+                                display="flex"
+                                flexDirection={{ xs: 'column', sm: 'row' }}
+                                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                justifyContent="space-between"
+                                mb={2}
+                                gap={1}
+                            >
                                 <Typography variant="h6">{tTeacher('addAttendance')}</Typography>
-                                <Box display="flex" gap={1}>
+                                <Box display="flex" gap={1} flexWrap="wrap">
                                     <TextField
                                         type="date"
                                         size="small"
                                         value={selectedDate}
                                         onChange={(e) => setSelectedDate(e.target.value)}
                                         InputLabelProps={{ shrink: true }}
+                                        sx={{ minWidth: { xs: 120, sm: 150 } }}
                                     />
                                     <Button variant="outlined" size="small" onClick={handleSetAllPresent}>
                                         全部出席
@@ -324,7 +363,7 @@ const TeacherAttendanceManagement = () => {
                         <Card sx={{ mb: 3 }}>
                             <CardContent>
                                 <Typography variant="h6" gutterBottom>{tTeacher('dateRange') || '日期范围'}</Typography>
-                                <Box display="flex" gap={2} alignItems="center">
+                                <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
                                     <TextField
                                         type="date"
                                         size="small"
@@ -332,8 +371,9 @@ const TeacherAttendanceManagement = () => {
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
                                         InputLabelProps={{ shrink: true }}
+                                        sx={{ minWidth: { xs: '100%', sm: 130 } }}
                                     />
-                                    <Typography>~</Typography>
+                                    <Typography sx={{ display: { xs: 'none', sm: 'block' } }}>~</Typography>
                                     <TextField
                                         type="date"
                                         size="small"
@@ -341,6 +381,7 @@ const TeacherAttendanceManagement = () => {
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
                                         InputLabelProps={{ shrink: true }}
+                                        sx={{ minWidth: { xs: '100%', sm: 130 } }}
                                     />
                                     <Button variant="contained" size="small" onClick={fetchStats}>
                                         {tCommon('search') || '查询'}
@@ -354,9 +395,9 @@ const TeacherAttendanceManagement = () => {
                             <CardContent>
                                 <Typography variant="h6" gutterBottom>{tTeacher('attendanceDistribution') || '出勤分布'}</Typography>
                                 {statsLoading ? (
-                                    <Skeleton variant="circular" width={200} height={200} sx={{ mx: 'auto' }} />
+                                    <Skeleton variant="circular" width={150} height={150} sx={{ mx: 'auto' }} />
                                 ) : distributionChartData ? (
-                                    <Box sx={{ height: 200, display: 'flex', justifyContent: 'center' }}>
+                                    <Box sx={{ height: { xs: 150, sm: 200 }, display: 'flex', justifyContent: 'center' }}>
                                         <Doughnut data={distributionChartData} options={{ responsive: true, maintainAspectRatio: false }} />
                                     </Box>
                                 ) : (
@@ -386,7 +427,7 @@ const TeacherAttendanceManagement = () => {
                                 {statsLoading ? (
                                     <Skeleton variant="rectangular" height={200} />
                                 ) : trendChartData ? (
-                                    <Box sx={{ height: 250 }}>
+                                    <Box sx={{ height: { xs: 200, sm: 250 } }}>
                                         <Bar data={trendChartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} />
                                     </Box>
                                 ) : (
@@ -404,7 +445,7 @@ const TeacherAttendanceManagement = () => {
                                 {statsLoading ? (
                                     <Skeleton variant="rectangular" height={200} />
                                 ) : rateTrendData ? (
-                                    <Box sx={{ height: 250 }}>
+                                    <Box sx={{ height: { xs: 200, sm: 250 } }}>
                                         <Line data={rateTrendData} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } }} />
                                     </Box>
                                 ) : (
@@ -417,7 +458,7 @@ const TeacherAttendanceManagement = () => {
                     {/* 导出按钮 */}
                     <Grid item xs={12}>
                         <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleExportCSV} disabled={!stats?.studentStats}>
-                            {tCommon('export')} CSV
+                            {tCommon('export')}
                         </Button>
                     </Grid>
                 </Grid>
@@ -425,23 +466,23 @@ const TeacherAttendanceManagement = () => {
 
             {/* Tab 3: 学生详情 */}
             <Collapse in={tabValue === 2}>
-                <Paper sx={{ p: 2 }}>
+                <Paper sx={{ p: { xs: 1, sm: 2 } }}>
                     <Typography variant="h6" gutterBottom>{tTeacher('studentAttendanceDetail') || '学生考勤详情'}</Typography>
                     <Divider sx={{ mb: 2 }} />
                     {statsLoading ? (
                         <Box>{[1, 2, 3, 4, 5].map(i => <Skeleton key={i} height={50} />)}</Box>
                     ) : stats?.studentStats ? (
-                        <TableContainer>
+                        <TableContainer sx={{ maxHeight: { xs: 300, sm: 400 } }}>
                             <Table size="small">
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell />
-                                        <TableCell>{tStudent('studentName')}</TableCell>
-                                        <TableCell>{tStudent('studentId')}</TableCell>
-                                        <TableCell align="center">{tTeacher('present')}</TableCell>
-                                        <TableCell align="center">{tTeacher('absent')}</TableCell>
-                                        <TableCell align="center">{tTeacher('attendanceRate')}</TableCell>
-                                        <TableCell align="center">{tTeacher('status')}</TableCell>
+                                        <TableCell sx={{ minWidth: { xs: 40, sm: 50 } }} />
+                                        <TableCell sx={{ minWidth: { xs: 70, sm: 100 } }}>{tStudent('studentName')}</TableCell>
+                                        <TableCell sx={{ minWidth: { xs: 60, sm: 80 } }}>{tStudent('studentId')}</TableCell>
+                                        <TableCell align="center" sx={{ minWidth: { xs: 40, sm: 60 } }}>{tTeacher('present')}</TableCell>
+                                        <TableCell align="center" sx={{ minWidth: { xs: 40, sm: 60 } }}>{tTeacher('absent')}</TableCell>
+                                        <TableCell align="center" sx={{ minWidth: { xs: 80, sm: 100 } }}>{tTeacher('attendanceRate')}</TableCell>
+                                        <TableCell align="center" sx={{ minWidth: { xs: 50, sm: 70 } }}>{tTeacher('status')}</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -462,7 +503,7 @@ const TeacherAttendanceManagement = () => {
                                                         <LinearProgress
                                                             variant="determinate"
                                                             value={student.attendanceRate}
-                                                            sx={{ width: 60 }}
+                                                            sx={{ width: { xs: 40, sm: 60 } }}
                                                             color={student.attendanceRate >= 80 ? 'success' : student.attendanceRate >= 60 ? 'warning' : 'error'}
                                                         />
                                                         <Typography variant="body2">{student.attendanceRate}%</Typography>

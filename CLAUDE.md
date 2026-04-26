@@ -41,15 +41,20 @@ npm run build:frontend
 # 完整构建（用于打包）
 npm run build
 
-# 打包为 Windows 安装程序
-npm run dist:win
-
-# 仅打包，不发布
-npm run dist:offline
-
-# 便携版（无需签名）
+# 打包为 Windows 便携版
 npm run build-nosign
+
+# 下载 Electron 二进制
+npm run download-electron
 ```
+
+### Electron 入口文件
+
+项目有多个 Electron 入口：
+- `electron-main-simple.js` - 简化版入口（当前 `package.json` main 指向此）
+- `electron-main.js` - 完整版入口
+
+打包配置也有多个：`electron-builder.config.js`（完整）、`electron-builder-simple.config.js`、`electron-builder-fixed.config.js`
 
 ### 依赖安装
 
