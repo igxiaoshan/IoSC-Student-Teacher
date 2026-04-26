@@ -423,7 +423,17 @@
     "suggestion4": "Regularly check homework completion status",
     "suggestion5": "Pay more attention in class and give timely encouragement",
     "allStudentsGood": "All students are performing well, no intervention needed!",
-    "totalStudents": "Total Students"
+    "totalStudents": "Total Students",
+    "last7Days": "Last 7 Days",
+    "last30Days": "Last 30 Days",
+    "attendanceTrendCard": "Attendance Rate Trend",
+    "trendUp": "Up",
+    "trendDown": "Down",
+    "trendStable": "Stable",
+    "noAttendanceData": "No attendance data",
+    "totalAttendanceRecords": "Total attendance records",
+    "attendanceRatePercent": "Attendance Rate (%)",
+    "presentCount": "Present Count"
   },
   "class": {
     "classInfo": "Class Information",

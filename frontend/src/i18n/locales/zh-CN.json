@@ -414,7 +414,17 @@
     "suggestion4": "定期检查学生作业完成情况",
     "suggestion5": "课堂多关注，及时给予鼓励",
     "allStudentsGood": "所有学生表现良好，无需干预！",
-    "totalStudents": "总人数"
+    "totalStudents": "总人数",
+    "last7Days": "近7天",
+    "last30Days": "近30天",
+    "attendanceTrendCard": "出勤率趋势",
+    "trendUp": "上升",
+    "trendDown": "下降",
+    "trendStable": "稳定",
+    "noAttendanceData": "暂无出勤数据",
+    "totalAttendanceRecords": "总考勤人次",
+    "attendanceRatePercent": "出勤率(%)",
+    "presentCount": "出勤人数"
   },
   "class": {
     "classInfo": "班级信息",

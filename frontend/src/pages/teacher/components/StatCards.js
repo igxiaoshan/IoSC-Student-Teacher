@@ -4,13 +4,19 @@ import TeacherStatsCard from '../../../components/teacher/TeacherStatsCard';
 import { useTranslation } from '../../../hooks/useTranslation';
 import Students from "../../../assets/img1.png";
 import Lessons from "../../../assets/subjects.svg";
-import Tests from "../../../assets/assignment.svg";
-import Time from "../../../assets/time.svg";
+import Attendance from "../../../assets/assignment.svg";
+import Score from "../../../assets/time.svg";
 
 /**
  * 教师端首页统计卡片组组件
  */
-const StatCards = ({ numberOfStudents, numberOfSessions, loading }) => {
+const StatCards = ({
+    numberOfStudents,
+    numberOfSessions,
+    attendanceRate = 0,
+    averageScore = '-',
+    loading = false
+}) => {
     const { tClass, tTeacher } = useTranslation();
 
     const statCards = [
@@ -29,18 +35,18 @@ const StatCards = ({ numberOfStudents, numberOfSessions, loading }) => {
             color: 'success'
         },
         {
-            label: tTeacher('completedTests'),
-            value: 24,
-            icon: Tests,
-            alt: 'Tests',
-            color: 'warning'
+            label: tTeacher('attendanceRate') || '出勤率',
+            value: attendanceRate,
+            icon: Attendance,
+            alt: 'Attendance',
+            color: 'warning',
+            suffix: '%'
         },
         {
-            label: tTeacher('totalHours'),
-            value: 30,
-            icon: Time,
-            alt: 'Time',
-            suffix: 'hrs',
+            label: tTeacher('averageScore') || '平均分',
+            value: averageScore,
+            icon: Score,
+            alt: 'Score',
             color: 'info'
         }
     ];

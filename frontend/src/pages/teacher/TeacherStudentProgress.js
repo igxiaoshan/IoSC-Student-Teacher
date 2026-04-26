@@ -60,7 +60,7 @@ const TeacherStudentProgress = () => {
             const res = await api.get('/StudentProgress', {
                 params: { classId: classID, subjectId: subjectID }
             });
-            setProgressData(res);
+            setProgressData(res.data);  // axios 响应数据在 res.data 中
         } catch (err) {
             console.error('Fetch progress error:', err);
         } finally {

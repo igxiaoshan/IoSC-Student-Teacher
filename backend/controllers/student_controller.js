@@ -347,30 +347,48 @@ const getClassAttendanceStats = async (req, res) => {
         const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const end = endDate ? new Date(endDate) : new Date();
 
+        // 生成完整日期序列（用于补0）
+        const dateSequence = [];
+        const currentDate = new Date(start);
+        while (currentDate <= end) {
+            const dateKey = currentDate.toISOString().split('T')[0];
+            dateSequence.push(dateKey);
+            stats.attendanceByDate[dateKey] = { present: 0, absent: 0, total: 0, rate: 0 };
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
         for (const student of students) {
             let presentCount = 0;
             let absentCount = 0;
+            const absentDates = []; // 缺勤日期列表（人次，同一天多次算多次）
+            const presentDates = []; // 出勤日期列表（人次，同一天多次算多次）
 
             for (const record of student.attendance) {
                 const recordDate = new Date(record.date);
                 if (recordDate >= start && recordDate <= end) {
                     if (!subjectId || record.subName._id.toString() === subjectId) {
+                        const dateKey = recordDate.toISOString().split('T')[0];
+                        // 按人次统计：每次考勤都计入，不合并
                         if (record.status === 'Present') {
                             presentCount++;
                             stats.totalPresent++;
+                            presentDates.push(`${dateKey}`); // 同一天可能多次出勤
                         } else {
                             absentCount++;
                             stats.totalAbsent++;
+                            absentDates.push(`${dateKey}`); // 同一天可能多次缺勤
                         }
 
-                        const dateKey = recordDate.toISOString().split('T')[0];
-                        if (!stats.attendanceByDate[dateKey]) {
-                            stats.attendanceByDate[dateKey] = { present: 0, absent: 0 };
-                        }
-                        if (record.status === 'Present') {
-                            stats.attendanceByDate[dateKey].present++;
-                        } else {
-                            stats.attendanceByDate[dateKey].absent++;
+                        if (stats.attendanceByDate[dateKey]) {
+                            if (record.status === 'Present') {
+                                stats.attendanceByDate[dateKey].present++;
+                            } else {
+                                stats.attendanceByDate[dateKey].absent++;
+                            }
+                            stats.attendanceByDate[dateKey].total++;
+                            stats.attendanceByDate[dateKey].rate = Math.round(
+                                (stats.attendanceByDate[dateKey].present / stats.attendanceByDate[dateKey].total) * 100
+                            );
                         }
                     }
                 }
@@ -384,7 +402,9 @@ const getClassAttendanceStats = async (req, res) => {
                 absentCount,
                 attendanceRate: presentCount + absentCount > 0
                     ? Math.round((presentCount / (presentCount + absentCount)) * 100)
-                    : 0
+                    : 0,
+                absentDates: absentDates.slice(-10), // 最多显示最近10次缺勤
+                presentDates: presentDates.slice(-10) // 最多显示最近10次出勤
             });
         }
 
@@ -575,7 +595,12 @@ const getClassOverviewStats = async (req, res) => {
             avgScore: 0,
             completedLessons: 0,
             attendanceRate: 0,
-            passRate: 0
+            passRate: 0,
+            gradeDistribution: [0, 0, 0, 0, 0], // [excellent(90+), good(80-89), average(70-79), pass(60-69), fail(<60)]
+            warningCount: 0,
+            dangerCount: 0,
+            improvement: 0,
+            attendanceByDate: {}  // 出勤率趋势数据 { "2024-01-01": { present: 10, absent: 2, rate: 83 } }
         };
 
         let totalPresent = 0;
@@ -585,13 +610,15 @@ const getClassOverviewStats = async (req, res) => {
         let passCount = 0;
 
         for (const student of students) {
-            // 今日考勤
-            const todayAttendance = student.attendance.find(a => {
+            // 今日考勤 - 修复: 使用 filter 而非 find，以正确处理同一天多次考勤
+            const todayRecords = student.attendance.filter(a => {
                 const recordDate = new Date(a.date);
                 recordDate.setHours(0, 0, 0, 0);
                 return recordDate.getTime() === today.getTime();
             });
-            if (todayAttendance && todayAttendance.status === 'Present') {
+            // 只要今日有任何出勤记录就算出勤（而非严格计算出席次数）
+            const hasPresent = todayRecords.some(a => a.status === 'Present');
+            if (hasPresent) {
                 stats.presentToday++;
             }
 
@@ -604,13 +631,46 @@ const getClassOverviewStats = async (req, res) => {
                 }
             }
 
-            // 成绩统计
+            // 成绩统计和分布
             for (const result of student.examResult) {
                 totalScore += result.marksObtained;
                 gradeCount++;
                 if (result.marksObtained >= 60) {
                     passCount++;
                 }
+                // 成绩分布
+                if (result.marksObtained >= 90) {
+                    stats.gradeDistribution[0]++;
+                } else if (result.marksObtained >= 80) {
+                    stats.gradeDistribution[1]++;
+                } else if (result.marksObtained >= 70) {
+                    stats.gradeDistribution[2]++;
+                } else if (result.marksObtained >= 60) {
+                    stats.gradeDistribution[3]++;
+                } else {
+                    stats.gradeDistribution[4]++;
+                }
+            }
+
+            // 计算学生预警状态
+            const attendanceRecords = student.attendance;
+            const presentCount = attendanceRecords.filter(a => a.status === 'Present').length;
+            const totalSessions = attendanceRecords.length;
+            const attendanceRate = totalSessions > 0
+                ? Math.round((presentCount / totalSessions) * 100)
+                : 0;
+
+            // 获取最新成绩
+            let latestGrade = null;
+            if (student.examResult.length > 0) {
+                latestGrade = student.examResult[student.examResult.length - 1].marksObtained;
+            }
+
+            // 预警判断
+            if (attendanceRate < 70 || (latestGrade !== null && latestGrade < 60)) {
+                stats.dangerCount++;
+            } else if (attendanceRate < 85 || (latestGrade !== null && latestGrade < 70)) {
+                stats.warningCount++;
             }
         }
 
@@ -628,6 +688,45 @@ const getClassOverviewStats = async (req, res) => {
             }
         }
         stats.completedLessons = uniqueDates.size;
+
+        // 计算改进指标（基于当前数据模拟）
+        // 实际应用中可对比历史数据
+        stats.improvement = stats.passRate >= 0.7 ? 5 : (stats.passRate >= 0.5 ? 0 : -3);
+
+        // 计算最近7天出勤率趋势
+        const last7Days = [];
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            date.setHours(0, 0, 0, 0);
+            const dateKey = date.toISOString().split('T')[0];
+            last7Days.push(dateKey);
+
+            let dayPresent = 0;
+            let dayAbsent = 0;
+
+            for (const student of students) {
+                for (const record of student.attendance) {
+                    const recordDate = new Date(record.date);
+                    recordDate.setHours(0, 0, 0, 0);
+                    if (recordDate.getTime() === date.getTime()) {
+                        if (record.status === 'Present') {
+                            dayPresent++;
+                        } else {
+                            dayAbsent++;
+                        }
+                    }
+                }
+            }
+
+            const dayTotal = dayPresent + dayAbsent;
+            stats.attendanceByDate[dateKey] = {
+                present: dayPresent,
+                absent: dayAbsent,
+                rate: dayTotal > 0 ? Math.round((dayPresent / dayTotal) * 100) : 0,
+                total: dayTotal
+            };
+        }
 
         return res.json({
             success: true,

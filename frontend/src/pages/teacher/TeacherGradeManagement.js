@@ -4,11 +4,12 @@ import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     TextField, Button, Chip, Avatar,
     FormControl, InputLabel, Select, MenuItem, Skeleton, Alert, Divider, LinearProgress,
-    Tab, Tabs, Collapse, useMediaQuery, useTheme, Hidden
+    Tab, Tabs, Collapse, useMediaQuery, useTheme, Hidden,
+    Dialog, DialogTitle, DialogContent, DialogActions, IconButton
 } from '@mui/material';
 import {
     Grade as GradeIcon,
-    Download as DownloadIcon, Refresh as RefreshIcon
+    Download as DownloadIcon, Refresh as RefreshIcon, Close as CloseIcon
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { getClassStudents, notifyGradeUpdate } from '../../redux/sclassRelated/sclassHandle';
@@ -46,6 +47,7 @@ const TeacherGradeManagement = () => {
     const [tabValue, setTabValue] = useState(0);
     const [sortOrder, setSortOrder] = useState('desc'); // desc: 高分在前, asc: 低分在前
     const [showAll, setShowAll] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState(null); // 选中学生查看详情
 
     useEffect(() => {
         if (classID) {
@@ -65,7 +67,7 @@ const TeacherGradeManagement = () => {
             const res = await api.get('/ClassGradeStats', {
                 params: { classId: classID, subjectId: subjectID }
             });
-            setStats(res);
+            setStats(res.data);  // axios 响应数据在 res.data 中
         } catch (err) {
             console.error('Fetch stats error:', err);
         } finally {
@@ -538,7 +540,12 @@ const TeacherGradeManagement = () => {
                                 </TableHead>
                                 <TableBody>
                                     {displayGrades.map((student, idx) => (
-                                        <TableRow key={student.studentId} hover>
+                                        <TableRow
+                                            key={student.studentId}
+                                            hover
+                                            onClick={() => setSelectedStudent(student)}
+                                            sx={{ cursor: 'pointer' }}
+                                        >
                                             <TableCell align="center">
                                                 <Chip
                                                     label={idx + 1}
@@ -597,6 +604,57 @@ const TeacherGradeManagement = () => {
                     </CardContent>
                 </Card>
             </Collapse>
+
+            {/* 学生成绩详情 Dialog */}
+            <Dialog
+                open={Boolean(selectedStudent)}
+                onClose={() => setSelectedStudent(null)}
+                maxWidth="sm"
+                fullWidth
+            >
+                {selectedStudent && (
+                    <>
+                        <DialogTitle>
+                            <Box display="flex" alignItems="center" justifyContent="space-between">
+                                <Box display="flex" alignItems="center">
+                                    <GradeIcon sx={{ mr: 1, color: 'secondary.main' }} />
+                                    {selectedStudent.name} - {tTeacher('gradeDetails') || '成绩详情'}
+                                </Box>
+                                <IconButton onClick={() => setSelectedStudent(null)} size="small">
+                                    <CloseIcon />
+                                </IconButton>
+                            </Box>
+                        </DialogTitle>
+                        <DialogContent dividers>
+                            <Grid container spacing={2}>
+                                <Grid item xs={6}>
+                                    <Typography variant="body2" color="text.secondary">{tStudent('studentId')}</Typography>
+                                    <Typography variant="body1">{selectedStudent.rollNum}</Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Typography variant="body2" color="text.secondary">{tTeacher('currentGrade') || '当前成绩'}</Typography>
+                                    <Typography
+                                        variant="h4"
+                                        color={selectedStudent.grade >= 90 ? 'success.main' : selectedStudent.grade >= 60 ? 'primary.main' : 'error.main'}
+                                    >
+                                        {selectedStudent.grade ?? '-'}
+                                    </Typography>
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <Typography variant="body2" color="text.secondary" gutterBottom>{tTeacher('status')}</Typography>
+                                    <Chip
+                                        label={selectedStudent.grade >= 90 ? '优秀' : selectedStudent.grade >= 80 ? '良好' : selectedStudent.grade >= 60 ? '及格' : selectedStudent.grade !== null ? '不及格' : '未录入'}
+                                        color={selectedStudent.grade >= 90 ? 'success' : selectedStudent.grade >= 60 ? 'primary' : selectedStudent.grade !== null ? 'error' : 'default'}
+                                    />
+                                </Grid>
+                            </Grid>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => setSelectedStudent(null)}>{tCommon('close')}</Button>
+                        </DialogActions>
+                    </>
+                )}
+            </Dialog>
         </Container>
     );
 };

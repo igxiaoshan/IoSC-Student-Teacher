@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Container, Box } from '@mui/material';
-import { useDispatch, useSelector } from 'react-redux';
-import { getClassStudents, getSubjectDetails } from '../../redux/sclassRelated/sclassHandle';
+import { useSelector } from 'react-redux';
+import { getSubjectDetails } from '../../redux/sclassRelated/sclassHandle';
 import { safeGet } from '../../utils/safeAccess';
+import useTeacherClassData from '../../hooks/useTeacherClassData';
 
 // 导入提取的组件
 import WelcomeBanner from './components/WelcomeBanner';
@@ -10,56 +11,68 @@ import StatCards from './components/StatCards';
 import TeachingEfficiencyCard from './components/TeachingEfficiencyCard';
 import GradeDistributionChart from './components/GradeDistributionChart';
 import WeeklyTaskTimeline from './components/WeeklyTaskTimeline';
+import HomeAlertCard from './components/HomeAlertCard';
+import AttendanceTrendCard from './components/AttendanceTrendCard';
 
 /**
  * 教师端首页仪表盘
  * 主容器组件 - 协调各子组件
+ * 数据与考勤/成绩管理页面联动
  */
 const TeacherHomePage = () => {
-    const dispatch = useDispatch();
-
     const { currentUser } = useSelector((state) => state.user);
-    const { subjectDetails, sclassStudents } = useSelector((state) => state.sclass);
-
-    const [dashboardData, setDashboardData] = useState(null);
-    const [dataLoading, setDataLoading] = useState(true);
+    const { subjectDetails } = useSelector((state) => state.sclass);
 
     const classID = safeGet(currentUser, 'teachSclass._id');
     const subjectID = safeGet(currentUser, 'teachSubject._id');
 
+    // 使用统一数据 hook - 支持考勤/成绩提交后自动刷新
+    const {
+        overviewStats,
+        students,
+        overviewLoading,
+        refreshTriggers,
+        fetchOverviewStats
+    } = useTeacherClassData(classID, {
+        autoFetch: true,
+        fetchStudents: true,
+        fetchOverview: true
+    });
+
+    // 监听 refreshTriggers - 考勤/成绩提交后自动更新
+    useEffect(() => {
+        if (refreshTriggers.attendance || refreshTriggers.grades) {
+            fetchOverviewStats();
+        }
+    }, [refreshTriggers.attendance, refreshTriggers.grades, fetchOverviewStats]);
+
+    // 获取科目详情
     useEffect(() => {
         if (subjectID) {
-            dispatch(getSubjectDetails(subjectID, "Subject"));
+            getSubjectDetails(subjectID, "Subject");
         }
-        if (classID) {
-            dispatch(getClassStudents(classID));
-        }
-        fetchDashboardData();
-    }, [dispatch, subjectID, classID]);
+    }, [subjectID]);
 
-    const fetchDashboardData = async () => {
-        setDataLoading(true);
-        try {
-            // 模拟数据获取
-            setTimeout(() => {
-                setDashboardData({
-                    efficiency: { overallScore: 85, lessonCompletion: 92, studentEngagement: 78, averageScore: 82, improvement: 5 },
-                    gradeDistribution: [8, 12, 10, 5, 2],
-                    pendingGrading: 15,
-                    weeklyTasks: null,
-                    suggestions: null,
-                    classProgress: null
-                });
-                setDataLoading(false);
-            }, 500);
-        } catch (err) {
-            console.error('Dashboard data fetch error:', err);
-            setDataLoading(false);
-        }
+    // 计算统计数据
+    const numberOfStudents = students?.length || 0;
+    const numberOfSessions = subjectDetails?.sessions || 0;
+
+    // 考勤率 (百分比)
+    const attendanceRate = overviewStats?.attendanceRate
+        ? (overviewStats.attendanceRate * 100).toFixed(1)
+        : 0;
+
+    // 计算教学效率数据
+    const efficiencyData = {
+        overallScore: overviewStats?.avgScore ? Math.round(overviewStats.avgScore) : 0,
+        lessonCompletion: overviewStats?.completedLessons ? Math.min(100, overviewStats.completedLessons * 10) : 0,
+        studentEngagement: attendanceRate || 0,
+        averageScore: overviewStats?.avgScore?.toFixed(1) || '-',
+        improvement: overviewStats?.improvement || 0
     };
 
-    const numberOfStudents = sclassStudents && sclassStudents.length;
-    const numberOfSessions = subjectDetails && subjectDetails.sessions;
+    // 成绩分布数据 (模拟五段分布)
+    const gradeDistribution = overviewStats?.gradeDistribution || [0, 0, 0, 0, 0];
 
     return (
         <Container maxWidth={false} sx={{ mt: 2, mb: 4, px: { xs: 1, sm: 2, md: 3 } }}>
@@ -70,7 +83,9 @@ const TeacherHomePage = () => {
             <StatCards
                 numberOfStudents={numberOfStudents}
                 numberOfSessions={numberOfSessions}
-                loading={dataLoading}
+                attendanceRate={attendanceRate}
+                averageScore={overviewStats?.avgScore?.toFixed(1) || '-'}
+                loading={overviewLoading}
             />
 
             {/* 主要内容区 - 使用 Grid 布局 */}
@@ -85,8 +100,8 @@ const TeacherHomePage = () => {
                 <Box>
                     <Box sx={{ mb: 3 }}>
                         <TeachingEfficiencyCard
-                            data={dashboardData?.efficiency}
-                            loading={dataLoading}
+                            data={efficiencyData}
+                            loading={overviewLoading}
                         />
                     </Box>
                 </Box>
@@ -95,20 +110,30 @@ const TeacherHomePage = () => {
                 <Box>
                     <Box sx={{ mb: 3 }}>
                         <GradeDistributionChart
-                            data={dashboardData?.gradeDistribution}
-                            loading={dataLoading}
+                            data={gradeDistribution}
+                            loading={overviewLoading}
                         />
                     </Box>
                     <WeeklyTaskTimeline
-                        tasks={dashboardData?.weeklyTasks}
-                        loading={dataLoading}
+                        tasks={null}
+                        loading={overviewLoading}
                     />
                 </Box>
 
-                {/* 右侧列 */}
+                {/* 右侧列 - 预警卡片 */}
                 <Box>
                     <Box sx={{ mb: 3 }}>
-                        {/* 占位 - 未来可添加 AI 建议卡片 */}
+                        <HomeAlertCard
+                            warningCount={overviewStats?.warningCount || 0}
+                            dangerCount={overviewStats?.dangerCount || 0}
+                            loading={overviewLoading}
+                        />
+                    </Box>
+                    <Box sx={{ mb: 3 }}>
+                        <AttendanceTrendCard
+                            attendanceByDate={overviewStats?.attendanceByDate}
+                            loading={overviewLoading}
+                        />
                     </Box>
                 </Box>
             </Box>

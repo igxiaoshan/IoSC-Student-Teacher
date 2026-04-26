@@ -49,6 +49,8 @@ const TeacherAttendanceManagement = () => {
     const [message, setMessage] = useState({ type: '', text: '' });
     const [tabValue, setTabValue] = useState(0);
     const [expandedStudent, setExpandedStudent] = useState(null);
+    const [thisWeek, setThisWeek] = useState(false);
+    const [thisMonth, setThisMonth] = useState(true);
 
     useEffect(() => {
         if (classID) {
@@ -68,12 +70,40 @@ const TeacherAttendanceManagement = () => {
             const res = await api.get('/ClassAttendanceStats', {
                 params: { classId: classID, subjectId: subjectID, startDate, endDate }
             });
-            setStats(res);
+            setStats(res.data);  // axios 响应数据在 res.data 中
         } catch (err) {
             console.error('Fetch stats error:', err);
         } finally {
             setStatsLoading(false);
         }
+    };
+
+    // 快捷选择日期范围
+    const handleQuickSelect = (days) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (days === 7) {
+            // 7天：包含今天
+            const start = new Date(today);
+            start.setDate(start.getDate() - 6);
+            setStartDate(start.toISOString().split('T')[0]);
+            setEndDate(today.toISOString().split('T')[0]);
+            setThisWeek(true);
+            setThisMonth(false);
+        } else {
+            // 30天：不包含今天（历史30天）
+            const end = new Date(today);
+            end.setDate(end.getDate() - 1); // 昨天
+            const start = new Date(today);
+            start.setDate(start.getDate() - 30); // 30天前
+            setStartDate(start.toISOString().split('T')[0]);
+            setEndDate(end.toISOString().split('T')[0]);
+            setThisWeek(false);
+            setThisMonth(true);
+        }
+        // 自动查询
+        setTimeout(() => fetchStats(), 0);
     };
 
     const handleAttendanceChange = (studentId, status) => {
@@ -363,6 +393,25 @@ const TeacherAttendanceManagement = () => {
                         <Card sx={{ mb: 3 }}>
                             <CardContent>
                                 <Typography variant="h6" gutterBottom>{tTeacher('dateRange') || '日期范围'}</Typography>
+                                {/* 快捷选择按钮 */}
+                                <Box display="flex" gap={1} mb={2} flexWrap="wrap">
+                                    <Button
+                                        size="small"
+                                        variant={thisWeek ? "contained" : "outlined"}
+                                        onClick={() => handleQuickSelect(7)}
+                                        color="primary"
+                                    >
+                                        {tTeacher('last7Days') || '近7天'}
+                                    </Button>
+                                    <Button
+                                        size="small"
+                                        variant={thisMonth ? "contained" : "outlined"}
+                                        onClick={() => handleQuickSelect(30)}
+                                        color="primary"
+                                    >
+                                        {tTeacher('last30Days') || '近30天'}
+                                    </Button>
+                                </Box>
                                 <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
                                     <TextField
                                         type="date"
@@ -515,6 +564,47 @@ const TeacherAttendanceManagement = () => {
                                                         label={student.attendanceRate >= 80 ? '良好' : student.attendanceRate >= 60 ? '一般' : '预警'}
                                                         color={student.attendanceRate >= 80 ? 'success' : student.attendanceRate >= 60 ? 'warning' : 'error'}
                                                     />
+                                                </TableCell>
+                                            </TableRow>
+                                            {/* 展开的学生考勤详情 */}
+                                            <TableRow>
+                                                <TableCell colSpan={7} sx={{ py: 0, bgcolor: 'grey.50' }}>
+                                                    <Collapse in={expandedStudent === student.studentId}>
+                                                        <Box sx={{ py: 2, px: 2 }}>
+                                                            <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                                                {/* 缺勤日期 */}
+                                                                <Box sx={{ minWidth: 200 }}>
+                                                                    <Typography variant="subtitle2" color="error" gutterBottom>
+                                                                        缺勤日期 ({student.absentDates?.length || 0}次)
+                                                                    </Typography>
+                                                                    {student.absentDates && student.absentDates.length > 0 ? (
+                                                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                            {student.absentDates.map((date, idx) => (
+                                                                                <Chip key={idx} label={date} size="small" color="error" variant="outlined" />
+                                                                            ))}
+                                                                        </Box>
+                                                                    ) : (
+                                                                        <Typography variant="body2" color="text.secondary">无缺勤记录</Typography>
+                                                                    )}
+                                                                </Box>
+                                                                {/* 出勤日期 */}
+                                                                <Box sx={{ minWidth: 200 }}>
+                                                                    <Typography variant="subtitle2" color="success" gutterBottom>
+                                                                        出勤日期 ({student.presentDates?.length || 0}次)
+                                                                    </Typography>
+                                                                    {student.presentDates && student.presentDates.length > 0 ? (
+                                                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                            {student.presentDates.map((date, idx) => (
+                                                                                <Chip key={idx} label={date} size="small" color="success" variant="outlined" />
+                                                                            ))}
+                                                                        </Box>
+                                                                    ) : (
+                                                                        <Typography variant="body2" color="text.secondary">无出勤记录</Typography>
+                                                                    )}
+                                                                </Box>
+                                                            </Box>
+                                                        </Box>
+                                                    </Collapse>
                                                 </TableCell>
                                             </TableRow>
                                         </React.Fragment>
