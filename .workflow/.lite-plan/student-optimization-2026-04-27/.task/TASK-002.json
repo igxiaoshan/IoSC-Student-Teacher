@@ -1,0 +1,60 @@
+{
+  "id": "TASK-002",
+  "title": "拆分StudentHomePage内联组件",
+  "description": "将StudentHomePage.js中6个内联组件提取为独立文件，放到新建的components/student/目录。组件：LearningProgressRing、WeeklyStudyChart、AISuggestionCard、TodoTasksCard、LearningGoalsCard、RecentActivityTimeline。",
+  "scope": "frontend/src/pages/student/ + frontend/src/components/student/",
+  "priority": 1,
+  "files": [
+    {
+      "path": "frontend/src/components/student/LearningProgressRing.js",
+      "change": "新建：从StudentHomePage提取LearningProgressRing组件"
+    },
+    {
+      "path": "frontend/src/components/student/WeeklyStudyChart.js",
+      "change": "新建：从StudentHomePage提取WeeklyStudyChart组件"
+    },
+    {
+      "path": "frontend/src/components/student/AISuggestionCard.js",
+      "change": "新建：从StudentHomePage提取AISuggestionCard组件"
+    },
+    {
+      "path": "frontend/src/components/student/TodoTasksCard.js",
+      "change": "新建：从StudentHomePage提取TodoTasksCard组件"
+    },
+    {
+      "path": "frontend/src/components/student/LearningGoalsCard.js",
+      "change": "新建：从StudentHomePage提取LearningGoalsCard组件"
+    },
+    {
+      "path": "frontend/src/components/student/RecentActivityTimeline.js",
+      "change": "新建：从StudentHomePage提取RecentActivityTimeline组件"
+    },
+    {
+      "path": "frontend/src/pages/student/StudentHomePage.js",
+      "change": "更新：移除内联组件定义，添加import语句",
+      "lines": "53-346"
+    }
+  ],
+  "dependencies": [],
+  "depends_on": [],
+  "convergence": {
+    "criteria": [
+      "components/student/目录存在",
+      "6个组件独立文件存在",
+      "StudentHomePage正确导入并使用组件",
+      "功能正常（首页显示正确）"
+    ],
+    "verification": "运行前端，访问学生首页验证布局和数据展示"
+  },
+  "implementation_notes": [
+    "每个组件需要独立的import语句（React, MUI, hooks）",
+    "保持props接口不变",
+    "StudentHomePage减少至约200行",
+    "添加index.js导出所有组件"
+  ],
+  "_metadata": {
+    "created_at": "2026-04-27T16:35:00+08:00",
+    "source": "implementation_scope[1]",
+    "estimated_time": "30-45 minutes"
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "relevant_files": [
+    {
+      "path": "frontend/src/pages/student/StudentSubjects.js",
+      "relevance": "high",
+      "rationale": "核心科目展示组件，已有卡片/表格/图表视图、知识点进度、AI推荐等高级功能"
+    },
+    {
+      "path": "frontend/src/pages/student/ViewStdAttendance.js",
+      "relevance": "high",
+      "rationale": "考勤模块核心，当前只有表格/图表基础视图，缺乏深度分析"
+    },
+    {
+      "path": "frontend/src/pages/student/SubjectSelection.js",
+      "relevance": "high",
+      "rationale": "课程选择管理，已有学习偏好设置，可扩展更多维度"
+    },
+    {
+      "path": "frontend/src/pages/student/StudentCalendar.js",
+      "relevance": "medium",
+      "rationale": "日历模块与课程关联，可联动考勤提醒"
+    },
+    {
+      "path": "frontend/src/pages/student/StudentHomePage.js",
+      "relevance": "medium",
+      "rationale": "首页仪表板，已集成学习进度环、周学习图表等"
+    },
+    {
+      "path": "backend/models/studentSchema.js",
+      "relevance": "high",
+      "rationale": "学生数据模型，包含 selectedSubjects、attendance、examResult，有扩展空间"
+    },
+    {
+      "path": "backend/models/studentCalendarSchema.js",
+      "relevance": "medium",
+      "rationale": "日历数据模型，支持事件类型、提醒、学习目标等"
+    },
+    {
+      "path": "backend/controllers/studentSubject-controller.js",
+      "relevance": "high",
+      "rationale": "科目选择后端逻辑，支持学习偏好设置"
+    },
+    {
+      "path": "frontend/src/utils/apiClient.js",
+      "relevance": "high",
+      "rationale": "API客户端封装，studentAPI已支持丰富的端点"
+    }
+  ],
+  "existing_patterns": [
+    "卡片/表格/图表多视图切换 (BottomNavigation)",
+    "知识点点位进度展示 (LinearProgress + Chip)",
+    "AI推荐与学习建议卡片",
+    "学习偏好设置对话框 (Dialog + FormControl)",
+    "科目选择与自动分配",
+    "日历事件与提醒系统",
+    "数据可视化 (Chart.js, Recharts)",
+    "响应式布局 (Grid + Card)",
+    "国际化支持 (useTranslation hook)"
+  ],
+  "architecture_constraints": [
+    "MERN技术栈 (MongoDB, Express, React, Node)",
+    "Redux状态管理 (userRelated, sclassRelated slices)",
+    "MUI 5 组件库",
+    "Chart.js + Recharts 图表库",
+    "现有API结构 (studentAPI, classAPI等封装)",
+    "后端学生模型的attendance数组结构 (date, status, subName)"
+  ],
+  "integration_points": [
+    "studentAPI.getStatistics() - 可扩展更多统计数据",
+    "studentAPI.getDashboard() - 首页仪表板数据源",
+    "studentAPI.getCalendar() - 日历联动入口",
+    "studentAPI.getSubjects() - 科目列表数据源",
+    "AI课件与错题本模块 - 跨模块推荐",
+    "studentCalendarSchema.learningGoals - 学习目标存储"
+  ],
+  "inspiration_sources": [
+    "StudentSubjects.js 的 SubjectCard 组件设计模式",
+    "StudentHomePage 的 LearningProgressRing 可视化",
+    "StudentCalendar 的 AI学习计划生成功能",
+    "StudentMistakeBook 的错题统计分析",
+    "Duolingo 风格的游戏化进度展示",
+    "Notion 风格的课程看板视图"
+  ],
+  "underutilized_data": [
+    "attendance 数据仅展示出勤率，未做趋势分析",
+    "examResult 无历史对比和进步曲线",
+    "selectedSubjects.learningPreferences 设置后未充分利用",
+    "calendarSchema.learningGoals 与课程管理未联动",
+    "无学习时长追踪与科目关联分析",
+    "无考勤异常预警机制"
+  ],
+  "extension_opportunities": [
+    "考勤趋势图表 (周/月/学期维度)",
+    "考勤异常智能提醒 (连续缺勤预警)",
+    "课程学习路径可视化 (前置依赖关系)",
+    "科目成绩进步曲线 (历史对比)",
+    "AI学习建议与考勤数据联动",
+    "学习目标追踪与课程进度绑定",
+    "课程评价与反馈系统",
+    "小组协作学习功能",
+    "课程资源推荐 (基于学习偏好)",
+    "游戏化元素 (积分、徽章、排行榜)"
+  ],
+  "_metadata": {
+    "exploration_type": "brainstorm-codebase",
+    "timestamp": "2026-04-28T10:30:00Z",
+    "session_id": "BS-20260428-student-modules-optimize"
+  }
+}

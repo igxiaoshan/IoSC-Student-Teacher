@@ -218,9 +218,11 @@ export const clearClassError = () => (dispatch) => {
 // 获取班级概览统计
 export const getClassOverviewStats = (classId) => async (dispatch) => {
     dispatch(getOverviewRequest());
+    console.log('[getClassOverviewStats] Fetching for classId:', classId);
 
     try {
         const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/ClassOverviewStats/${classId}`);
+        console.log('[getClassOverviewStats] Response:', result.data);
         if (result.data.success) {
             dispatch(getOverviewSuccess(result.data.data));
         } else {

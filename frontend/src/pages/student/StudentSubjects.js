@@ -11,6 +11,7 @@ import CustomBarChart from '../../components/CustomBarChart';
 import { safeGet } from '../../utils/safeAccess';
 import { useTranslation } from '../../hooks/useTranslation';
 import { studentAPI } from '../../utils/apiClient';
+import { SubjectTimeline } from '../../components/student';
 
 import InsertChartIcon from '@mui/icons-material/InsertChart';
 import InsertChartOutlinedIcon from '@mui/icons-material/InsertChartOutlined';
@@ -27,17 +28,59 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import HistoryIcon from '@mui/icons-material/History';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
+import VideocamIcon from '@mui/icons-material/Videocam';
+import DescriptionIcon from '@mui/icons-material/Description';
+import ImageIcon from '@mui/icons-material/Image';
+import LinkIcon from '@mui/icons-material/Link';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { StyledTableCell, StyledTableRow } from '../../components/styles';
 
-// 科目卡片组件
-const SubjectCard = ({ subject, marks, progress, onClick, expanded, onExpand }) => {
-    const { tSubject } = useTranslation();
+// 学习风格图标和标签映射
+const useLearningStyleConfig = (tStudent) => ({
+    visual: { icon: <VisibilityIcon />, label: tStudent('visualLearner'), color: 'primary', description: tStudent('visualPriority') },
+    auditory: { icon: <PlayArrowIcon />, label: tStudent('auditoryLearner'), color: 'secondary', description: tStudent('auditoryPriority') },
+    reading: { icon: <MenuBookIcon />, label: tStudent('readingLearner'), color: 'success', description: tStudent('readingPriority') },
+    kinesthetic: { icon: <SchoolIcon />, label: tStudent('kinestheticLearner'), color: 'warning', description: tStudent('kinestheticPriority') }
+});
 
-    const subjectName = safeGet(subject, 'subName', '未知科目');
+// 难度配置
+const useDifficultyConfig = (tStudent) => ({
+    beginner: { label: tStudent('beginner'), color: 'success' },
+    intermediate: { label: tStudent('intermediate'), color: 'warning' },
+    advanced: { label: tStudent('advanced'), color: 'error' }
+});
+
+// 资源类型图标
+const RESOURCE_TYPE_ICONS = {
+    video: <VideocamIcon fontSize="small" />,
+    document: <DescriptionIcon fontSize="small" />,
+    image: <ImageIcon fontSize="small" />,
+    link: <LinkIcon fontSize="small" />
+};
+
+// 科目卡片组件
+const SubjectCard = ({ subject, marks, progress, onClick, expanded, onExpand, timeline, timelineLoading, nextCourse }) => {
+    const { tStudent, tSubject } = useTranslation();
+    const LEARNING_STYLE_CONFIG = useLearningStyleConfig(tStudent);
+    const DIFFICULTY_CONFIG = useDifficultyConfig(tStudent);
+
+    const subjectName = safeGet(subject, 'subName', tStudent('unknownSubject'));
     const subjectCode = safeGet(subject, 'subCode', '');
     const sessions = safeGet(subject, 'sessions', 0);
     const marksObtained = marks?.marksObtained || 0;
     const maxMarks = 100;
+
+    // 学习偏好信息
+    const preferenceInfo = subject.preferenceInfo || {};
+    const learningStyle = preferenceInfo.learningStyle || 'visual';
+    const difficulty = preferenceInfo.difficulty || 'intermediate';
+    const styleConfig = LEARNING_STYLE_CONFIG[learningStyle] || LEARNING_STYLE_CONFIG.visual;
+    const difficultyConfig = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.intermediate;
+
+    // 排序后的资源
+    const sortedResources = subject.sortedResources || [];
+    const filteredResources = subject.filteredResources || sortedResources;
 
     // 根据成绩计算颜色
     const getScoreColor = (score) => {
@@ -48,10 +91,10 @@ const SubjectCard = ({ subject, marks, progress, onClick, expanded, onExpand }) 
 
     // 知识点数据（模拟）
     const knowledgePoints = [
-        { name: '基础概念', mastery: 85, status: 'mastered' },
-        { name: '核心原理', mastery: 70, status: 'learning' },
-        { name: '应用实践', mastery: 45, status: 'weak' },
-        { name: '综合运用', mastery: 30, status: 'weak' }
+        { name: tStudent('basicConcepts'), mastery: 85, status: 'mastered' },
+        { name: tStudent('corePrinciples'), mastery: 70, status: 'learning' },
+        { name: tStudent('applicationPractice'), mastery: 45, status: 'weak' },
+        { name: tStudent('comprehensiveApplication'), mastery: 30, status: 'weak' }
     ];
 
     return (
@@ -65,7 +108,7 @@ const SubjectCard = ({ subject, marks, progress, onClick, expanded, onExpand }) 
                         <Box>
                             <Typography variant="h6">{subjectName}</Typography>
                             <Typography variant="body2" color="text.secondary">
-                                {subjectCode} · {sessions}课时
+                                {subjectCode} · {sessions}{tStudent('sessions')}
                             </Typography>
                         </Box>
                     </Box>
@@ -73,14 +116,43 @@ const SubjectCard = ({ subject, marks, progress, onClick, expanded, onExpand }) 
                         <Typography variant="h4" color={`${getScoreColor(marksObtained)}.main`}>
                             {marksObtained}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">分</Typography>
+                        <Typography variant="caption" color="text.secondary">{tStudent('points')}</Typography>
                     </Box>
+                </Box>
+
+                {/* 学习偏好状态 */}
+                <Box sx={{ mb: 2, display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Tooltip title={tStudent('learningStyleLabel', { style: styleConfig.description })}>
+                        <Chip
+                            icon={styleConfig.icon}
+                            label={styleConfig.label}
+                            size="small"
+                            color={styleConfig.color}
+                            variant="outlined"
+                        />
+                    </Tooltip>
+                    <Tooltip title={tStudent('difficultyLabel', { level: '' })}>
+                        <Chip
+                            label={tStudent('difficultyLabel', { level: difficultyConfig.label })}
+                            size="small"
+                            color={difficultyConfig.color}
+                        />
+                    </Tooltip>
+                    {sortedResources.length > 0 && (
+                        <Tooltip title={tStudent('totalResources', { count: preferenceInfo.totalResources || sortedResources.length })}>
+                            <Chip
+                                label={tStudent('resourceCount', { count: sortedResources.length })}
+                                size="small"
+                                variant="outlined"
+                            />
+                        </Tooltip>
+                    )}
                 </Box>
 
                 {/* 进度条 */}
                 <Box sx={{ mb: 2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography variant="body2">学习进度</Typography>
+                        <Typography variant="body2">{tStudent('learningProgress')}</Typography>
                         <Typography variant="body2" color="text.secondary">{progress || 65}%</Typography>
                     </Box>
                     <LinearProgress
@@ -90,6 +162,20 @@ const SubjectCard = ({ subject, marks, progress, onClick, expanded, onExpand }) 
                         sx={{ height: 8, borderRadius: 4 }}
                     />
                 </Box>
+
+                {/* 资源类型分布 */}
+                {preferenceInfo.resourceTypeDistribution && (
+                    <Box sx={{ display: 'flex', gap: 0.5, mb: 1 }}>
+                        {Object.entries(preferenceInfo.resourceTypeDistribution).map(([type, count]) => (
+                            count > 0 && (
+                                <Box key={type} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    {RESOURCE_TYPE_ICONS[type]}
+                                    <Typography variant="caption" color="text.secondary">{count}</Typography>
+                                </Box>
+                            )
+                        ))}
+                    </Box>
+                )}
 
                 {/* 知识点概览 */}
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
@@ -109,11 +195,11 @@ const SubjectCard = ({ subject, marks, progress, onClick, expanded, onExpand }) 
             <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     {marksObtained >= 85 ? (
-                        <Chip icon={<TrendingUpIcon />} label="表现优秀" color="success" size="small" />
+                        <Chip icon={<TrendingUpIcon />} label={tStudent('excellentPerformance')} color="success" size="small" />
                     ) : marksObtained >= 60 ? (
-                        <Chip icon={<TrendingUpIcon />} label="继续努力" color="primary" size="small" />
+                        <Chip icon={<TrendingUpIcon />} label={tStudent('keepWorking')} color="primary" size="small" />
                     ) : (
-                        <Chip icon={<TrendingDownIcon />} label="需要加强" color="warning" size="small" />
+                        <Chip icon={<TrendingDownIcon />} label={tStudent('needStrengthen')} color="warning" size="small" />
                     )}
                 </Box>
                 <IconButton size="small" onClick={(e) => { e.stopPropagation(); onExpand(); }}>
@@ -125,7 +211,23 @@ const SubjectCard = ({ subject, marks, progress, onClick, expanded, onExpand }) 
             <Collapse in={expanded}>
                 <Divider />
                 <CardContent>
-                    <Typography variant="subtitle2" gutterBottom>知识点掌握详情</Typography>
+                    {/* 学习时间线 */}
+                    <Box sx={{ mb: 2 }}>
+                        <Typography variant="subtitle2" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <HistoryIcon fontSize="small" color="primary" />
+                            {tStudent('recentLearningRecords')}
+                        </Typography>
+                        <SubjectTimeline
+                            records={timeline || []}
+                            nextCourse={nextCourse}
+                            loading={timelineLoading}
+                            subjectId={subject?._id}
+                        />
+                    </Box>
+
+                    <Divider sx={{ my: 2 }} />
+
+                    <Typography variant="subtitle2" gutterBottom>{tStudent('knowledgeMasteryDetails')}</Typography>
                     <List dense>
                         {knowledgePoints.map((kp, idx) => (
                             <ListItem key={idx} sx={{ px: 0 }}>
@@ -153,6 +255,40 @@ const SubjectCard = ({ subject, marks, progress, onClick, expanded, onExpand }) 
                             </ListItem>
                         ))}
                     </List>
+
+                    {/* 按偏好排序的资源列表 */}
+                    {filteredResources.length > 0 && (
+                        <Box sx={{ mt: 2 }}>
+                            <Typography variant="subtitle2" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                {styleConfig.icon}
+                                {tStudent('learningResources')} ({styleConfig.description})
+                            </Typography>
+                            <List dense>
+                                {filteredResources.slice(0, 5).map((resource, idx) => (
+                                    <ListItem key={idx || resource.id} sx={{ px: 0 }}>
+                                        <ListItemIcon sx={{ minWidth: 36 }}>
+                                            {RESOURCE_TYPE_ICONS[resource.type] || <LinkIcon fontSize="small" />}
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary={resource.title}
+                                            secondary={resource.description || resource.type}
+                                            primaryTypographyProps={{ variant: 'body2' }}
+                                        />
+                                        <Chip
+                                            label={DIFFICULTY_CONFIG[resource.difficulty]?.label || tStudent('intermediate')}
+                                            size="small"
+                                            color={(DIFFICULTY_CONFIG[resource.difficulty]?.color) || 'warning'}
+                                        />
+                                    </ListItem>
+                                ))}
+                            </List>
+                            {filteredResources.length > 5 && (
+                                <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                                    {tStudent('moreResources', { count: filteredResources.length - 5 })}
+                                </Typography>
+                            )}
+                        </Box>
+                    )}
                 </CardContent>
             </Collapse>
         </Card>
@@ -168,9 +304,9 @@ const RecentPracticeList = ({ practices, loading }) => {
     }
 
     const defaultPractices = [
-        { id: 1, subject: '数学', topic: '二次函数', score: 85, time: '今天 14:30', correct: 17, total: 20 },
-        { id: 2, subject: '英语', topic: '词汇练习', score: 72, time: '昨天 16:00', correct: 18, total: 25 },
-        { id: 3, subject: '物理', topic: '力学基础', score: 90, time: '前天 10:15', correct: 9, total: 10 }
+        { id: 1, subject: tStudent('subject') || '数学', topic: tStudent('basicConcepts'), score: 85, time: tStudent('today'), correct: 17, total: 20 },
+        { id: 2, subject: tStudent('subject') || '英语', topic: tStudent('corePrinciples'), score: 72, time: tStudent('yesterday'), correct: 18, total: 25 },
+        { id: 3, subject: tStudent('subject') || '物理', topic: tStudent('applicationPractice'), score: 90, time: tStudent('daysAgo', { count: 2 }), correct: 9, total: 10 }
     ];
 
     const items = practices || defaultPractices;
@@ -180,7 +316,7 @@ const RecentPracticeList = ({ practices, loading }) => {
             <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <HistoryIcon color="primary" sx={{ mr: 1 }} />
-                    <Typography variant="h6">{tStudent('recentPractice') || '最近练习'}</Typography>
+                    <Typography variant="h6">{tStudent('recentPractice')}</Typography>
                 </Box>
                 <List dense>
                     {items.map((practice, index) => (
@@ -189,7 +325,7 @@ const RecentPracticeList = ({ practices, loading }) => {
                                 secondaryAction={
                                     <Box sx={{ textAlign: 'right' }}>
                                         <Typography variant="body2" fontWeight="bold" color={practice.score >= 80 ? 'success.main' : 'warning.main'}>
-                                            {practice.score}分
+                                            {practice.score}{tStudent('points')}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">{practice.time}</Typography>
                                     </Box>
@@ -202,7 +338,7 @@ const RecentPracticeList = ({ practices, loading }) => {
                                 </ListItemAvatar>
                                 <ListItemText
                                     primary={practice.topic}
-                                    secondary={`${practice.subject} · ${practice.correct}/${practice.total}正确`}
+                                    secondary={`${practice.subject} · ${tStudent('correctRatio', { correct: practice.correct, total: practice.total })}`}
                                     primaryTypographyProps={{ variant: 'body2' }}
                                 />
                             </ListItem>
@@ -223,26 +359,26 @@ const AIRecommendations = ({ recommendations, loading }) => {
         {
             id: 1,
             type: 'weakness',
-            title: '重点复习：物理力学',
-            description: '根据练习记录，力学部分正确率较低，建议多做相关练习',
+            title: tStudent('weakPointsAlert'),
+            description: tStudent('tipDailyReview'),
             priority: 'high',
-            action: '开始练习'
+            action: tStudent('startLearning')
         },
         {
             id: 2,
             type: 'suggestion',
-            title: '巩固英语词汇',
-            description: '词汇量已达到本周目标的80%，继续加油！',
+            title: tStudent('learningGoals'),
+            description: tStudent('tipVocabulary'),
             priority: 'medium',
-            action: '继续学习'
+            action: tStudent('keepWorking')
         },
         {
             id: 3,
             type: 'preview',
-            title: '预习数学新章节',
-            description: '建议提前了解三角函数的基础概念',
+            title: tStudent('learningPath'),
+            description: tStudent('tipStudyHours'),
             priority: 'low',
-            action: '开始预习'
+            action: tStudent('startLearning')
         }
     ];
 
@@ -256,12 +392,20 @@ const AIRecommendations = ({ recommendations, loading }) => {
         }
     };
 
+    const getPriorityLabel = (priority) => {
+        switch (priority) {
+            case 'high': return tStudent('important');
+            case 'medium': return tStudent('suggested');
+            default: return tStudent('optional');
+        }
+    };
+
     return (
         <Card>
             <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <AutoAwesomeIcon color="primary" sx={{ mr: 1 }} />
-                    <Typography variant="h6">{tStudent('aiRecommendations') || 'AI学习推荐'}</Typography>
+                    <Typography variant="h6">{tStudent('aiRecommendations')}</Typography>
                 </Box>
                 {loading ? (
                     <Box>{[1, 2, 3].map(i => <Skeleton key={i} height={80} sx={{ mb: 1 }} />)}</Box>
@@ -276,7 +420,7 @@ const AIRecommendations = ({ recommendations, loading }) => {
                                         {rec.type === 'preview' && <SchoolIcon color="info" sx={{ mr: 1 }} fontSize="small" />}
                                         <Typography variant="subtitle2">{rec.title}</Typography>
                                     </Box>
-                                    <Chip label={rec.priority === 'high' ? '重要' : rec.priority === 'medium' ? '建议' : '可选'} size="small" color={getPriorityColor(rec.priority)} />
+                                    <Chip label={getPriorityLabel(rec.priority)} size="small" color={getPriorityColor(rec.priority)} />
                                 </Box>
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                                     {rec.description}
@@ -295,11 +439,12 @@ const AIRecommendations = ({ recommendations, loading }) => {
 
 // 薄弱知识点提示组件
 const WeakPointsAlert = ({ weakPoints }) => {
+    const { tStudent } = useTranslation();
     if (!weakPoints || weakPoints.length === 0) return null;
 
     return (
         <Alert severity="warning" sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>薄弱知识点提醒</Typography>
+            <Typography variant="subtitle2" gutterBottom>{tStudent('weakPointsAlert')}</Typography>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 {weakPoints.map((wp, idx) => (
                     <Chip key={idx} label={wp} size="small" color="warning" variant="outlined" />
@@ -323,6 +468,8 @@ const StudentSubjects = () => {
     const [recommendations, setRecommendations] = useState(null);
     const [dataLoading, setDataLoading] = useState(false);
     const [tabValue, setTabValue] = useState(0);
+    const [subjectTimelines, setSubjectTimelines] = useState({});
+    const [timelinesLoading, setTimelinesLoading] = useState({});
 
     useEffect(() => {
         dispatch(getUserDetails(currentUser._id, "Student"));
@@ -365,7 +512,43 @@ const StudentSubjects = () => {
     };
 
     const handleSubjectExpand = (subjectId) => {
-        setExpandedSubject(expandedSubject === subjectId ? null : subjectId);
+        const newExpanded = expandedSubject === subjectId ? null : subjectId;
+        setExpandedSubject(newExpanded);
+
+        // 展开时加载该科目的学习记录
+        if (newExpanded !== null) {
+            fetchSubjectTimeline(subjectId);
+        }
+    };
+
+    const fetchSubjectTimeline = async (subjectIndex) => {
+        const result = subjectMarks[subjectIndex];
+        if (!result) return;
+
+        const subjectId = safeGet(result, 'subName._id');
+        if (!subjectId || subjectTimelines[subjectId]) return;
+
+        setTimelinesLoading(prev => ({ ...prev, [subjectId]: true }));
+        try {
+            const timelineData = await studentAPI.getSubjectTimeline(currentUser._id, subjectId);
+            setSubjectTimelines(prev => ({
+                ...prev,
+                [subjectId]: timelineData?.records || []
+            }));
+        } catch (err) {
+            console.log('Timeline fetch error:', err);
+            // 使用模拟数据
+            setSubjectTimelines(prev => ({
+                ...prev,
+                [subjectId]: [
+                    { _id: '1', type: 'practice', title: '完成练习', time: new Date(Date.now() - 3600000), score: 85 },
+                    { _id: '2', type: 'learn', title: '观看视频', time: new Date(Date.now() - 86400000) },
+                    { _id: '3', type: 'homework', title: '提交作业', time: new Date(Date.now() - 172800000), score: 78 }
+                ]
+            }));
+        } finally {
+            setTimelinesLoading(prev => ({ ...prev, [subjectId]: false }));
+        }
     };
 
     // 获取薄弱知识点
@@ -385,27 +568,31 @@ const StudentSubjects = () => {
                     <Grid item xs={12} md={8}>
                         <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
                             <SchoolIcon color="primary" sx={{ mr: 1 }} />
-                            {tSubject('mySubjects') || '我的科目'}
+                            {tStudent('mySubjects')}
                         </Typography>
 
                         {subjectMarks && subjectMarks.length > 0 ? (
                             subjectMarks.map((result, index) => {
                                 if (!result.subName) return null;
+                                const subjectId = safeGet(result, 'subName._id');
                                 return (
                                     <SubjectCard
                                         key={index}
                                         subject={result.subName}
                                         marks={result}
-                                        progress={subjectProgress[safeGet(result, 'subName._id')] || Math.floor(Math.random() * 40 + 40)}
+                                        progress={subjectProgress[subjectId] || Math.floor(Math.random() * 40 + 40)}
                                         expanded={expandedSubject === index}
                                         onExpand={() => handleSubjectExpand(index)}
                                         onClick={() => handleSubjectExpand(index)}
+                                        timeline={subjectTimelines[subjectId] || []}
+                                        timelineLoading={timelinesLoading[subjectId] || false}
+                                        nextCourse={null}
                                     />
                                 );
                             })
                         ) : (
                             <Card sx={{ p: 3, textAlign: 'center' }}>
-                                <Typography color="text.secondary">暂无科目成绩记录</Typography>
+                                <Typography color="text.secondary">{tStudent('noSubjectGrades')}</Typography>
                             </Card>
                         )}
                     </Grid>
@@ -426,14 +613,14 @@ const StudentSubjects = () => {
         return (
             <>
                 <Typography variant="h4" align="center" gutterBottom>
-                    {tSubject('subjects') || '科目'}
+                    {tSubject('subjectList') || tSubject('subjectName')}
                 </Typography>
                 <Table>
                     <TableHead>
                         <StyledTableRow>
-                            <StyledTableCell>{tSubject('subjectName') || '课程名称'}</StyledTableCell>
-                            <StyledTableCell>{tSubject('score') || '成绩'}</StyledTableCell>
-                            <StyledTableCell>{tSubject('status') || '状态'}</StyledTableCell>
+                            <StyledTableCell>{tSubject('subjectName')}</StyledTableCell>
+                            <StyledTableCell>{tStudent('avgScore')}</StyledTableCell>
+                            <StyledTableCell>{tCommon('status')}</StyledTableCell>
                         </StyledTableRow>
                     </TableHead>
                     <TableBody>
@@ -444,7 +631,7 @@ const StudentSubjects = () => {
                             const score = result.marksObtained;
                             return (
                                 <StyledTableRow key={index}>
-                                    <StyledTableCell>{safeGet(result, 'subName.subName', '未知科目')}</StyledTableCell>
+                                    <StyledTableCell>{safeGet(result, 'subName.subName', tStudent('unknownSubject'))}</StyledTableCell>
                                     <StyledTableCell>
                                         <Typography
                                             color={score >= 85 ? 'success.main' : score >= 60 ? 'warning.main' : 'error.main'}
@@ -455,7 +642,7 @@ const StudentSubjects = () => {
                                     </StyledTableCell>
                                     <StyledTableCell>
                                         <Chip
-                                            label={score >= 85 ? '优秀' : score >= 60 ? '及格' : '需加强'}
+                                            label={score >= 85 ? tStudent('excellent') : score >= 60 ? tStudent('pass') : tStudent('needImprove')}
                                             size="small"
                                             color={score >= 85 ? 'success' : score >= 60 ? 'warning' : 'error'}
                                         />
@@ -477,13 +664,13 @@ const StudentSubjects = () => {
         return (
             <Container>
                 <Typography variant="h4" align="center" gutterBottom>
-                    {tStudent('classDetails') || '班级详情'}
+                    {tStudent('classDetails')}
                 </Typography>
                 <Typography variant="h5" gutterBottom>
-                    {tStudent('currentClass') || '你目前在班级'} {safeGet(sclassDetails, 'sclassName', '未分配班级')}
+                    {tStudent('currentClass')} {safeGet(sclassDetails, 'sclassName', tStudent('unassignedClass'))}
                 </Typography>
                 <Typography variant="h6" gutterBottom>
-                    {tStudent('theseAreSubjects') || '这些是科目'}:
+                    {tStudent('theseAreSubjects')}:
                 </Typography>
                 {subjectsList && Array.isArray(subjectsList) &&
                     subjectsList.map((subject, index) => (
@@ -495,14 +682,14 @@ const StudentSubjects = () => {
                                     </Avatar>
                                     <Box>
                                         <Typography variant="subtitle1">
-                                            {safeGet(subject, 'subName', '未知科目')}
+                                            {safeGet(subject, 'subName', tStudent('unknownSubject'))}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
-                                            {safeGet(subject, 'subCode', '无代码')} · {safeGet(subject, 'sessions', 0)}课时
+                                            {safeGet(subject, 'subCode', tStudent('noCode'))} · {safeGet(subject, 'sessions', 0)}{tStudent('sessions')}
                                         </Typography>
                                     </Box>
                                 </Box>
-                                <Button size="small" variant="outlined">开始学习</Button>
+                                <Button size="small" variant="outlined">{tStudent('startLearning')}</Button>
                             </Box>
                         </Card>
                     ))}

@@ -6,6 +6,8 @@ import { getUserDetails } from '../../redux/userRelated/userHandle';
 import { calculateOverallAttendancePercentage, calculateSubjectAttendancePercentage, groupAttendanceBySubject } from '../../components/attendanceCalculator';
 
 import CustomBarChart from '../../components/CustomBarChart';
+import AttendanceTrendChart from '../../components/student/AttendanceTrendChart';
+import AttendanceAlertCard from '../../components/student/AttendanceAlertCard';
 import { safeGet } from '../../utils/safeAccess';
 
 import InsertChartIcon from '@mui/icons-material/InsertChart';
@@ -40,10 +42,14 @@ const ViewStdAttendance = () => {
 
     const [subjectAttendance, setSubjectAttendance] = useState([]);
     const [selectedSection, setSelectedSection] = useState('table');
+    const [trendData, setTrendData] = useState(null);
 
     useEffect(() => {
         if (userDetails) {
             setSubjectAttendance(userDetails.attendance || []);
+            if (userDetails.attendanceTrend) {
+                setTrendData(userDetails.attendanceTrend);
+            }
         }
     }, [userDetails])
 
@@ -66,8 +72,14 @@ const ViewStdAttendance = () => {
     };
 
     const renderTableSection = () => {
+        const studentId = safeGet(currentUser, '_id');
         return (
             <>
+                {/* 出勤预警卡片 */}
+                {studentId && (
+                    <AttendanceAlertCard studentId={studentId} days={30} showDetails={true} />
+                )}
+
                 <Typography variant="h4" align="center" gutterBottom>
                     考勤
                 </Typography>
@@ -146,6 +158,9 @@ const ViewStdAttendance = () => {
     const renderChartSection = () => {
         return (
             <>
+                <Box sx={{ mb: 3 }}>
+                    <AttendanceTrendChart data={trendData} loading={loading} />
+                </Box>
                 <CustomBarChart chartData={subjectData} dataKey="attendancePercentage" />
             </>
         )
@@ -172,7 +187,7 @@ const ViewStdAttendance = () => {
                                         icon={selectedSection === 'table' ? <TableChartIcon /> : <TableChartOutlinedIcon />}
                                     />
                                     <BottomNavigationAction
-                                        label="图表"
+                                        label="趋势"
                                         value="chart"
                                         icon={selectedSection === 'chart' ? <InsertChartIcon /> : <InsertChartOutlinedIcon />}
                                     />

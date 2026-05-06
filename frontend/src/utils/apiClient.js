@@ -270,13 +270,39 @@ export const studentAPI = {
     create: (data) => api.post('/StudentReg', data),
     update: (id, data) => api.put(`/Student/${id}`, data),
     delete: (id) => api.delete(`/Student/${id}`),
+    // 科目相关
     getSubjects: (studentId) => api.get(`/student/${studentId}/subjects`),
+    getAvailableSubjects: (studentId) => api.get(`/student/${studentId}/subjects/available`),
+    selectSubject: (studentId, subjectId, data) => api.post(`/student/${studentId}/subjects/select`, { subjectId, ...data }),
+    unselectSubject: (studentId, subjectId) => api.delete(`/student/${studentId}/subjects/${subjectId}`),
+    autoAssignSubjects: (studentId) => api.post(`/student/${studentId}/subjects/auto-assign`),
+    updateSubjectPreferences: (studentId, subjectId, data) => api.put(`/student/${studentId}/subjects/${subjectId}/preferences`, data),
+    // 科目学习记录
+    getSubjectTimeline: (studentId, subjectId) => api.get(`/student/${studentId}/subjects/${subjectId}/timeline`),
     // 学生仪表板
     getDashboard: (studentId, params) => api.get(`/student-dashboard/${studentId}`, params),
     getLearningGoals: (studentId) => api.get(`/student-dashboard/${studentId}/goals`),
     getSuggestions: (studentId, params) => api.get(`/student-dashboard/${studentId}/suggestions`, params),
     getStatistics: (studentId, params) => api.get(`/student-dashboard/${studentId}/statistics`, params),
     getReport: (studentId, params) => api.get(`/student-dashboard/${studentId}/report`, params),
+    // 日历相关
+    getCalendar: (studentId, params) => api.get(`/student/${studentId}/calendar`, params),
+    getCalendarStatistics: (studentId) => api.get(`/student/${studentId}/calendar/statistics`),
+    syncCalendarCourses: (studentId) => api.post(`/student/${studentId}/calendar/sync/courses`),
+    syncCalendarExams: (studentId) => api.post(`/student/${studentId}/calendar/sync/exams`),
+    generateAIStudyPlan: (studentId, data) => api.post(`/student/${studentId}/calendar/ai/study-plan`, data),
+    addCalendarEvent: (studentId, data) => api.post(`/student/${studentId}/calendar/events`, data),
+    updateEventStatus: (studentId, eventId, data) => api.put(`/student/${studentId}/calendar/events/${eventId}/status`, data),
+    // 考勤趋势
+    getAttendanceTrend: (studentId, viewType) => api.get(`/student/${studentId}/attendance/trend`, { viewType }),
+    // 考勤预警 (学生维度)
+    getAttendanceAlerts: (studentId, params) => api.get(`/StudentAttendanceAlerts/${studentId}`, params),
+    getSubjectAbsence: (studentId, params) => api.get(`/StudentSubjectAbsence/${studentId}`, params),
+    // 学习路径
+    getLearningPath: (studentId) => api.get(`/learning-path/student/${studentId}`),
+    createLearningPath: (studentId, data) => api.post(`/learning-path/${studentId}/generate`, data),
+    updateLearningPath: (studentId, data) => api.put(`/learning-path/${studentId}/update`, data),
+    updatePhaseProgress: (studentId, phaseIndex, data) => api.put(`/learning-path/${studentId}/phases/${phaseIndex}`, data),
 };
 
 // 教师相关 API

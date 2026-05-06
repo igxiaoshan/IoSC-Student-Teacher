@@ -1,0 +1,41 @@
+{
+  "id": "TASK-005",
+  "title": "Phase 2.2: 课程进度追踪组件增强",
+  "description": "增强 StudentSubjects 的 SubjectCard 组件，添加学习时间线、最近学习记录、下次课程提醒。开发 SubjectTimeline 子组件。",
+  "scope": "frontend",
+  "files": [
+    {
+      "path": "frontend/src/pages/student/StudentSubjects.js",
+      "change": "SubjectCard 组件添加时间线区域，集成 SubjectTimeline"
+    },
+    {
+      "path": "frontend/src/components/student/SubjectTimeline.js",
+      "change": "新建学习时间线组件，显示最近学习活动和下次课程"
+    },
+    {
+      "path": "frontend/src/utils/apiClient.js",
+      "change": "studentAPI 添加 getLearningRecords 端点"
+    }
+  ],
+  "acceptance_criteria": [
+    "科目卡片显示最近3条学习记录",
+    "下次课程时间正确显示（从日历数据获取）",
+    "学习时长统计准确",
+    "无记录时显示友好提示"
+  ],
+  "dependencies": ["TASK-004"],
+  "estimated_time": "2-3 hours",
+  "priority": 5,
+  "convergence": {
+    "criteria": [
+      "学习记录正确显示",
+      "下次课程提醒准确",
+      "时间线组件渲染正确"
+    ],
+    "verification": "组件测试 + 手动验证"
+  },
+  "_metadata": {
+    "phase": 2,
+    "created": "2026-04-28T12:00:00Z"
+  }
+}

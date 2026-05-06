@@ -21,10 +21,10 @@ const WeeklyTaskTimeline = ({ tasks, loading }) => {
     const { tTeacher } = useTranslation();
 
     const defaultTasks = [
-        { id: 1, title: '批改第三章作业', deadline: '今天', type: 'grading', completed: false, urgent: true },
-        { id: 2, title: '准备期中考试', deadline: '本周三', type: 'exam', completed: false, urgent: false },
-        { id: 3, title: '学生家长会', deadline: '本周五', type: 'meeting', completed: false, urgent: false },
-        { id: 4, title: '完成教学进度报告', deadline: '下周', type: 'report', completed: true, urgent: false }
+        { id: 1, title: tTeacher('taskGradeChapter3') || '批改第三章作业', deadline: tTeacher('today') || '今天', type: 'grading', completed: false, urgent: true },
+        { id: 2, title: tTeacher('taskMidtermExam') || '准备期中考试', deadline: tTeacher('thisWednesday') || '本周三', type: 'exam', completed: false, urgent: false },
+        { id: 3, title: tTeacher('taskParentMeeting') || '学生家长会', deadline: tTeacher('thisFriday') || '本周五', type: 'meeting', completed: false, urgent: false },
+        { id: 4, title: tTeacher('taskTeachingReport') || '完成教学进度报告', deadline: tTeacher('nextWeek') || '下周', type: 'report', completed: true, urgent: false }
     ];
 
     const items = tasks || defaultTasks;

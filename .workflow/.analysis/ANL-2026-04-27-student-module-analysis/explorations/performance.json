@@ -1,0 +1,346 @@
+{
+  "perspective": "Performance",
+  "relevant_files": [
+    {
+      "path": "frontend/src/pages/student/StudentHomePage.js",
+      "relevance": 0.98,
+      "role": "modify_target",
+      "rationale": "Critical performance bottleneck - multiple data fetches inline components without memoization",
+      "key_code": [
+        {
+          "symbol": "LearningProgressRing",
+          "location": "L53-L95",
+          "description": "Inline component without React.memo"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/pages/student/StudentSubjects.js",
+      "relevance": 0.95,
+      "role": "modify_target",
+      "rationale": "Heavy component with 4 inline sub-components and repeated data fetching",
+      "key_code": [
+        {
+          "symbol": "SubjectCard",
+          "location": "L33-L160",
+          "description": "127-line inline component without memoization"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/pages/student/StudentDashboard.js",
+      "relevance": 0.85,
+      "role": "context_only",
+      "rationale": "Root container styles object uses theme functions",
+      "key_code": [
+        {
+          "symbol": "styles object",
+          "location": "L113-L138",
+          "description": "Styles with theme functions"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/redux/studentRelated/studentHandle.js",
+      "relevance": 0.8,
+      "role": "modify_target",
+      "rationale": "No caching axios calls without deduplication",
+      "key_code": [
+        {
+          "symbol": "getAllStudents",
+          "location": "L10-L24",
+          "description": "Direct axios without caching"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/redux/userRelated/userHandle.js",
+      "relevance": 0.75,
+      "role": "dependency",
+      "rationale": "getUserDetails called repeatedly without deduplication",
+      "key_code": [
+        {
+          "symbol": "getUserDetails",
+          "location": "L60-L72",
+          "description": "No request deduplication"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/utils/apiClient.js",
+      "relevance": 0.7,
+      "role": "modify_target",
+      "rationale": "Missing caching layer and retry strategy",
+      "key_code": [
+        {
+          "symbol": "api object",
+          "location": "L143-L248",
+          "description": "Stateless API without caching"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/pages/student/StudentSideBar.js",
+      "relevance": 0.6,
+      "role": "context_only",
+      "rationale": "Re-renders on every location change",
+      "key_code": [
+        {
+          "symbol": "useTranslation calls",
+          "location": "L22",
+          "description": "Multiple translation hooks per render"
+        }
+      ]
+    }
+  ],
+  "key_findings": [
+    {
+      "category": "Missing Memoization",
+      "finding": "6 inline components lack React.memo causing unnecessary re-renders",
+      "significance": "critical",
+      "evidence": "StudentHomePage.js L53-L346 StudentSubjects.js L33-L294"
+    },
+    {
+      "category": "Inline Object Creation",
+      "finding": "Chart data objects recreated on every render",
+      "significance": "high",
+      "evidence": "StudentHomePage.js L60-L82 L102-L121"
+    },
+    {
+      "category": "Duplicate API Calls",
+      "finding": "getUserDetails called independently without caching",
+      "significance": "high",
+      "evidence": "StudentHomePage.js L365 StudentSubjects.js L328"
+    },
+    {
+      "category": "Missing useCallback",
+      "finding": "fetchDashboardData and fetchSubjectData recreated each render",
+      "significance": "high",
+      "evidence": "StudentHomePage.js L373-L384 StudentSubjects.js L332-L345"
+    },
+    {
+      "category": "No API Caching",
+      "finding": "apiClient.js lacks caching layer",
+      "significance": "high",
+      "evidence": "apiClient.js L143-L248"
+    },
+    {
+      "category": "Default Data Recreation",
+      "finding": "defaultSuggestions defaultTasks arrays created every render",
+      "significance": "medium",
+      "evidence": "StudentHomePage.js L134-L179 StudentSubjects.js L50-L55"
+    },
+    {
+      "category": "Excessive useEffect Dependencies",
+      "finding": "useEffect with broad currentUser dependency",
+      "significance": "medium",
+      "evidence": "StudentHomePage.js L363-L371"
+    },
+    {
+      "category": "Large Component Bundle",
+      "finding": "StudentHomePage.js 577 lines delays code splitting",
+      "significance": "medium",
+      "evidence": "StudentHomePage.js full file"
+    }
+  ],
+  "code_anchors": [
+    {
+      "file": "frontend/src/pages/student/StudentHomePage.js",
+      "lines": "L53-L95",
+      "snippet": "const LearningProgressRing",
+      "significance": "Inline component without memo"
+    },
+    {
+      "file": "frontend/src/pages/student/StudentHomePage.js",
+      "lines": "L363-L371",
+      "snippet": "useEffect dispatch getUserDetails fetchDashboardData",
+      "significance": "Broad dependencies no caching"
+    },
+    {
+      "file": "frontend/src/pages/student/StudentSubjects.js",
+      "lines": "L33-L160",
+      "snippet": "const SubjectCard 127 lines",
+      "significance": "Large inline component without memo"
+    },
+    {
+      "file": "frontend/src/pages/student/StudentSubjects.js",
+      "lines": "L50-L55",
+      "snippet": "const knowledgePoints array",
+      "significance": "Array created on each render"
+    },
+    {
+      "file": "frontend/src/utils/apiClient.js",
+      "lines": "L143-L196",
+      "snippet": "const api get post",
+      "significance": "No caching mechanism"
+    },
+    {
+      "file": "frontend/src/redux/userRelated/userHandle.js",
+      "lines": "L60-L72",
+      "snippet": "export getUserDetails axios get",
+      "significance": "Direct axios without caching"
+    }
+  ],
+  "call_chains": [
+    {
+      "entry": "StudentHomePage mount",
+      "chain": [
+        "useEffect currentUser classID",
+        "dispatch getUserDetails",
+        "fetchDashboardData",
+        "dispatch getSubjectList"
+      ],
+      "files": [
+        "StudentHomePage.js",
+        "userHandle.js",
+        "apiClient.js"
+      ],
+      "performance_impact": "3 parallel requests without caching"
+    },
+    {
+      "entry": "StudentSubjects mount",
+      "chain": [
+        "useEffect currentUser._id",
+        "dispatch getUserDetails",
+        "fetchSubjectData"
+      ],
+      "files": [
+        "StudentSubjects.js",
+        "userHandle.js",
+        "apiClient.js"
+      ],
+      "performance_impact": "Duplicate getUserDetails call"
+    },
+    {
+      "entry": "ChartJS rendering",
+      "chain": [
+        "LearningProgressRing render",
+        "create data object",
+        "create options object",
+        "Doughnut render"
+      ],
+      "files": [
+        "StudentHomePage.js"
+      ],
+      "performance_impact": "Objects recreated each render"
+    },
+    {
+      "entry": "SubjectCard list",
+      "chain": [
+        "subjectMarks.map",
+        "create knowledgePoints",
+        "calculate colors",
+        "render Card"
+      ],
+      "files": [
+        "StudentSubjects.js"
+      ],
+      "performance_impact": "N x 4 knowledgePoints arrays per render"
+    },
+    {
+      "entry": "Navigation change",
+      "chain": [
+        "location.pathname",
+        "StudentSideBar re-render",
+        "color recalculations"
+      ],
+      "files": [
+        "StudentSideBar.js"
+      ],
+      "performance_impact": "Full sidebar re-render on route"
+    }
+  ],
+  "questions_for_user": [
+    {
+      "question": "Implement React.memo for inline components?",
+      "context": "6 inline components cause cascading re-renders"
+    },
+    {
+      "question": "Add useCallback wrapper for data fetching functions?",
+      "context": "fetchDashboardData and fetchSubjectData trigger dependency issues"
+    },
+    {
+      "question": "Implement API caching layer in apiClient.js?",
+      "context": "No caching means repeated network calls"
+    },
+    {
+      "question": "Deduplicate getUserDetails calls across components?",
+      "context": "Both StudentHomePage and StudentSubjects call independently"
+    },
+    {
+      "question": "Extract inline components to separate files?",
+      "context": "StudentHomePage.js 577 lines delays code splitting"
+    },
+    {
+      "question": "Implement stale-while-revalidate pattern?",
+      "context": "Dashboard data could show cached while refreshing"
+    }
+  ],
+  "optimization_recommendations": [
+    {
+      "priority": "critical",
+      "action": "Wrap inline components with React.memo",
+      "impact": "Prevents 6+ components from re-rendering",
+      "files": [
+        "StudentHomePage.js",
+        "StudentSubjects.js"
+      ]
+    },
+    {
+      "priority": "high",
+      "action": "Add useCallback to fetch functions",
+      "impact": "Stabilizes useEffect dependencies",
+      "files": [
+        "StudentHomePage.js",
+        "StudentSubjects.js"
+      ]
+    },
+    {
+      "priority": "high",
+      "action": "Move static arrays outside or use useMemo",
+      "impact": "Prevents 4N array allocations per render",
+      "files": [
+        "StudentHomePage.js",
+        "StudentSubjects.js"
+      ]
+    },
+    {
+      "priority": "medium",
+      "action": "Implement request caching in apiClient.js",
+      "impact": "Eliminates redundant network calls",
+      "files": [
+        "apiClient.js"
+      ]
+    },
+    {
+      "priority": "medium",
+      "action": "Batch dashboard API calls",
+      "impact": "Reduces 3 parallel requests to 1",
+      "files": [
+        "apiClient.js"
+      ]
+    },
+    {
+      "priority": "low",
+      "action": "Extract inline components to files",
+      "impact": "Enables code splitting",
+      "files": [
+        "StudentHomePage.js",
+        "StudentSubjects.js"
+      ]
+    }
+  ],
+  "_metadata": {
+    "analysis_mode": "deep-scan",
+    "timestamp": "2026-04-27",
+    "files_analyzed": 7,
+    "inline_components_found": 10,
+    "missing_memoization_count": 6,
+    "api_call_chains_traced": 5,
+    "performance_bottlenecks": 8,
+    "excluded_scope": [
+      "AI functionality",
+      "Teacher/Admin modules"
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "TASK-009",
+  "title": "测试文件生成与验证",
+  "description": "为关键组件和 API 生成测试文件，验证功能正确性。包括趋势图组件测试、异常提醒测试、API 端点测试。",
+  "scope": "testing",
+  "files": [
+    {
+      "path": "frontend/src/components/student/__tests__/AttendanceTrendChart.test.js",
+      "change": "趋势图组件渲染测试"
+    },
+    {
+      "path": "frontend/src/components/student/__tests__/AttendanceAlertCard.test.js",
+      "change": "异常提醒卡片测试"
+    },
+    {
+      "path": "backend/tests/attendanceTrend.test.js",
+      "change": "趋势 API 端点测试"
+    },
+    {
+      "path": "backend/tests/learningPath.test.js",
+      "change": "学习路径服务测试"
+    }
+  ],
+  "acceptance_criteria": [
+    "趋势图组件测试覆盖渲染和数据绑定",
+    "异常提醒测试覆盖触发条件和显示",
+    "API 测试覆盖请求响应格式",
+    "测试可通过 npm test 运行"
+  ],
+  "dependencies": ["TASK-001", "TASK-002", "TASK-003", "TASK-007"],
+  "estimated_time": "2-3 hours",
+  "priority": 9,
+  "convergence": {
+    "criteria": [
+      "测试文件正确生成",
+      "测试可通过运行",
+      "关键功能有测试覆盖"
+    ],
+    "verification": "npm test 运行成功"
+  },
+  "_metadata": {
+    "phase": "testing",
+    "created": "2026-04-28T12:00:00Z"
+  }
+}

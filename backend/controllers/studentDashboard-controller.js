@@ -557,6 +557,90 @@ const generateGoalSuggestions = async (studentId, goals) => {
 };
 
 // 数据分析辅助函数
+const calculateTimeRange = (period) => {
+    const now = new Date();
+    let startDate;
+
+    switch (period) {
+        case 'today':
+            startDate = new Date(now);
+            startDate.setHours(0, 0, 0, 0);
+            break;
+        case 'week':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+        case 'month':
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+        case 'semester':
+            startDate = new Date(now.getTime() - 120 * 24 * 60 * 60 * 1000);
+            break;
+        default:
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    return { start: startDate, end: now };
+};
+
+const getDetailedStatistics = async (studentId, subject, timeRange) => {
+    const query = {
+        student: studentId,
+        submitTime: { $gte: timeRange.start, $lte: timeRange.end }
+    };
+    if (subject) query.subject = subject;
+
+    const answers = await Answer.find(query);
+
+    return {
+        totalQuestions: answers.length,
+        correctAnswers: answers.filter(a => a.isCorrect).length,
+        averageScore: answers.length > 0 ?
+            answers.reduce((sum, a) => sum + (a.score / a.maxScore), 0) / answers.length * 100 : 0,
+        totalTimeSpent: answers.reduce((sum, a) => sum + (a.timeSpent || 0), 0)
+    };
+};
+
+const analyzeLearningTrends = async (studentId, subject, timeRange) => {
+    // 简化实现
+    return { trend: 'stable', improvementRate: 0 };
+};
+
+const generateComparison = async (studentId, statistics, timeRange) => {
+    return { previous: null, current: statistics, change: 0 };
+};
+
+const generateStatisticalInsights = async (statistics, trends) => {
+    return [];
+};
+
+const getComprehensiveLearningState = async (studentId) => {
+    return { level: 'intermediate', strengths: [], weaknesses: [], mood: 'neutral' };
+};
+
+const generateComprehensiveSuggestions = async (state, options) => {
+    return [];
+};
+
+const groupSuggestionsByType = (suggestions) => {
+    return suggestions;
+};
+
+const generateLearningReport = async (studentId, reportType) => {
+    return { type: reportType, data: {} };
+};
+
+const generateComparisonData = async (studentId, reportType) => {
+    return {};
+};
+
+const generateReportInsights = async (studentId, report) => {
+    return [];
+};
+
+const calculateNextReportDate = (reportType) => {
+    return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+};
+
 const groupAnswersByDay = (answers) => {
     const grouped = {};
     answers.forEach(answer => {

@@ -1,0 +1,42 @@
+{
+  "id": "TASK-008",
+  "title": "Phase 3.2: 学习路径可视化组件",
+  "description": "开发学习路径可视化组件，显示学习里程碑进度、每日推荐、AI 建议。集成到 StudentHomePage。",
+  "scope": "frontend",
+  "files": [
+    {
+      "path": "frontend/src/components/student/LearningPathCard.js",
+      "change": "新建学习路径卡片组件，显示里程碑进度和每日推荐"
+    },
+    {
+      "path": "frontend/src/pages/student/StudentHomePage.js",
+      "change": "集成 LearningPathCard 到首页布局"
+    },
+    {
+      "path": "frontend/src/utils/apiClient.js",
+      "change": "studentAPI 添加 getLearningPath 端点"
+    }
+  ],
+  "acceptance_criteria": [
+    "学习路径可视化显示里程碑进度",
+    "每日推荐按优先级排序显示",
+    "AI 建议卡片正确显示",
+    "无路径时显示引导提示",
+    "移动端适配良好"
+  ],
+  "dependencies": ["TASK-007"],
+  "estimated_time": "2-3 hours",
+  "priority": 8,
+  "convergence": {
+    "criteria": [
+      "路径可视化正确渲染",
+      "每日推荐准确显示",
+      "AI 建议有吸引力"
+    ],
+    "verification": "组件测试 + 手动验证"
+  },
+  "_metadata": {
+    "phase": 3,
+    "created": "2026-04-28T12:00:00Z"
+  }
+}

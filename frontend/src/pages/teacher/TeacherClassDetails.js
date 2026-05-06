@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import * as React from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom'
+import { getClassStudents, getClassOverviewStats } from "../../redux/sclassRelated/sclassHandle";
 import { useTranslation } from '../../hooks/useTranslation';
 import useTeacherClassData from '../../hooks/useTeacherClassData';
 import {
@@ -16,7 +18,9 @@ import { safeGet } from '../../utils/safeAccess';
 
 const TeacherClassDetails = () => {
     const navigate = useNavigate()
+    const dispatch = useDispatch();
     const { tStudent, tTeacher, tClass, tCommon, tDashboard } = useTranslation();
+    const { sclassStudents, loading, error, getresponse, classOverviewStats, overviewLoading } = useSelector((state) => state.sclass);
 
     const { currentUser } = useSelector((state) => state.user);
     const classID = safeGet(currentUser, 'teachSclass._id');
@@ -24,20 +28,37 @@ const TeacherClassDetails = () => {
     const className = safeGet(currentUser, 'teachSclass.sclassName', tClass('unassignedClass'));
     const subjectName = safeGet(currentUser, 'teachSubject.subName', tTeacher('unassignedSubject'));
 
-    // 使用共享数据 hook - 统一数据获取和状态管理
-    const {
-        overviewStats: classOverviewStats,
-        students: sclassStudents,
-        studentsLoading: loading
-    } = useTeacherClassData(classID, {
-        autoFetch: true,
-        fetchStudents: true,
-        fetchOverview: true
+    // 使用共享数据 hook 监听刷新触发器
+    const { refreshTriggers } = useTeacherClassData(classID, {
+        autoFetch: false,
+        fetchStudents: false,
+        fetchOverview: false // hook 只监听刷新触发器，不自动获取
     });
 
+    // 组件自行管理数据获取
+    useEffect(() => {
+        if (classID) {
+            console.log('[TeacherClassDetails] Fetching data for classID:', classID);
+            dispatch(getClassStudents(classID));
+            dispatch(getClassOverviewStats(classID));
+        }
+    }, [dispatch, classID])
+
+    // 监听考勤/成绩更新，刷新数据
+    useEffect(() => {
+        if (refreshTriggers.attendance || refreshTriggers.grades) {
+            dispatch(getClassStudents(classID));
+            dispatch(getClassOverviewStats(classID));
+        }
+    }, [refreshTriggers.attendance, refreshTriggers.grades, dispatch, classID]);
+
+    if (error) {
+        console.log(error)
+    }
+
     const studentColumns = [
-        { id: 'name', label: tStudent('studentName'), minWidth: { xs: 80, sm: 120 } },
-        { id: 'rollNum', label: tStudent('studentId'), minWidth: { xs: 60, sm: 80 } },
+        { id: 'name', label: tStudent('studentName'), minWidth: 170 },
+        { id: 'rollNum', label: tStudent('studentId'), minWidth: 100 },
     ]
 
     const studentRows = (sclassStudents || []).map((student) => {
@@ -66,6 +87,7 @@ const TeacherClassDetails = () => {
         const [selectedIndex, setSelectedIndex] = React.useState(0);
 
         const handleClick = () => {
+            console.info(`You clicked ${options[selectedIndex]}`);
             if (selectedIndex === 0) {
                 handleAttendance();
             } else if (selectedIndex === 1) {
@@ -176,19 +198,12 @@ const TeacherClassDetails = () => {
                     <Typography>{tCommon('loading')}</Typography>
                 </Box>
             ) : (
-                <Box sx={{ p: { xs: 1, sm: 2 } }}>
+                <Box sx={{ p: 2 }}>
                     {/* 班级概览头部 */}
-                    <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3, borderRadius: 2 }}>
-                        <Box
-                            display="flex"
-                            flexDirection={{ xs: 'column', sm: 'row' }}
-                            alignItems={{ xs: 'flex-start', sm: 'center' }}
-                            justifyContent="space-between"
-                            mb={2}
-                            gap={2}
-                        >
+                    <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+                        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
                             <Box display="flex" alignItems="center">
-                                <Avatar sx={{ width: { xs: 48, sm: 56 }, height: { xs: 48, sm: 56 }, bgcolor: '#7f56da', mr: 2 }}>
+                                <Avatar sx={{ width: 56, height: 56, bgcolor: '#7f56da', mr: 2 }}>
                                     <PeopleIcon />
                                 </Avatar>
                                 <Box>
@@ -277,7 +292,7 @@ const TeacherClassDetails = () => {
                     </Paper>
 
                     {/* 学生列表 */}
-                    {!sclassStudents || sclassStudents.length === 0 ? (
+                    {getresponse ? (
                         <Paper sx={{ p: 3, textAlign: 'center', borderRadius: 2 }}>
                             <PeopleIcon sx={{ fontSize: 60, color: 'grey.400', mb: 2 }} />
                             <Typography variant="h6" gutterBottom color="text.secondary">

@@ -1,0 +1,64 @@
+{
+  "session_id": "student-modules-optimize-2026-04-28",
+  "summary": "学生端课程管理与考勤模块优化 - 三阶段完整实施",
+  "approach": "分三阶段实施：Phase 1 考勤增强 → Phase 2 课程管理增强 → Phase 3 AI学习路径。按依赖关系顺序执行，关键路径为 Phase 1 和 2 并行，Phase 3 依赖前两个阶段。",
+  "complexity": "High",
+  "estimated_time": "18-25 hours",
+  "recommended_execution": "Codex",
+  "task_ids": [
+    "TASK-001",
+    "TASK-002",
+    "TASK-003",
+    "TASK-004",
+    "TASK-005",
+    "TASK-006",
+    "TASK-007",
+    "TASK-008",
+    "TASK-009",
+    "TASK-010"
+  ],
+  "execution_strategy": {
+    "parallel_groups": [
+      ["TASK-001", "TASK-002", "TASK-004"],
+      ["TASK-003", "TASK-005", "TASK-006"],
+      ["TASK-007", "TASK-008"],
+      ["TASK-009", "TASK-010"]
+    ],
+    "critical_path": ["TASK-001", "TASK-002", "TASK-005", "TASK-007", "TASK-008"],
+    "dependencies": {
+      "TASK-005": ["TASK-004"],
+      "TASK-007": ["TASK-002", "TASK-004"],
+      "TASK-008": ["TASK-007"],
+      "TASK-009": ["TASK-001", "TASK-002", "TASK-003", "TASK-007"],
+      "TASK-010": ["TASK-001", "TASK-003", "TASK-005", "TASK-008"]
+    }
+  },
+  "phases": [
+    {
+      "name": "Phase 1: 考勤模块增强",
+      "tasks": ["TASK-001", "TASK-002", "TASK-003"],
+      "description": "趋势分析 + 异常提醒"
+    },
+    {
+      "name": "Phase 2: 课程管理增强",
+      "tasks": ["TASK-004", "TASK-005", "TASK-006"],
+      "description": "学习记录 + 偏好应用"
+    },
+    {
+      "name": "Phase 3: AI 学习路径",
+      "tasks": ["TASK-007", "TASK-008"],
+      "description": "推荐引擎 + 可视化"
+    },
+    {
+      "name": "测试与集成",
+      "tasks": ["TASK-009", "TASK-010"],
+      "description": "测试覆盖 + 国际化"
+    }
+  ],
+  "_metadata": {
+    "exploration_angles": ["patterns", "integration-points", "dependencies", "testing"],
+    "source": "brainstorm-with-file",
+    "source_session": "BS-20260428-student-modules-optimize",
+    "created": "2026-04-28T12:00:00Z"
+  }
+}

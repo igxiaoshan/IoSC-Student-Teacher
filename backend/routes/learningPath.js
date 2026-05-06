@@ -6,7 +6,10 @@ const {
     updateLearningPath,
     getLearningRecommendations,
     getKnowledgeMap,
-    recordLearningActivity
+    recordLearningActivity,
+    getDailyRecommendations,
+    getStudentLearningPaths,
+    toggleLearningPathStatus
 } = require('../controllers/learningPath-controller');
 
 const {
@@ -14,13 +17,17 @@ const {
     aiCacheMiddleware,
     aiLoggingMiddleware,
     aiFeatureToggle,
-    contentFilterMiddleware,
-    generateCacheKey
+    contentFilterMiddleware
 } = require('../middleware/aiMiddleware');
 
-// 应用通用中间件
 router.use(aiLoggingMiddleware);
 router.use(contentFilterMiddleware);
+
+// 获取学生所有学习路径
+router.get('/student/:studentId',
+    aiCacheMiddleware((req) => `learning_paths:${req.params.studentId}`),
+    getStudentLearningPaths
+);
 
 // 生成个性化学习路径
 router.post('/:studentId/generate',
@@ -49,6 +56,13 @@ router.get('/:studentId/recommendations',
     getLearningRecommendations
 );
 
+// 获取每日推荐
+router.get('/:studentId/daily',
+    aiRateLimit,
+    aiFeatureToggle('personalizedExercise'),
+    getDailyRecommendations
+);
+
 // 获取知识图谱
 router.get('/:studentId/knowledge-map',
     aiCacheMiddleware((req) => `knowledge_map:${req.params.studentId}:${req.query.subject}`),
@@ -58,6 +72,11 @@ router.get('/:studentId/knowledge-map',
 // 记录学习活动
 router.post('/:studentId/activity',
     recordLearningActivity
+);
+
+// 暂停/恢复/完成学习路径
+router.post('/:studentId/toggle/:pathId',
+    toggleLearningPathStatus
 );
 
 module.exports = router;

@@ -1,0 +1,42 @@
+{
+  "id": "TASK-002",
+  "title": "Phase 1.2: 考勤趋势分析后端 API",
+  "description": "创建后端趋势分析 API 端点，预聚合周/月/学期考勤数据。在 studentRoutes.js 添加新路由，实现趋势计算逻辑。",
+  "scope": "backend",
+  "files": [
+    {
+      "path": "backend/routes/studentRoutes.js",
+      "change": "添加 /Student/:id/attendance/trends 路由"
+    },
+    {
+      "path": "backend/controllers/attendanceTrend-controller.js",
+      "change": "新建趋势计算控制器，实现周/月/学期聚合逻辑"
+    },
+    {
+      "path": "frontend/src/utils/apiClient.js",
+      "change": "studentAPI 添加 getAttendanceTrends 端点封装"
+    }
+  ],
+  "acceptance_criteria": [
+    "GET /Student/:id/attendance/trends 返回正确格式",
+    "weekly 数据包含最近8周出勤率",
+    "monthly 数据包含月度统计",
+    "semester 数据包含学期总览",
+    "支持 period 参数过滤"
+  ],
+  "dependencies": [],
+  "estimated_time": "2-3 hours",
+  "priority": 2,
+  "convergence": {
+    "criteria": [
+      "API 返回数据格式符合前端组件需求",
+      "聚合计算结果准确",
+      "响应时间 < 500ms"
+    ],
+    "verification": "API 测试 + 手动验证"
+  },
+  "_metadata": {
+    "phase": 1,
+    "created": "2026-04-28T12:00:00Z"
+  }
+}

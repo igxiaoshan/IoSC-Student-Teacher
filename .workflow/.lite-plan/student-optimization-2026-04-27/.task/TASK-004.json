@@ -1,0 +1,57 @@
+{
+  "id": "TASK-004",
+  "title": "添加React性能优化",
+  "description": "为提取后的组件添加React.memo包裹，为StudentHomePage中的计算添加useMemo，为回调函数添加useCallback。减少不必要的重渲染。",
+  "scope": "frontend/src/components/student/ + frontend/src/pages/student/",
+  "priority": 2,
+  "files": [
+    {
+      "path": "frontend/src/components/student/LearningProgressRing.js",
+      "change": "添加React.memo包裹组件"
+    },
+    {
+      "path": "frontend/src/components/student/WeeklyStudyChart.js",
+      "change": "添加React.memo包裹组件"
+    },
+    {
+      "path": "frontend/src/components/student/AISuggestionCard.js",
+      "change": "添加React.memo包裹组件"
+    },
+    {
+      "path": "frontend/src/components/student/TodoTasksCard.js",
+      "change": "添加React.memo包裹组件"
+    },
+    {
+      "path": "frontend/src/components/student/LearningGoalsCard.js",
+      "change": "添加React.memo包裹组件"
+    },
+    {
+      "path": "frontend/src/components/student/RecentActivityTimeline.js",
+      "change": "添加React.memo包裹组件"
+    },
+    {
+      "path": "frontend/src/pages/student/StudentHomePage.js",
+      "change": "为statCards添加useMemo，为fetchDashboardData添加useCallback"
+    }
+  ],
+  "dependencies": ["TASK-002"],
+  "depends_on": ["TASK-002"],
+  "convergence": {
+    "criteria": [
+      "所有提取组件被React.memo包裹",
+      "StudentHomePage中statCards使用useMemo",
+      "fetchDashboardData使用useCallback"
+    ],
+    "verification": "代码检查确认memo/useMemo/useCallback使用，可选性能测试"
+  },
+  "implementation_notes": [
+    "React.memo包裹：export default React.memo(ComponentName)",
+    "useMemo示例：const statCards = useMemo(() => [...], [numberOfSubjects, studyStats])",
+    "useCallback示例：const fetchDashboardData = useCallback(async () => {...}, [studentId])"
+  ],
+  "_metadata": {
+    "created_at": "2026-04-27T16:35:00+08:00",
+    "source": "implementation_scope[3]",
+    "estimated_time": "20-30 minutes"
+  }
+}

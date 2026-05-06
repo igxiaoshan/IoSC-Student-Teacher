@@ -34,7 +34,7 @@ import {
     AutoAwesome as AutoAwesomeIcon
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
+import api, { studentAPI } from '../../utils/apiClient';
 import { safeGet } from '../../utils/safeAccess';
 import Popup from '../../components/Popup';
 
@@ -67,9 +67,9 @@ const SubjectSelection = () => {
     const fetchStudentSubjects = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/student/${studentId}/subjects`);
-            if (response.data.success) {
-                setSelectedSubjects(response.data.data.subjects);
+            const response = await studentAPI.getSubjects(studentId);
+            if (response.success) {
+                setSelectedSubjects(response.data.subjects);
             }
         } catch (error) {
             console.error('获取学生科目失败:', error);
@@ -82,9 +82,9 @@ const SubjectSelection = () => {
 
     const fetchAvailableSubjects = async () => {
         try {
-            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/student/${studentId}/subjects/available`);
-            if (response.data.success) {
-                setAvailableSubjects(response.data.data.subjects);
+            const response = await studentAPI.getAvailableSubjects(studentId);
+            if (response.success) {
+                setAvailableSubjects(response.data.subjects);
             }
         } catch (error) {
             console.error('获取可选科目失败:', error);
@@ -93,12 +93,9 @@ const SubjectSelection = () => {
 
     const handleSelectSubject = async (subjectId) => {
         try {
-            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/student/${studentId}/subjects/select`, {
-                subjectId,
-                learningPreferences: preferences
-            });
-            
-            if (response.data.success) {
+            const response = await studentAPI.selectSubject(studentId, subjectId, { learningPreferences: preferences });
+
+            if (response.success) {
                 setMessage(tSubject('subjectSelectionSuccess'));
                 setShowPopup(true);
                 fetchStudentSubjects();
@@ -112,9 +109,9 @@ const SubjectSelection = () => {
 
     const handleUnselectSubject = async (subjectId) => {
         try {
-            const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/student/${studentId}/subjects/${subjectId}`);
-            
-            if (response.data.success) {
+            const response = await studentAPI.unselectSubject(studentId, subjectId);
+
+            if (response.success) {
                 setMessage('取消选择成功！');
                 setShowPopup(true);
                 fetchStudentSubjects();
@@ -128,10 +125,10 @@ const SubjectSelection = () => {
 
     const handleAutoAssign = async () => {
         try {
-            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/student/${studentId}/subjects/auto-assign`);
-            
-            if (response.data.success) {
-                setMessage(response.data.message);
+            const response = await studentAPI.autoAssignSubjects(studentId);
+
+            if (response.success) {
+                setMessage(response.message);
                 setShowPopup(true);
                 fetchStudentSubjects();
                 fetchAvailableSubjects();
@@ -144,12 +141,13 @@ const SubjectSelection = () => {
 
     const handleUpdatePreferences = async () => {
         try {
-            const response = await axios.put(
-                `${process.env.REACT_APP_BASE_URL}/student/${studentId}/subjects/${currentSubject._id}/preferences`,
+            const response = await studentAPI.updateSubjectPreferences(
+                studentId,
+                currentSubject._id,
                 { learningPreferences: preferences }
             );
-            
-            if (response.data.success) {
+
+            if (response.success) {
                 setMessage('学习偏好更新成功！');
                 setShowPopup(true);
                 setShowPreferencesDialog(false);

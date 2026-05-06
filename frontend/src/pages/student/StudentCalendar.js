@@ -82,7 +82,7 @@ import {
     endOfDay
 } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import axios from 'axios';
+import api, { studentAPI } from '../../utils/apiClient';
 import { generateMockCalendarData, generateMockStatistics } from '../../utils/mockCalendarData';
 
 const StudentCalendar = () => {
@@ -198,12 +198,14 @@ const StudentCalendar = () => {
                 return;
             }
 
-            const response = await axios.get(
-                `/student/${currentUser._id}/calendar?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}&view=${view}`
-            );
+            const response = await studentAPI.getCalendar(currentUser._id, {
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString(),
+                view
+            });
 
-            if (response.data.success) {
-                const eventsData = response.data.data.calendar.events || [];
+            if (response.success) {
+                const eventsData = response.data.calendar.events || [];
                 // 解析日期字符串为Date对象
                 const parsedEvents = eventsData.map(event => ({
                     ...event,
@@ -213,8 +215,8 @@ const StudentCalendar = () => {
                 setEvents(parsedEvents);
 
                 // 更新设置
-                if (response.data.data.settings) {
-                    setSettings(prev => ({ ...prev, ...response.data.data.settings.display }));
+                if (response.data.settings) {
+                    setSettings(prev => ({ ...prev, ...response.data.settings.display }));
                 }
             } else {
                 // API失败时使用mock数据
@@ -242,9 +244,9 @@ const StudentCalendar = () => {
                 return;
             }
 
-            const response = await axios.get(`/student/${currentUser._id}/calendar/statistics`);
-            if (response.data.success) {
-                setStatistics(response.data.data);
+            const response = await studentAPI.getCalendarStatistics(currentUser._id);
+            if (response.success) {
+                setStatistics(response.data);
             } else {
                 // API失败时使用mock数据
                 const mockStats = generateMockStatistics(events);
@@ -276,8 +278,8 @@ const StudentCalendar = () => {
 
             // 并行同步课程和考试
             const [coursesResult, examsResult] = await Promise.allSettled([
-                axios.post(`/student/${currentUser._id}/calendar/sync/courses`),
-                axios.post(`/student/${currentUser._id}/calendar/sync/exams`)
+                studentAPI.syncCalendarCourses(currentUser._id),
+                studentAPI.syncCalendarExams(currentUser._id)
             ]);
 
             let successCount = 0;
@@ -318,12 +320,12 @@ const StudentCalendar = () => {
         try {
             setSyncing(true);
 
-            const response = await axios.post(`/student/${currentUser._id}/calendar/ai/study-plan`, aiPlanData);
+            const response = await studentAPI.generateAIStudyPlan(currentUser._id, aiPlanData);
 
-            if (response.data.success) {
+            if (response.success) {
                 await loadCalendarData();
                 setShowAIDialog(false);
-                alert(`AI学习计划生成成功！已添加 ${response.data.data.generatedEvents} 个学习任务`);
+                alert(`AI学习计划生成成功！已添加 ${response.data.generatedEvents} 个学习任务`);
             }
         } catch (error) {
             console.error('生成AI学习计划失败:', error);
@@ -360,7 +362,7 @@ const StudentCalendar = () => {
                 endTime: endTime.toISOString()
             };
 
-            await axios.post(`/student/${currentUser._id}/calendar/events`, eventData);
+            await studentAPI.addCalendarEvent(currentUser._id, eventData);
             await loadCalendarData();
             setShowAddEventDialog(false);
 
@@ -386,9 +388,7 @@ const StudentCalendar = () => {
 
     const updateEventStatus = useCallback(async (eventId, newStatus) => {
         try {
-            await axios.put(`/student/${currentUser._id}/calendar/events/${eventId}/status`, {
-                status: newStatus
-            });
+            await studentAPI.updateEventStatus(currentUser._id, eventId, { status: newStatus });
 
             // 更新本地状态
             setEvents(prev => prev.map(event =>

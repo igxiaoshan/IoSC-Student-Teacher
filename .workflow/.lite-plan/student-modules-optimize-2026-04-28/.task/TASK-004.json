@@ -1,0 +1,35 @@
+{
+  "id": "TASK-004",
+  "title": "Phase 2.1: 学习记录数据模型扩展",
+  "description": "扩展 studentSchema 添加 learningRecords 子文档，用于存储学习活动记录。同时扩展 attendance 字段添加缺勤原因等。",
+  "scope": "backend",
+  "files": [
+    {
+      "path": "backend/models/studentSchema.js",
+      "change": "添加 learningRecords 子文档，扩展 attendance 字段（reason, notified, makeupStatus）"
+    },
+    {
+      "path": "backend/controllers/studentSubject-controller.js",
+      "change": "getStudentSubjects 返回学习记录数据"
+    }
+  ],
+  "acceptance_criteria": [
+    "learningRecords 子文档包含 subject, type, title, duration, score, completedAt",
+    "attendance 扩展字段可选，不影响现有数据",
+    "Schema 索引优化查询性能"
+  ],
+  "dependencies": [],
+  "estimated_time": "1-2 hours",
+  "priority": 4,
+  "convergence": {
+    "criteria": [
+      "Schema 扩展不影响现有数据",
+      "新字段正确存储和读取"
+    ],
+    "verification": "单元测试 + 数据验证"
+  },
+  "_metadata": {
+    "phase": 2,
+    "created": "2026-04-28T12:00:00Z"
+  }
+}

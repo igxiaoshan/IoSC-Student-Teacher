@@ -11,6 +11,13 @@ const {
     batchAttendance, getClassAttendanceStats, getClassGradeStats, getStudentProgress,
     getClassOverviewStats
 } = require('../controllers/student_controller.js');
+const {
+    getStudentAttendanceTrend,
+    getClassAttendanceTrend,
+    getAttendanceAlerts,
+    getStudentAttendanceAlerts,
+    getStudentSubjectAbsence
+} = require('../controllers/attendanceTrend-controller.js');
 
 // 注册和登录
 router.post('/StudentReg', studentRegister);
@@ -38,5 +45,14 @@ router.get('/ClassAttendanceStats', getClassAttendanceStats);
 router.get('/ClassGradeStats', getClassGradeStats);
 router.get('/StudentProgress', getStudentProgress);
 router.get('/ClassOverviewStats/:id', getClassOverviewStats);
+
+// 出勤趋势分析 API
+router.get('/StudentAttendanceTrend/:studentId', getStudentAttendanceTrend);
+router.get('/ClassAttendanceTrend/:classId', getClassAttendanceTrend);
+router.get('/AttendanceAlerts/:classId?', getAttendanceAlerts);
+
+// 学生维度预警 API
+router.get('/StudentAttendanceAlerts/:studentId', getStudentAttendanceAlerts);
+router.get('/StudentSubjectAbsence/:studentId', getStudentSubjectAbsence);
 
 module.exports = router;

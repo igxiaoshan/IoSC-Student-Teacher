@@ -1,0 +1,353 @@
+{
+  "relevant_files": [
+    {
+      "path": "frontend/src/pages/student/StudentDashboard.js",
+      "annotation": "Student module entry point with routing",
+      "dimensions": [
+        "architecture",
+        "implementation",
+        "ux"
+      ],
+      "lines": 138,
+      "exports": [
+        "StudentDashboard"
+      ]
+    },
+    {
+      "path": "frontend/src/pages/student/StudentSideBar.js",
+      "annotation": "Navigation sidebar with categorized menu",
+      "dimensions": [
+        "ux",
+        "implementation"
+      ],
+      "lines": 121,
+      "exports": [
+        "StudentSideBar"
+      ]
+    },
+    {
+      "path": "frontend/src/pages/student/StudentHomePage.js",
+      "annotation": "Dashboard home with stats and AI suggestions",
+      "dimensions": [
+        "implementation",
+        "ux",
+        "performance"
+      ],
+      "lines": 577,
+      "exports": [
+        "StudentHomePage"
+      ]
+    },
+    {
+      "path": "frontend/src/pages/student/StudentSubjects.js",
+      "annotation": "Subject grades view with multiple modes",
+      "dimensions": [
+        "implementation",
+        "ux"
+      ],
+      "lines": 561,
+      "exports": [
+        "StudentSubjects"
+      ]
+    },
+    {
+      "path": "frontend/src/pages/student/ViewStdAttendance.js",
+      "annotation": "Attendance viewer with chart views",
+      "dimensions": [
+        "implementation",
+        "ux"
+      ],
+      "lines": 195,
+      "exports": [
+        "ViewStdAttendance"
+      ]
+    },
+    {
+      "path": "frontend/src/pages/student/StudentProfile.js",
+      "annotation": "Profile display page",
+      "dimensions": [
+        "implementation",
+        "ux"
+      ],
+      "lines": 119,
+      "exports": [
+        "StudentProfile"
+      ]
+    },
+    {
+      "path": "frontend/src/redux/studentRelated/studentSlice.js",
+      "annotation": "Redux slice for student state",
+      "dimensions": [
+        "architecture",
+        "implementation"
+      ],
+      "lines": 57,
+      "exports": [
+        "studentReducer"
+      ]
+    },
+    {
+      "path": "frontend/src/redux/studentRelated/studentHandle.js",
+      "annotation": "Redux async actions for student CRUD",
+      "dimensions": [
+        "architecture",
+        "implementation"
+      ],
+      "lines": 58,
+      "exports": [
+        "getAllStudents",
+        "updateStudentFields"
+      ]
+    },
+    {
+      "path": "frontend/src/redux/store.js",
+      "annotation": "Redux store configuration",
+      "dimensions": [
+        "architecture"
+      ],
+      "lines": 23,
+      "exports": [
+        "store"
+      ]
+    },
+    {
+      "path": "frontend/src/redux/userRelated/userHandle.js",
+      "annotation": "User auth and profile management",
+      "dimensions": [
+        "architecture",
+        "implementation"
+      ],
+      "lines": 124,
+      "exports": [
+        "loginUser",
+        "getUserDetails"
+      ]
+    },
+    {
+      "path": "frontend/src/redux/sclassRelated/sclassHandle.js",
+      "annotation": "Class and subject async actions",
+      "dimensions": [
+        "architecture",
+        "implementation"
+      ],
+      "lines": 250,
+      "exports": [
+        "getSubjectList",
+        "getClassDetails"
+      ]
+    },
+    {
+      "path": "frontend/src/utils/apiClient.js",
+      "annotation": "Unified Axios client with interceptors",
+      "dimensions": [
+        "architecture",
+        "implementation"
+      ],
+      "lines": 313,
+      "exports": [
+        "studentAPI",
+        "userAPI",
+        "api"
+      ]
+    },
+    {
+      "path": "frontend/src/utils/apiConfig.js",
+      "annotation": "Base API configuration",
+      "dimensions": [
+        "architecture",
+        "implementation"
+      ],
+      "lines": 145,
+      "exports": [
+        "api",
+        "aiAPI"
+      ]
+    },
+    {
+      "path": "frontend/src/utils/safeAccess.js",
+      "annotation": "Safe property access utility",
+      "dimensions": [
+        "implementation"
+      ],
+      "lines": 30,
+      "exports": [
+        "safeGet"
+      ]
+    },
+    {
+      "path": "frontend/src/hooks/useTranslation.js",
+      "annotation": "i18n hook with role-specific functions",
+      "dimensions": [
+        "ux",
+        "implementation"
+      ],
+      "lines": 62,
+      "exports": [
+        "useTranslation"
+      ]
+    },
+    {
+      "path": "frontend/src/components/styles.js",
+      "annotation": "MUI styled components",
+      "dimensions": [
+        "ux",
+        "implementation"
+      ],
+      "lines": 74,
+      "exports": [
+        "AppBar",
+        "Drawer"
+      ]
+    },
+    {
+      "path": "backend/routes/studentRoutes.js",
+      "annotation": "Student API routes",
+      "dimensions": [
+        "architecture"
+      ],
+      "lines": 43,
+      "endpoints": [
+        "/StudentReg",
+        "/StudentLogin",
+        "/Students/:id"
+      ]
+    },
+    {
+      "path": "backend/routes/studentDashboard.js",
+      "annotation": "Student dashboard API routes",
+      "dimensions": [
+        "architecture",
+        "performance"
+      ],
+      "lines": 57,
+      "endpoints": [
+        "/:studentId",
+        "/:studentId/statistics"
+      ]
+    },
+    {
+      "path": "backend/controllers/student_controller.js",
+      "annotation": "Student CRUD controllers",
+      "dimensions": [
+        "implementation"
+      ],
+      "lines": 763,
+      "exports": [
+        "studentRegister",
+        "studentLogIn",
+        "getStudents"
+      ]
+    },
+    {
+      "path": "backend/controllers/studentDashboard-controller.js",
+      "annotation": "Dashboard data aggregation",
+      "dimensions": [
+        "implementation",
+        "performance"
+      ],
+      "lines": 677,
+      "exports": [
+        "getStudentDashboard",
+        "getLearningStatistics"
+      ]
+    },
+    {
+      "path": "backend/models/studentSchema.js",
+      "annotation": "Student Mongoose schema",
+      "dimensions": [
+        "architecture"
+      ],
+      "lines": 154,
+      "collections": [
+        "student"
+      ]
+    }
+  ],
+  "patterns": [
+    {
+      "name": "Module Pattern",
+      "description": "Each role has isolated module with Dashboard + SideBar + Pages",
+      "example": "frontend/src/pages/student/"
+    },
+    {
+      "name": "Redux Async Thunk Pattern",
+      "description": "Using createAsyncThunk-style functions",
+      "example": "frontend/src/redux/studentRelated/studentHandle.js"
+    },
+    {
+      "name": "API Module Pattern",
+      "description": "Centralized API client with role-specific objects",
+      "example": "frontend/src/utils/apiClient.js"
+    },
+    {
+      "name": "Safe Access Pattern",
+      "description": "Using safeGet() for nested property access",
+      "example": "safeGet(currentUser, sclassName._id)"
+    },
+    {
+      "name": "Translation Hook Pattern",
+      "description": "Role-specific translation functions",
+      "example": "const { tStudent } = useTranslation()"
+    }
+  ],
+  "module_map": {
+    "frontend_student_pages": {
+      "path": "frontend/src/pages/student/",
+      "files": 22,
+      "entry": "StudentDashboard.js"
+    },
+    "frontend_redux_student": {
+      "path": "frontend/src/redux/studentRelated/",
+      "files": 2
+    },
+    "frontend_utils": {
+      "path": "frontend/src/utils/",
+      "files": 13
+    },
+    "backend_student_routes": {
+      "path": "backend/routes/",
+      "files": [
+        "studentRoutes.js",
+        "studentDashboard.js"
+      ]
+    },
+    "backend_student_controllers": {
+      "path": "backend/controllers/",
+      "files": [
+        "student_controller.js",
+        "studentDashboard-controller.js"
+      ]
+    }
+  },
+  "questions_for_user": [
+    {
+      "id": "Q1",
+      "category": "scope",
+      "question": "分析是否需要包含AI助手相关页面？",
+      "context": "LearningAssistant等属于AI功能模块"
+    },
+    {
+      "id": "Q2",
+      "category": "depth",
+      "question": "是否需要分析后端AI中间件和服务？",
+      "context": "影响对studentDashboard路由的理解"
+    },
+    {
+      "id": "Q3",
+      "category": "integration",
+      "question": "是否需要分析教师端和管理员端对学生数据的管理？",
+      "context": "admin/studentRelated/有8个文件"
+    }
+  ],
+  "_metadata": {
+    "generated_at": "2026-04-27",
+    "analyzer": "claude-opus-4",
+    "total_files_analyzed": 21,
+    "dimensions_covered": [
+      "architecture",
+      "implementation",
+      "performance",
+      "ux"
+    ]
+  }
+}

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Box, Typography, Button, Alert, Paper } from '@mui/material';
 import { Refresh as RefreshIcon, Home as HomeIcon } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -41,14 +40,12 @@ class ErrorBoundary extends React.Component {
 }
 
 const ErrorFallback = ({ error, errorInfo, onRetry }) => {
-    const navigate = useNavigate();
-
     const handleRefresh = () => {
         window.location.reload();
     };
 
     const handleGoHome = () => {
-        navigate('/Admin/dashboard');
+        window.location.href = '/';
     };
 
     const isNullReferenceError = error?.message?.includes('Cannot read properties of null');

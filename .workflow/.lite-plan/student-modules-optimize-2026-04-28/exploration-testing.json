@@ -1,0 +1,118 @@
+{
+  "relevant_files": [
+    {
+      "path": "frontend/src/pages/student/ViewStdAttendance.js",
+      "relevance": 0.80,
+      "role": "test-target",
+      "rationale": "考勤模块需测试趋势图渲染、异常提醒显示",
+      "key_code": ["renderChartSection", "renderTableSection"],
+      "topic_relation": "组件测试"
+    },
+    {
+      "path": "backend/routes/studentRoutes.js",
+      "relevance": 0.85,
+      "role": "test-target",
+      "rationale": "新增 API 端点需测试请求响应格式",
+      "key_code": ["router.get", "router.post", "router.put"],
+      "topic_relation": "API 测试"
+    },
+    {
+      "path": "backend/controllers/student_controller.js",
+      "relevance": 0.85,
+      "role": "test-target",
+      "rationale": "趋势计算逻辑需单元测试验证准确性",
+      "key_code": ["studentAttendance", "batchAttendance"],
+      "topic_relation": "逻辑测试"
+    }
+  ],
+  "testing": {
+    "frameworks": {
+      "frontend": {
+        "name": "Jest + React Testing Library",
+        "status": "可能已配置（需检查 package.json）",
+        "coverage": "需确认",
+        "action": "检查并补充测试"
+      },
+      "backend": {
+        "name": "Jest + Supertest",
+        "status": "可能已配置（需检查 package.json）",
+        "coverage": "需确认",
+        "action": "检查并补充 API 测试"
+      }
+    },
+    "test_cases_needed": [
+      {
+        "feature": "考勤趋势图",
+        "type": "component",
+        "description": "验证周/月趋势数据正确渲染",
+        "priority": "high"
+      },
+      {
+        "feature": "异常提醒卡片",
+        "type": "component",
+        "description": "验证连续缺勤触发提醒显示",
+        "priority": "high"
+      },
+      {
+        "feature": "/attendance/trends API",
+        "type": "api",
+        "description": "验证返回数据格式和聚合正确性",
+        "priority": "high"
+      },
+      {
+        "feature": "趋势计算逻辑",
+        "type": "unit",
+        "description": "验证周/月聚合计算结果",
+        "priority": "medium"
+      },
+      {
+        "feature": "学习记录存储",
+        "type": "integration",
+        "description": "验证 learningRecords 正确写入",
+        "priority": "medium"
+      },
+      {
+        "feature": "学习路径推荐",
+        "type": "integration",
+        "description": "验证 AI 推荐与数据联动",
+        "priority": "medium"
+      }
+    ],
+    "test_fixtures": [
+      {
+        "name": "mockAttendanceData",
+        "description": "包含8周考勤数据的模拟数组",
+        "use": "趋势图渲染测试"
+      },
+      {
+        "name": "mockAnomalyAttendance",
+        "description": "包含连续缺勤的考勤数据",
+        "use": "异常提醒测试"
+      },
+      {
+        "name": "mockStudentSubjects",
+        "description": "包含学习偏好的科目列表",
+        "use": "偏好应用测试"
+      }
+    ]
+  },
+  "constraints": [
+    "需确认现有测试框架配置",
+    "Chart.js 组件测试需要 mock Canvas",
+    "API 测试需要测试数据库连接"
+  ],
+  "clarification_needs": [
+    {
+      "question": "是否需要生成测试文件？",
+      "context": "现有项目测试配置需检查",
+      "options": ["生成测试文件（推荐）", "仅手动验证", "使用现有测试框架"],
+      "recommended": 0
+    }
+  ],
+  "_metadata": {
+    "exploration_angle": "testing",
+    "exploration_index": 4,
+    "source": "lite-plan-from-brainstorm",
+    "timestamp": "2026-04-28T11:45:00Z"
+  }
+}

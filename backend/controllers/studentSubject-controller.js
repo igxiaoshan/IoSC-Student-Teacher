@@ -1,6 +1,7 @@
 const Student = require('../models/studentSchema');
 const Subject = require('../models/subjectSchema');
 const Sclass = require('../models/sclassSchema');
+const { getSubjectResources, LEARNING_STYLE_LABELS, DIFFICULTY_LABELS } = require('../services/learningPreferenceService');
 
 /**
  * 获取学生的科目列表（包括班级科目和选修科目）
@@ -75,16 +76,55 @@ const getStudentSubjects = async (req, res) => {
             }
         }
 
+        // 为每个科目获取按偏好排序的资源
+        const subjectsWithResources = await Promise.all(
+            uniqueSubjects.map(async (subject) => {
+                try {
+                    const prefs = subject.learningPreferences || {};
+                    const { resources, preferenceInfo, filteredByDifficulty } = await getSubjectResources(
+                        subject._id,
+                        prefs
+                    );
+                    return {
+                        ...subject,
+                        sortedResources: resources,
+                        filteredResources: filteredByDifficulty,
+                        preferenceInfo: {
+                            ...preferenceInfo,
+                            // 添加偏好显示标签
+                            learningStyleLabel: LEARNING_STYLE_LABELS[prefs.preferredLearningStyle] || '视觉学习者',
+                            difficultyLabel: DIFFICULTY_LABELS[prefs.difficulty] || '中级'
+                        }
+                    };
+                } catch (err) {
+                    // 资源获取失败时返回空资源
+                    return {
+                        ...subject,
+                        sortedResources: [],
+                        filteredResources: [],
+                        preferenceInfo: {
+                            learningStyle: subject.learningPreferences?.preferredLearningStyle || 'visual',
+                            learningStyleLabel: LEARNING_STYLE_LABELS[subject.learningPreferences?.preferredLearningStyle] || '视觉学习者',
+                            difficulty: subject.learningPreferences?.difficulty || 'intermediate',
+                            difficultyLabel: DIFFICULTY_LABELS[subject.learningPreferences?.difficulty] || '中级',
+                            totalResources: 0,
+                            resourceTypeDistribution: { video: 0, document: 0, image: 0, link: 0 }
+                        }
+                    };
+                }
+            })
+        );
+
         res.json({
             success: true,
             data: {
                 studentId: student._id,
                 studentName: student.name,
                 className: student.sclassName?.sclassName || '未分配班级',
-                subjects: uniqueSubjects,
-                totalSubjects: uniqueSubjects.length,
-                requiredSubjects: uniqueSubjects.filter(s => s.isRequired).length,
-                electiveSubjects: uniqueSubjects.filter(s => !s.isRequired).length
+                subjects: subjectsWithResources,
+                totalSubjects: subjectsWithResources.length,
+                requiredSubjects: subjectsWithResources.filter(s => s.isRequired).length,
+                electiveSubjects: subjectsWithResources.filter(s => !s.isRequired).length
             }
         });
 
@@ -332,7 +372,7 @@ const autoAssignClassSubjects = async (req, res) => {
 
         // 获取班级的所有科目
         const classSubjects = await Subject.findByClass(student.sclassName._id);
-        
+
         let assignedCount = 0;
         for (const subject of classSubjects) {
             const existingSelection = student.selectedSubjects.find(
@@ -371,11 +411,63 @@ const autoAssignClassSubjects = async (req, res) => {
     }
 };
 
+/**
+ * 获取科目学习时间线
+ */
+const getSubjectTimeline = async (req, res) => {
+    try {
+        const { studentId, subjectId } = req.params;
+
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: '学生不存在' });
+        }
+
+        // 从 learningRecords 获取该科目的学习记录
+        const learningRecords = (student.learningRecords || [])
+            .filter(record => record.subject?.toString() === subjectId)
+            .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
+            .slice(0, 5)
+            .map(record => ({
+                _id: record._id,
+                type: record.type || 'learn',
+                title: record.title,
+                duration: record.duration || 0,
+                score: record.score,
+                completedAt: record.completedAt,
+                status: 'completed'
+            }));
+
+        // 获取下次课程信息（简化实现）
+        const nextCourse = null;
+
+        res.json({
+            success: true,
+            data: {
+                studentId,
+                subjectId,
+                records: learningRecords,
+                nextCourse,
+                totalRecords: learningRecords.length
+            }
+        });
+
+    } catch (error) {
+        console.error('获取科目时间线错误:', error);
+        res.status(500).json({
+            success: false,
+            message: '获取科目时间线失败',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     getStudentSubjects,
     getAvailableSubjects,
     selectSubject,
     unselectSubject,
     updateLearningPreferences,
-    autoAssignClassSubjects
+    autoAssignClassSubjects,
+    getSubjectTimeline
 };

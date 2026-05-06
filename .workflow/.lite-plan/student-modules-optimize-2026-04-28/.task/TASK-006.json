@@ -1,0 +1,42 @@
+{
+  "id": "TASK-006",
+  "title": "Phase 2.3: 学习偏好智能应用",
+  "description": "实现学习偏好应用逻辑，根据 SubjectSelection 中设置的 learningPreferences 调整资源展示顺序和练习生成难度。",
+  "scope": "full-stack",
+  "files": [
+    {
+      "path": "frontend/src/pages/student/StudentSubjects.js",
+      "change": "SubjectCard 根据学习风格调整资源展示顺序"
+    },
+    {
+      "path": "backend/controllers/studentSubject-controller.js",
+      "change": "getStudentSubjects 返回按偏好排序的资源列表"
+    },
+    {
+      "path": "backend/services/learningPreferenceService.js",
+      "change": "新建偏好应用服务，实现资源排序和难度配置逻辑"
+    }
+  ],
+  "acceptance_criteria": [
+    "视觉学习者：视频资源优先展示",
+    "阅读学习者：文档资源优先展示",
+    "初级难度：练习简单题占比 60%",
+    "高级难度：练习挑战题占比 50%",
+    "偏好设置可视化显示在科目卡片"
+  ],
+  "dependencies": [],
+  "estimated_time": "2-3 hours",
+  "priority": 6,
+  "convergence": {
+    "criteria": [
+      "资源排序符合偏好设置",
+      "难度配置正确应用",
+      "偏好状态可视化"
+    ],
+    "verification": "组件测试 + 逻辑验证"
+  },
+  "_metadata": {
+    "phase": 2,
+    "created": "2026-04-28T12:00:00Z"
+  }
+}

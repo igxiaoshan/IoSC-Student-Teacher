@@ -89,6 +89,39 @@ const studentSchema = new mongoose.Schema({
             ref: 'subject',
             required: true
         }
+    }],
+    // 学习记录（可选字段，用于学习进度追踪）
+    learningRecords: [{
+        date: {
+            type: Date,
+            default: Date.now
+        },
+        subject: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'subject'
+        },
+        activityType: {
+            type: String,
+            enum: ['lesson', 'homework', 'exam', 'practice', 'review'],
+            default: 'lesson'
+        },
+        duration: {
+            type: Number,
+            default: 0
+        },
+        score: {
+            type: Number,
+            min: 0,
+            max: 100
+        },
+        completed: {
+            type: Boolean,
+            default: false
+        },
+        notes: {
+            type: String,
+            maxlength: 500
+        }
     }]
 }, {
     timestamps: true,
@@ -100,6 +133,7 @@ const studentSchema = new mongoose.Schema({
 studentSchema.index({ school: 1, sclassName: 1 });
 studentSchema.index({ rollNum: 1, school: 1, sclassName: 1 }, { unique: true });
 studentSchema.index({ 'selectedSubjects.subject': 1 });
+studentSchema.index({ 'learningRecords.subject': 1 });
 
 // 虚拟字段：获取活跃的科目
 studentSchema.virtual('activeSubjects').get(function() {

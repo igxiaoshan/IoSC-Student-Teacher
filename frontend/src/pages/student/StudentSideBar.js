@@ -6,16 +6,10 @@ import { useTranslation } from '../../hooks/useTranslation';
 import HomeIcon from '@mui/icons-material/Home';
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
-import AnnouncementOutlinedIcon from '@mui/icons-material/AnnouncementOutlined';
 import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import SchoolIcon from '@mui/icons-material/School';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import QuizIcon from '@mui/icons-material/Quiz';
-import ImageIcon from '@mui/icons-material/Image';
-import VideocamIcon from '@mui/icons-material/Videocam';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 const StudentSideBar = () => {
     const location = useLocation();
@@ -52,48 +46,6 @@ const StudentSideBar = () => {
                         <CalendarTodayIcon color={location.pathname.startsWith("/Student/calendar") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
                     <ListItemText primary={tStudent('courseCalendar')} />
-                </ListItemButton>
-                <ListItemButton component={Link} to="/Student/mistake-book">
-                    <ListItemIcon>
-                        <ErrorOutlineIcon color={location.pathname.startsWith("/Student/mistake-book") ? 'primary' : 'inherit'} />
-                    </ListItemIcon>
-                    <ListItemText primary={tStudent('mistakeBook') || '错题本'} />
-                </ListItemButton>
-                {/* <ListItemButton component={Link} to="/Student/complain">
-                    <ListItemIcon>
-                        <AnnouncementOutlinedIcon color={location.pathname.startsWith("/Student/complain") ? 'primary' : 'inherit'} />
-                    </ListItemIcon>
-                    <ListItemText primary={tStudent('complaints')} />
-                </ListItemButton> */}
-            </React.Fragment>
-            <Divider sx={{ my: 1 }} />
-            <React.Fragment>
-                <ListSubheader component="div" inset>
-                    {tStudent('aiAssistant')}
-                </ListSubheader>
-                <ListItemButton component={Link} to="/Student/learning-assistant">
-                    <ListItemIcon>
-                        <SmartToyIcon color={location.pathname.startsWith("/Student/learning-assistant") ? 'primary' : 'inherit'} />
-                    </ListItemIcon>
-                    <ListItemText primary={tStudent('learningAssistant')} />
-                </ListItemButton>
-                <ListItemButton component={Link} to="/Student/practice-assistant">
-                    <ListItemIcon>
-                        <QuizIcon color={location.pathname.startsWith("/Student/practice-assistant") ? 'primary' : 'inherit'} />
-                    </ListItemIcon>
-                    <ListItemText primary={tStudent('practiceAssistant')} />
-                </ListItemButton>
-                <ListItemButton component={Link} to="/Student/jimeng-image">
-                    <ListItemIcon>
-                        <ImageIcon color={location.pathname.startsWith("/Student/jimeng-image") ? 'primary' : 'inherit'} />
-                    </ListItemIcon>
-                    <ListItemText primary={tStudent('aiImageGenerator')} />
-                </ListItemButton>
-                <ListItemButton component={Link} to="/Student/knowledge-video">
-                    <ListItemIcon>
-                        <VideocamIcon color={location.pathname.startsWith("/Student/knowledge-video") ? 'primary' : 'inherit'} />
-                    </ListItemIcon>
-                    <ListItemText primary={tStudent('knowledgeVideo')} />
                 </ListItemButton>
             </React.Fragment>
             <Divider sx={{ my: 1 }} />

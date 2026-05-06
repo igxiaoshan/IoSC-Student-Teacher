@@ -1,0 +1,50 @@
+{
+  "id": "TASK-003",
+  "title": "Phase 1.3: 考勤异常提醒系统",
+  "description": "实现考勤异常检测和提醒功能。创建 AttendanceAlertCard 前端组件，后端异常检测逻辑，以及规则配置 Schema。",
+  "scope": "full-stack",
+  "files": [
+    {
+      "path": "frontend/src/components/student/AttendanceAlertCard.js",
+      "change": "新建异常提醒卡片组件，显示连续缺勤等预警信息"
+    },
+    {
+      "path": "frontend/src/pages/student/ViewStdAttendance.js",
+      "change": "集成 AttendanceAlertCard 组件"
+    },
+    {
+      "path": "backend/models/attendanceRuleSchema.js",
+      "change": "新建考勤规则配置 Schema"
+    },
+    {
+      "path": "backend/controllers/attendanceAlert-controller.js",
+      "change": "新建异常检测控制器，实现连续缺勤检测逻辑"
+    },
+    {
+      "path": "backend/routes/studentRoutes.js",
+      "change": "添加 /Student/:id/attendance/alerts 和规则配置路由"
+    }
+  ],
+  "acceptance_criteria": [
+    "连续缺勤 >= 3 天触发提醒",
+    "单科缺勤率 > 20% 触发提醒",
+    "提醒卡片正确显示异常类型和严重程度",
+    "规则阈值可配置",
+    "支持站内通知和邮件通知（可选）"
+  ],
+  "dependencies": [],
+  "estimated_time": "3-4 hours",
+  "priority": 3,
+  "convergence": {
+    "criteria": [
+      "异常检测逻辑正确触发",
+      "提醒卡片正确显示",
+      "规则配置 API 可用"
+    ],
+    "verification": "组件测试 + API 测试"
+  },
+  "_metadata": {
+    "phase": 1,
+    "created": "2026-04-28T12:00:00Z"
+  }
+}

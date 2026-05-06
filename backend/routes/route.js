@@ -51,6 +51,9 @@ router.use('/student', studentAiRoutes);
 // 实训练习
 router.use('/ai/practical-exercise', require('./practicalExercise'));
 
+// 学习路径
+router.use('/learning-path', require('./learningPath'));
+
 // ============================================
 // 学生功能路由
 // ============================================
@@ -59,6 +62,12 @@ router.use('/ai/practical-exercise', require('./practicalExercise'));
 router.get('/student/:studentId/calendar', (req, res, next) => {
     const { getStudentCalendar } = require('../controllers/studentCalendar-controller.js');
     getStudentCalendar(req, res, next);
+});
+
+// 学生科目时间线
+router.get('/student/:studentId/subjects/:subjectId/timeline', (req, res, next) => {
+    const { getSubjectTimeline } = require('../controllers/studentSubject-controller.js');
+    getSubjectTimeline(req, res, next);
 });
 
 // ============================================

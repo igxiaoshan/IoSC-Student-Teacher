@@ -1,0 +1,41 @@
+{
+  "id": "TASK-007",
+  "title": "Phase 3.1: 学习路径数据模型和推荐引擎",
+  "description": "创建 learningPathSchema 数据模型，实现基于多维度数据（考勤、成绩、错题、偏好）的推荐引擎。",
+  "scope": "backend",
+  "files": [
+    {
+      "path": "backend/models/learningPathSchema.js",
+      "change": "新建学习路径 Schema，包含 currentPath, dailyRecommendations, aiInsights"
+    },
+    {
+      "path": "backend/services/learningPathService.js",
+      "change": "新建推荐引擎服务，实现特征提取、规则推荐、AI 增强"
+    },
+    {
+      "path": "backend/routes/studentRoutes.js",
+      "change": "添加学习路径相关路由"
+    }
+  ],
+  "acceptance_criteria": [
+    "特征提取正确聚合考勤、成绩、错题、偏好数据",
+    "规则引擎生成基础推荐",
+    "AI 增强（可选）调用 Dify/Ollama 生成个性化建议",
+    "每日推荐正确生成并存储"
+  ],
+  "dependencies": ["TASK-002", "TASK-004"],
+  "estimated_time": "3-4 hours",
+  "priority": 7,
+  "convergence": {
+    "criteria": [
+      "推荐引擎正确运行",
+      "学习路径数据正确存储",
+      "AI 增强有降级策略"
+    ],
+    "verification": "单元测试 + 服务测试"
+  },
+  "_metadata": {
+    "phase": 3,
+    "created": "2026-04-28T12:00:00Z"
+  }
+}

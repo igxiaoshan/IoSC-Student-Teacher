@@ -1,0 +1,82 @@
+{
+  "relevant_files": [
+    {
+      "path": "frontend/src/utils/apiClient.js",
+      "relevance": 0.95,
+      "role": "api-extension",
+      "rationale": "studentAPI 已封装，需添加 getAttendanceTrends/getAttendanceAlerts 端点",
+      "key_code": ["studentAPI.getStatistics", "studentAPI.getDashboard"],
+      "topic_relation": "API 扩展入口"
+    },
+    {
+      "path": "frontend/src/pages/student/StudentSubjects.js",
+      "relevance": 0.90,
+      "role": "primary-modification",
+      "rationale": "SubjectCard 组件需添加学习时间线，与 LearningProgressRing 联动",
+      "key_code": ["SubjectCard", "LinearProgress", "knowledgePoints"],
+      "topic_relation": "课程进度追踪增强"
+    },
+    {
+      "path": "backend/controllers/studentSubject-controller.js",
+      "relevance": 0.85,
+      "role": "api-extension",
+      "rationale": "getStudentSubjects 需返回学习记录，selectSubject 需触发偏好应用",
+      "key_code": ["getStudentSubjects", "selectSubject", "updateLearningPreferences"],
+      "topic_relation": "科目数据扩展"
+    },
+    {
+      "path": "frontend/src/pages/student/StudentHomePage.js",
+      "relevance": 0.80,
+      "role": "integration",
+      "rationale": "首页仪表板，AI 学习路径推荐可集成到现有布局",
+      "key_code": ["LearningProgressRing", "WeeklyStudyChart", "studentAPI.getDashboard"],
+      "topic_relation": "AI 推荐集成点"
+    },
+    {
+      "path": "backend/models/studentCalendarSchema.js",
+      "relevance": 0.75,
+      "role": "data-integration",
+      "rationale": "learningGoals 已支持，可与学习路径联动",
+      "key_code": ["learningGoals", "statistics"],
+      "topic_relation": "目标与路径集成"
+    }
+  ],
+  "integration_points": [
+    {
+      "from": "ViewStdAttendance",
+      "to": "StudentCalendar",
+      "location": "前端组件联动",
+      "description": "考勤异常事件可同步到日历提醒系统"
+    },
+    {
+      "from": "StudentSubjects",
+      "to": "StudentMistakeBook",
+      "location": "前端数据展示",
+      "description": "科目薄弱点关联错题本推荐"
+    },
+    {
+      "from": "SubjectSelection.learningPreferences",
+      "to": "AI Practice Generator",
+      "location": "后端服务调用",
+      "description": "学习偏好驱动 AI 练习题难度和类型"
+    },
+    {
+      "from": "LearningPathService",
+      "to": "studentAPI.getDashboard",
+      "location": "后端服务集成",
+      "description": "学习路径推荐集成到仪表板数据"
+    }
+  ],
+  "constraints": [
+    "studentAPI 端点需保持向后兼容，新功能使用新端点",
+    "学习记录需埋点收集，现有模块（练习、课件）需添加记录逻辑",
+    "AI 服务（Dify/Ollama）可能不稳定，需要降级策略"
+  ],
+  "clarification_needs": [],
+  "_metadata": {
+    "exploration_angle": "integration-points",
+    "exploration_index": 2,
+    "source": "lite-plan-from-brainstorm",
+    "timestamp": "2026-04-28T11:45:00Z"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "TASK-001",
+  "title": "Phase 1.1: 考勤趋势分析组件开发",
+  "description": "在 ViewStdAttendance.js 中添加趋势分析视图，包括周/月/学期趋势图表。复用现有 BottomNavigation 多视图模式，新增 'trends' 视图选项。",
+  "scope": "frontend",
+  "files": [
+    {
+      "path": "frontend/src/pages/student/ViewStdAttendance.js",
+      "change": "添加趋势视图选项、引入 AttendanceTrendChart 组件、扩展 handleSectionChange"
+    },
+    {
+      "path": "frontend/src/components/student/AttendanceTrendChart.js",
+      "change": "新建趋势图组件，使用 Chart.js Line 组件渲染周/月/学期趋势"
+    }
+  ],
+  "acceptance_criteria": [
+    "趋势视图选项在 BottomNavigation 中正确显示",
+    "周趋势图显示最近8周出勤率变化",
+    "月趋势图显示各月出勤率对比",
+    "学期总览显示整体出勤统计",
+    "无数据时显示友好提示"
+  ],
+  "dependencies": [],
+  "estimated_time": "2-3 hours",
+  "priority": 1,
+  "convergence": {
+    "criteria": [
+      "周趋势图正确渲染最近8周数据",
+      "月趋势图正确显示月度对比",
+      "学期总览统计准确"
+    ],
+    "verification": "手动验证 + 组件测试"
+  },
+  "_metadata": {
+    "phase": 1,
+    "created": "2026-04-28T12:00:00Z"
+  }
+}

@@ -1,0 +1,305 @@
+{
+  "perspective": "Technical Architecture",
+  "relevant_files": [
+    {
+      "path": "frontend/src/pages/student/StudentDashboard.js",
+      "relevance": 0.95,
+      "role": "modify_target",
+      "rationale": "Main routing container for student module",
+      "key_code": [
+        {
+          "symbol": "StudentDashboard",
+          "location": "L33-L109",
+          "description": "Routing container with 12 routes"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/pages/student/StudentSideBar.js",
+      "relevance": 0.9,
+      "role": "pattern_reference",
+      "rationale": "Navigation UI with Material UI",
+      "key_code": [
+        {
+          "symbol": "Navigation sections",
+          "location": "L25-L117",
+          "description": "Three React.Fragment sections"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/redux/studentRelated/studentSlice.js",
+      "relevance": 0.85,
+      "role": "type_definition",
+      "rationale": "Redux state and reducers",
+      "key_code": [
+        {
+          "symbol": "initialState",
+          "location": "L3-L9",
+          "description": "State shape"
+        },
+        {
+          "symbol": "reducers",
+          "location": "L14-L46",
+          "description": "Six reducers"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/redux/studentRelated/studentHandle.js",
+      "relevance": 0.8,
+      "role": "dependency",
+      "rationale": "Async thunk actions",
+      "key_code": [
+        {
+          "symbol": "getAllStudents",
+          "location": "L10-L24",
+          "description": "Async thunk pattern"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/pages/student/StudentHomePage.js",
+      "relevance": 0.75,
+      "role": "pattern_reference",
+      "rationale": "Dashboard composition pattern",
+      "key_code": [
+        {
+          "symbol": "Data fetching",
+          "location": "L363-L384",
+          "description": "Dual data source pattern"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/pages/student/StudentSubjects.js",
+      "relevance": 0.75,
+      "role": "pattern_reference",
+      "rationale": "Feature page with inline sub-components",
+      "key_code": [
+        {
+          "symbol": "Component composition",
+          "location": "L33-L295",
+          "description": "4 inline components"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/utils/apiClient.js",
+      "relevance": 0.7,
+      "role": "dependency",
+      "rationale": "Centralized Axios instance",
+      "key_code": [
+        {
+          "symbol": "studentAPI",
+          "location": "L267-L280",
+          "description": "Student API methods"
+        }
+      ]
+    },
+    {
+      "path": "backend/routes/studentRoutes.js",
+      "relevance": 0.65,
+      "role": "integration_point",
+      "rationale": "RESTful endpoints",
+      "key_code": [
+        {
+          "symbol": "Route definitions",
+          "location": "L16-L41",
+          "description": "CRUD and batch operations"
+        }
+      ]
+    },
+    {
+      "path": "backend/routes/studentDashboard.js",
+      "relevance": 0.65,
+      "role": "integration_point",
+      "rationale": "AI dashboard with middleware",
+      "key_code": [
+        {
+          "symbol": "Middleware chain",
+          "location": "L20-L54",
+          "description": "Base + route-specific middleware"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/redux/store.js",
+      "relevance": 0.6,
+      "role": "context_only",
+      "rationale": "Store configuration",
+      "key_code": [
+        {
+          "symbol": "Store config",
+          "location": "L10-L20",
+          "description": "8 reducers"
+        }
+      ]
+    },
+    {
+      "path": "backend/routes/route.js",
+      "relevance": 0.55,
+      "role": "context_only",
+      "rationale": "Main route mounting",
+      "key_code": [
+        {
+          "symbol": "Route mounting",
+          "location": "L28-L69",
+          "description": "Module route mounting"
+        }
+      ]
+    }
+  ],
+  "key_findings": [
+    {
+      "category": "Routing Structure",
+      "finding": "Centralized routing in StudentDashboard.js with 12 routes organized by functionality",
+      "significance": "high",
+      "evidence": "StudentDashboard.js L83-L104"
+    },
+    {
+      "category": "Component Hierarchy",
+      "finding": "Three-level hierarchy: Dashboard -> SideBar + Route Components",
+      "significance": "medium",
+      "evidence": "StudentSubjects.js L33-L295"
+    },
+    {
+      "category": "State Management",
+      "finding": "Redux Toolkit pattern with Slice + Handle",
+      "significance": "high",
+      "evidence": "studentSlice.js L3-L46"
+    },
+    {
+      "category": "API Layer",
+      "finding": "Dual API pattern: Redux thunks vs apiClient studentAPI",
+      "significance": "high",
+      "evidence": "apiClient.js L267-L280"
+    },
+    {
+      "category": "Backend Middleware",
+      "finding": "Middleware chain pattern for AI routes",
+      "significance": "medium",
+      "evidence": "studentDashboard.js L20-L54"
+    },
+    {
+      "category": "Module Boundary",
+      "finding": "Cross-module dependencies in StudentSubjects",
+      "significance": "medium",
+      "evidence": "StudentSubjects.js L315-L316"
+    }
+  ],
+  "code_anchors": [
+    {
+      "file": "frontend/src/pages/student/StudentDashboard.js",
+      "lines": "L83-L104",
+      "snippet": "Routes block with 12 definitions",
+      "significance": "Central routing"
+    },
+    {
+      "file": "frontend/src/pages/student/StudentSideBar.js",
+      "lines": "L25-L67",
+      "snippet": "React.Fragment navigation grouping",
+      "significance": "Navigation structure"
+    },
+    {
+      "file": "frontend/src/redux/studentRelated/studentSlice.js",
+      "lines": "L1-L57",
+      "snippet": "createSlice with 6 reducers",
+      "significance": "Redux slice"
+    },
+    {
+      "file": "frontend/src/utils/apiClient.js",
+      "lines": "L267-L280",
+      "snippet": "studentAPI module",
+      "significance": "API wrapper"
+    },
+    {
+      "file": "backend/routes/studentDashboard.js",
+      "lines": "L20-L54",
+      "snippet": "Middleware chain",
+      "significance": "Backend middleware"
+    }
+  ],
+  "call_chains": [
+    {
+      "entry": "StudentHomePage mount",
+      "chain": [
+        "useEffect -> getUserDetails",
+        "axios.get /Student/:id",
+        "getStudentDetail controller"
+      ],
+      "files": [
+        "StudentHomePage.js",
+        "userHandle.js",
+        "studentRoutes.js"
+      ]
+    },
+    {
+      "entry": "Dashboard data fetch",
+      "chain": [
+        "fetchDashboardData -> studentAPI.getDashboard",
+        "apiClient.get /student-dashboard/:studentId"
+      ],
+      "files": [
+        "StudentHomePage.js",
+        "apiClient.js",
+        "studentDashboard.js"
+      ]
+    },
+    {
+      "entry": "Statistics fetch",
+      "chain": [
+        "fetchSubjectData -> studentAPI.getStatistics"
+      ],
+      "files": [
+        "StudentSubjects.js",
+        "apiClient.js"
+      ]
+    },
+    {
+      "entry": "Attendance display",
+      "chain": [
+        "useEffect -> getUserDetails",
+        "groupAttendanceBySubject"
+      ],
+      "files": [
+        "ViewStdAttendance.js",
+        "attendanceCalculator.js"
+      ]
+    },
+    {
+      "entry": "SubjectSelection CRUD",
+      "chain": [
+        "handleSelectSubject -> axios.post"
+      ],
+      "files": [
+        "SubjectSelection.js"
+      ]
+    }
+  ],
+  "questions_for_user": [
+    {
+      "question": "Extract inline sub-components in StudentSubjects.js?",
+      "context": "560 lines with 4 inline components"
+    },
+    {
+      "question": "Unify API calling patterns?",
+      "context": "Redux thunks vs apiClient studentAPI"
+    },
+    {
+      "question": "Aggregate student data in studentSlice?",
+      "context": "Cross-module userSlice + sclassSlice dependencies"
+    }
+  ],
+  "_metadata": {
+    "analysis_mode": "deep-scan",
+    "timestamp": "2026-04-27",
+    "files_analyzed": 12,
+    "call_chains_traced": 5,
+    "code_anchors_extracted": 5,
+    "excluded_scope": [
+      "AI functionality",
+      "Teacher/Admin modules"
+    ]
+  }
+}

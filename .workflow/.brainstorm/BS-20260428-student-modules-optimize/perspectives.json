@@ -1,0 +1,262 @@
+{
+  "session_id": "BS-20260428-student-modules-optimize",
+  "timestamp": "2026-04-28T10:45:00Z",
+  "perspectives": {
+    "creative": {
+      "source": "Creative Perspective (Innovation-focused)",
+      "ideas": [
+        {
+          "id": "C1",
+          "title": "AI 考勤预测与智能预警系统",
+          "description": "利用历史考勤数据训练预测模型，提前预警可能的缺勤风险。结合学习进度、天气、节假日等多维度因素，为学生提供个性化的出勤建议。当预测到高风险时，自动发送提醒通知。",
+          "novelty": 9,
+          "impact": 8,
+          "complexity": "high",
+          "features": [
+            "考勤趋势预测曲线",
+            "风险因素分析仪表板",
+            "智能提醒时间优化",
+            "家长端预警推送"
+          ]
+        },
+        {
+          "id": "C2",
+          "title": "游戏化学习旅程地图",
+          "description": "将课程学习转化为可视化的旅程地图，每个科目是一个关卡/城市，知识点是任务点。出勤率影响角色体力值，完成学习任务获得经验值和徽章。引入班级排行榜和小组协作任务。",
+          "novelty": 8,
+          "impact": 9,
+          "complexity": "high",
+          "features": [
+            "可视化学习地图",
+            "角色成长系统",
+            "成就徽章收集",
+            "班级排行榜",
+            "小组任务协作"
+          ]
+        },
+        {
+          "id": "C3",
+          "title": "AR 课程预览与虚拟实验室",
+          "description": "通过 AR 技术让学生在选课前预览课程内容，虚拟实验室让抽象概念可视化。考勤打卡可以通过 AR 扫描教室二维码完成，增加互动趣味性。",
+          "novelty": 10,
+          "impact": 7,
+          "complexity": "very_high",
+          "features": [
+            "AR 课程内容预览",
+            "虚拟实验模拟",
+            "AR 考勤打卡",
+            "3D 知识点展示"
+          ]
+        },
+        {
+          "id": "C4",
+          "title": "社交学习空间",
+          "description": "为学生创建课程相关的社交空间，可以分享学习笔记、提问讨论、组队学习。考勤数据可以用于匹配合适的学习伙伴（相似出勤模式的学生）。",
+          "novelty": 7,
+          "impact": 8,
+          "complexity": "medium",
+          "features": [
+            "课程讨论区",
+            "学习笔记共享",
+            "学习伙伴匹配",
+            "小组学习房间"
+          ]
+        },
+        {
+          "id": "C5",
+          "title": "智能学习路径推荐引擎",
+          "description": "基于考勤数据、成绩趋势、学习偏好，AI 动态生成个性化学习路径。当检测到某科目出勤下降时，自动调整学习计划，推荐相关资源。",
+          "novelty": 8,
+          "impact": 9,
+          "complexity": "medium",
+          "features": [
+            "动态学习路径生成",
+            "薄弱点自动检测",
+            "资源智能推荐",
+            "学习计划自适应调整"
+          ]
+        }
+      ]
+    },
+    "pragmatic": {
+      "source": "Pragmatic Perspective (Implementation-focused)",
+      "approaches": [
+        {
+          "id": "P1",
+          "title": "考勤趋势分析增强",
+          "description": "在现有 ViewStdAttendance 基础上，添加周/月/学期趋势图表，出勤率对比分析，异常出勤标记。利用现有 Chart.js 基础设施，扩展后端统计 API。",
+          "effort": "2-3 days",
+          "risk": "low",
+          "dependencies": [
+            "后端新增 /student/:id/attendance/trends API",
+            "Chart.js 扩展配置"
+          ],
+          "mvp_scope": [
+            "周出勤趋势折线图",
+            "月度出勤率对比柱状图",
+            "异常出勤日期高亮"
+          ]
+        },
+        {
+          "id": "P2",
+          "title": "课程进度追踪卡片增强",
+          "description": "增强 StudentSubjects 的 SubjectCard，添加学习进度时间线、最近学习记录、下次课程提醒。利用现有 studentAPI.getStatistics 数据。",
+          "effort": "1-2 days",
+          "risk": "low",
+          "dependencies": [
+            "现有数据模型已支持",
+            "前端组件扩展"
+          ],
+          "mvp_scope": [
+            "学习进度时间线",
+            "最近3次学习记录",
+            "下次课程倒计时"
+          ]
+        },
+        {
+          "id": "P3",
+          "title": "考勤异常提醒通知",
+          "description": "当连续缺勤达到阈值时，系统自动发送通知提醒。复用现有日历提醒基础设施，添加考勤规则配置。",
+          "effort": "2-3 days",
+          "risk": "medium",
+          "dependencies": [
+            "通知服务扩展",
+            "考勤规则配置表"
+          ],
+          "mvp_scope": [
+            "连续缺勤检测逻辑",
+            "站内通知推送",
+            "提醒阈值配置"
+          ]
+        },
+        {
+          "id": "P4",
+          "title": "学习偏好智能应用",
+          "description": "充分利用 SubjectSelection 中已设置的学习偏好，在课程卡片中显示个性化推荐内容，调整学习资源展示方式。",
+          "effort": "1-2 days",
+          "risk": "low",
+          "dependencies": [
+            "现有 learningPreferences 数据",
+            "推荐算法逻辑"
+          ],
+          "mvp_scope": [
+            "根据学习风格调整资源展示",
+            "难度自适应练习推荐",
+            "学习目标进度追踪"
+          ]
+        },
+        {
+          "id": "P5",
+          "title": "课程与日历深度联动",
+          "description": "将课程进度与 StudentCalendar 深度集成，自动生成学习计划事件，考勤数据同步到日历统计。",
+          "effort": "3-4 days",
+          "risk": "medium",
+          "dependencies": [
+            "studentCalendarSchema 已支持",
+            "API 扩展"
+          ],
+          "mvp_scope": [
+            "课程事件自动同步",
+            "考勤数据日历视图",
+            "学习计划生成"
+          ]
+        }
+      ]
+    },
+    "systematic": {
+      "source": "Systematic Perspective (Architecture-focused)",
+      "analysis": {
+        "data_model_extensions": [
+          {
+            "model": "studentSchema.attendance",
+            "extension": "添加 reason (缺勤原因)、makeup (补课状态)、notified (是否已提醒) 字段",
+            "rationale": "支持更精细的考勤分析和预警"
+          },
+          {
+            "model": "studentSchema.examResult",
+            "extension": "添加 history[] 数组存储历史成绩，支持进步曲线分析",
+            "rationale": "实现成绩趋势可视化"
+          },
+          {
+            "model": "新建 attendanceRule Schema",
+            "extension": "定义考勤规则（连续缺勤阈值、提醒时间、通知方式）",
+            "rationale": "支持灵活的考勤预警配置"
+          },
+          {
+            "model": "新建 learningPath Schema",
+            "extension": "存储个性化学习路径、进度、里程碑",
+            "rationale": "支持学习路径推荐功能"
+          }
+        ],
+        "integration_points": [
+          {
+            "from": "ViewStdAttendance",
+            "to": "StudentCalendar",
+            "description": "考勤异常事件同步到日历提醒"
+          },
+          {
+            "from": "StudentSubjects",
+            "to": "StudentMistakeBook",
+            "description": "科目薄弱点关联错题本推荐"
+          },
+          {
+            "from": "SubjectSelection",
+            "to": "AI学习助手",
+            "description": "学习偏好驱动 AI 推荐个性化"
+          },
+          {
+            "from": "考勤数据",
+            "to": "家长端通知",
+            "description": "考勤异常推送给家长"
+          }
+        ],
+        "scalability_notes": "考勤趋势分析建议在后端预计算聚合数据，避免前端大数据量处理。学习路径推荐可考虑引入缓存层。游戏化元素需要独立的积分/成就系统，避免污染核心业务数据。",
+        "recommended_phases": [
+          {
+            "phase": 1,
+            "focus": "考勤模块增强",
+            "items": ["趋势图表", "异常提醒", "数据可视化优化"],
+            "timeline": "1-2 周"
+          },
+          {
+            "phase": 2,
+            "focus": "课程管理增强",
+            "items": ["进度追踪增强", "学习偏好应用", "日历联动"],
+            "timeline": "2-3 周"
+          },
+          {
+            "phase": 3,
+            "focus": "高级功能",
+            "items": ["学习路径推荐", "社交学习", "游戏化元素"],
+            "timeline": "3-4 周"
+          }
+        ]
+      }
+    }
+  },
+  "convergent_themes": [
+    "考勤趋势分析与可视化是所有视角的共识优先项",
+    "数据驱动个性化是核心增强方向",
+    "现有基础设施可支持大部分增强功能",
+    "渐进式实现比大重构更可行"
+  ],
+  "conflicting_views": [
+    {
+      "topic": "游戏化程度",
+      "creative": "全面游戏化，角色成长系统",
+      "pragmatic": "轻量级徽章激励即可",
+      "resolution": "Phase 3 可选功能，根据用户反馈决定深度"
+    },
+    {
+      "topic": "AI 预测功能",
+      "creative": "考勤预测 + 学习路径推荐",
+      "pragmatic": "先做规则预警，AI 预测作为增强",
+      "resolution": "规则预警作为 MVP，AI 预测作为 Phase 3"
+    }
+  ],
+  "unique_contributions": {
+    "creative": "AR/VR、社交学习、游戏化旅程等创新方向",
+    "pragmatic": "具体实现路径、工作量估算、MVP 定义",
+    "systematic": "数据模型扩展、集成架构、分阶段实施计划"
+  }
+}

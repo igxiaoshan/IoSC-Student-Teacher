@@ -1,0 +1,124 @@
+{
+  "relevant_files": [
+    {
+      "path": "frontend/src/pages/student/ViewStdAttendance.js",
+      "relevance": 0.95,
+      "role": "primary-modification",
+      "rationale": "考勤模块核心组件，需添加趋势图表和异常提醒，已有 BottomNavigation 多视图模式",
+      "key_code": ["BottomNavigation", "CustomBarChart", "groupAttendanceBySubject"],
+      "topic_relation": "attendance-trends + anomaly-alerts target"
+    },
+    {
+      "path": "backend/routes/studentRoutes.js",
+      "relevance": 0.90,
+      "role": "api-extension",
+      "rationale": "学生路由文件，需新增 /attendance/trends 和 /attendance/alerts 端点",
+      "key_code": ["router.get('/StudentAttendance/:id')", "batchAttendance", "getClassAttendanceStats"],
+      "topic_relation": "trends API + rules API extension"
+    },
+    {
+      "path": "frontend/src/components/CustomBarChart.js",
+      "relevance": 0.85,
+      "role": "pattern-reference",
+      "rationale": "现有柱状图组件模式，趋势图可复用其 Chart.js 配置",
+      "key_code": ["Chart as ChartJS", "BarElement", "CategoryScale"],
+      "topic_relation": "chart pattern for trend visualization"
+    },
+    {
+      "path": "backend/models/studentSchema.js",
+      "relevance": 0.90,
+      "role": "data-extension",
+      "rationale": "attendance 数组已有 date/status/subName，需扩展 reason/notified/makeupStatus",
+      "key_code": ["attendance: [{ date, status, subName }]"],
+      "topic_relation": "attendance schema extension"
+    },
+    {
+      "path": "backend/controllers/student_controller.js",
+      "relevance": 0.85,
+      "role": "logic-extension",
+      "rationale": "已有 studentAttendance, batchAttendance, getClassAttendanceStats，需添加 trend 计算逻辑",
+      "key_code": ["studentAttendance()", "getClassAttendanceStats()"],
+      "topic_relation": "trend calculation + anomaly detection logic"
+    }
+  ],
+  "patterns": {
+    "existing": [
+      {
+        "name": "BottomNavigation 多视图切换",
+        "location": "ViewStdAttendance.js:154-180",
+        "description": "表格/图表视图切换，可扩展添加趋势视图",
+        "code_example": "<BottomNavigation value={selectedSection} onChange={handleSectionChange}>"
+      },
+      {
+        "name": "attendanceCalculator 模式",
+        "location": "components/attendanceCalculator.js",
+        "description": "考勤计算封装函数，可扩展趋势分析函数",
+        "code_example": "calculateOverallAttendancePercentage(subjectAttendance)"
+      },
+      {
+        "name": "API 批量统计模式",
+        "location": "studentRoutes.js:35-40",
+        "description": "getClassAttendanceStats 已实现班级统计，可复用趋势统计逻辑",
+        "code_example": "router.get('/ClassAttendanceStats', getClassAttendanceStats)"
+      }
+    ],
+    "recommended": [
+      {
+        "name": "趋势数据预聚合",
+        "description": "后端预计算周/月聚合数据，前端直接渲染避免大数据量处理",
+        "rationale": "attendance 数组可能数百条，前端计算影响性能"
+      },
+      {
+        "name": "规则配置 Schema",
+        "description": "新建 attendanceRuleSchema 存储预警规则，支持多场景配置",
+        "rationale": "不同学校/班级可能有不同预警阈值"
+      }
+    ]
+  },
+  "integration_points": [
+    {
+      "from": "ViewStdAttendance.js",
+      "to": "backend/routes/studentRoutes.js",
+      "location": "frontend:201 + backend:新增路由",
+      "description": "前端调用新 trends API，传递 studentId 和 period 参数"
+    },
+    {
+      "from": "AttendanceAlertCard",
+      "to": "notification system",
+      "location": "新组件",
+      "description": "异常提醒卡片需集成站内通知，可复用 StudentCalendar 提醒模式"
+    },
+    {
+      "from": "studentSchema.attendance",
+      "to": "AttendanceRuleSchema",
+      "location": "models/*.js",
+      "description": "考勤数据与规则 Schema 联动，触发预警条件"
+    }
+  ],
+  "constraints": [
+    "Chart.js 已注册 BarElement/ArcElement，需注册 LineElement 用于趋势图",
+    "attendance 数组每条只有 date/status/subName，缺少缺勤原因字段",
+    "现有考勤计算函数不支持时间范围过滤",
+    "无站内通知系统的统一接口（需检查 StudentCalendar 提醒实现）"
+  ],
+  "clarification_needs": [
+    {
+      "question": "趋势分析的时间维度范围？",
+      "context": "周趋势需要8周数据，月趋势需要学期数据量",
+      "options": ["周趋势（推荐）", "月趋势", "学期总览", "全部实现"],
+      "recommended": 0
+    },
+    {
+      "question": "预警通知方式？",
+      "context": "站内通知系统需要检查现有实现",
+      "options": ["仅前端卡片提醒（推荐）", "站内通知推送", "邮件通知", "全部支持"],
+      "recommended": 0
+    }
+  ],
+  "_metadata": {
+    "exploration_angle": "patterns",
+    "exploration_index": 1,
+    "source": "lite-plan-from-brainstorm",
+    "timestamp": "2026-04-28T11:45:00Z"
+  }
+}

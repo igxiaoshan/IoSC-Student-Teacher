@@ -1,0 +1,42 @@
+{
+  "id": "TASK-001",
+  "title": "统一API调用到apiClient.studentAPI",
+  "description": "改造学生端Redux handle和页面组件，将直接axios调用替换为统一的apiClient.studentAPI封装。涉及3个文件：studentHandle.js、StudentCalendar.js、SubjectSelection.js。",
+  "scope": "frontend/src/redux/studentRelated/ + frontend/src/pages/student/",
+  "priority": 1,
+  "files": [
+    {
+      "path": "frontend/src/redux/studentRelated/studentHandle.js",
+      "change": "替换axios直接调用为studentAPI方法",
+      "lines": "1-58"
+    },
+    {
+      "path": "frontend/src/pages/student/StudentCalendar.js",
+      "change": "替换axios直接调用为apiClient封装"
+    },
+    {
+      "path": "frontend/src/pages/student/SubjectSelection.js",
+      "change": "替换axios直接调用为apiClient封装"
+    }
+  ],
+  "dependencies": [],
+  "depends_on": [],
+  "convergence": {
+    "criteria": [
+      "无直接axios导入（检查import语句）",
+      "所有学生端API功能正常（手动验证）"
+    ],
+    "verification": "运行前端开发服务器，测试学生端各功能"
+  },
+  "implementation_notes": [
+    "studentHandle.js: getAllStudents → studentAPI.getAll",
+    "studentHandle.js: updateStudentFields → studentAPI.update",
+    "StudentCalendar.js: 直接axios → apiClient.get/post",
+    "SubjectSelection.js: 直接axios → apiClient.get/post"
+  ],
+  "_metadata": {
+    "created_at": "2026-04-27T16:35:00+08:00",
+    "source": "implementation_scope[0]",
+    "estimated_time": "20-30 minutes"
+  }
+}

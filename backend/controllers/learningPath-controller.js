@@ -3,7 +3,9 @@ const Subject = require('../models/subjectSchema');
 const Answer = require('../models/answerSchema');
 const PracticeRecord = require('../models/practiceRecordSchema');
 const KnowledgeBase = require('../models/knowledgeBaseSchema');
+const LearningPath = require('../models/learningPathSchema');
 const aiService = require('../services/aiService');
+const learningPathService = require('../services/learningPathService');
 const AIResponseParser = require('../utils/aiResponseParser');
 
 /**
@@ -12,9 +14,8 @@ const AIResponseParser = require('../utils/aiResponseParser');
 const generateLearningPath = async (req, res) => {
     try {
         const { studentId } = req.params;
-        const { subject, learningGoals, timeframe, preferences } = req.body;
+        const { subject, learningGoals, timeframe, preferences, useAI = true } = req.body;
 
-        // 验证学生
         const student = await Student.findById(studentId)
             .populate('sclassName', 'sclassName')
             .populate('school', 'schoolName');
@@ -23,48 +24,21 @@ const generateLearningPath = async (req, res) => {
             return res.status(404).json({ message: '学生不存在' });
         }
 
-        // 获取学生完整学习档案
-        const studentData = await getComprehensiveStudentData(studentId, subject);
-
-        // 获取课程体系信息
-        const curriculum = await getCurriculumStructure(subject, student.sclassName._id);
-
-        // 调用AI服务生成学习路径
-        const pathData = {
-            studentId,
-            currentLevel: studentData.currentLevel,
-            strengths: studentData.strengths,
-            weaknesses: studentData.weaknesses,
-            learningHistory: studentData.learningHistory,
-            learningStyle: studentData.learningStyle,
-            availableTime: timeframe,
-            goals: learningGoals
-        };
-
-        const aiResult = await aiService.planLearningPath(pathData, curriculum);
-
-        let learningPath;
-        if (aiResult.success) {
-            const parsed = AIResponseParser.parseLearningPathResponse(aiResult.answer);
-            if (parsed.success) {
-                learningPath = parsed.learningPath;
-            } else {
-                learningPath = await generateBasicLearningPath(studentData, curriculum);
-            }
-        } else {
-            learningPath = await generateBasicLearningPath(studentData, curriculum);
+        let existingPath = await LearningPath.findActiveByStudentSubject(studentId, subject);
+        if (existingPath) {
+            existingPath.status = 'archived';
+            await existingPath.save();
         }
 
-        // 保存学习路径
-        const pathRecord = {
-            studentId,
-            subject,
-            learningPath,
-            generatedAt: new Date(),
-            status: 'active',
-            progress: 0,
-            aiGenerated: aiResult.success
-        };
+        const learningPath = await learningPathService.createLearningPath(studentId, subject, {
+            learningGoals,
+            timeframe,
+            preferences,
+            useAI
+        });
+
+        const populatedPath = await LearningPath.findById(learningPath._id)
+            .populate('subject', 'subName subCode');
 
         res.json({
             message: '学习路径生成成功',
@@ -72,13 +46,11 @@ const generateLearningPath = async (req, res) => {
                 student: {
                     id: student._id,
                     name: student.name,
-                    class: student.sclassName.sclassName,
-                    currentLevel: studentData.currentLevel
+                    class: student.sclassName.sclassName
                 },
-                learningPath: pathRecord,
-                estimatedCompletion: calculateEstimatedCompletion(learningPath, timeframe),
-                nextSteps: getNextSteps(learningPath),
-                aiGenerated: aiResult.success
+                learningPath: populatedPath,
+                generatedAt: learningPath.generatedAt,
+                aiGenerated: learningPath.aiGenerated
             }
         });
 
@@ -104,20 +76,14 @@ const getLearningPathProgress = async (req, res) => {
             return res.status(404).json({ message: '学生不存在' });
         }
 
-        // 获取当前学习路径
-        const currentPath = await getCurrentLearningPath(studentId, subject);
-        
+        const currentPath = await LearningPath.findActiveByStudentSubject(studentId, subject);
+
         if (!currentPath) {
             return res.status(404).json({ message: '未找到活跃的学习路径' });
         }
 
-        // 计算进度
         const progress = await calculateLearningProgress(studentId, currentPath);
-
-        // 分析学习效果
         const effectiveness = await analyzeLearningEffectiveness(studentId, currentPath);
-
-        // 生成调整建议
         const adjustmentSuggestions = await generatePathAdjustments(progress, effectiveness);
 
         res.json({
@@ -127,7 +93,7 @@ const getLearningPathProgress = async (req, res) => {
             progress: progress,
             effectiveness: effectiveness,
             adjustmentSuggestions: adjustmentSuggestions,
-            lastUpdated: new Date()
+            lastUpdated: currentPath.lastUpdated
         });
 
     } catch (error) {
@@ -152,30 +118,43 @@ const updateLearningPath = async (req, res) => {
             return res.status(404).json({ message: '学生不存在' });
         }
 
-        // 获取当前路径
-        const currentPath = await getCurrentLearningPath(studentId);
-        if (!currentPath) {
+        const currentPath = await LearningPath.findById(pathId);
+        if (!currentPath || currentPath.student.toString() !== studentId) {
             return res.status(404).json({ message: '学习路径不存在' });
         }
 
-        // 应用更新
-        const updatedPath = await applyPathUpdates(currentPath, updates, reason);
+        const previousState = {
+            phases: currentPath.phases,
+            personalizedElements: currentPath.personalizedElements,
+            progress: currentPath.progress
+        };
 
-        // 记录更新历史
-        await recordPathUpdate(studentId, {
-            oldPath: currentPath,
-            newPath: updatedPath,
-            reason: reason,
-            updatedAt: new Date()
+        Object.keys(updates).forEach(key => {
+            if (['phases', 'personalizedElements', 'totalDuration'].includes(key)) {
+                currentPath[key] = updates[key];
+            }
         });
+
+        currentPath.progress = currentPath.calculateProgress();
+        currentPath.lastUpdated = new Date();
+
+        currentPath.updateHistory.push({
+            updatedAt: new Date(),
+            updateType: 'manual',
+            reason: reason || '用户手动更新',
+            previousState,
+            newState: { phases: currentPath.phases, progress: currentPath.progress }
+        });
+
+        await currentPath.save();
 
         res.json({
             message: '学习路径更新成功',
             data: {
-                updatedPath: updatedPath,
+                updatedPath: currentPath,
                 changes: updates,
                 reason: reason,
-                updatedAt: new Date()
+                updatedAt: currentPath.lastUpdated
             }
         });
 
@@ -194,25 +173,43 @@ const updateLearningPath = async (req, res) => {
 const getLearningRecommendations = async (req, res) => {
     try {
         const { studentId } = req.params;
-        const { context, urgency } = req.query;
+        const { subject, context, urgency, useAI = true } = req.query;
 
         const student = await Student.findById(studentId);
         if (!student) {
             return res.status(404).json({ message: '学生不存在' });
         }
 
-        // 获取学生当前状态
-        const studentState = await getCurrentStudentState(studentId);
+        const features = await learningPathService.extractStudentFeatures(studentId, subject);
 
-        // 生成个性化建议
-        const recommendations = await generatePersonalizedRecommendations(studentState, {
+        let recommendations = await learningPathService.generateRuleBasedRecommendations(features, {
             context: context || 'general',
             urgency: urgency || 'normal'
         });
 
+        if (useAI === 'true' || useAI === true) {
+            const subjectInfo = await Subject.findById(subject);
+            const aiResult = await learningPathService.enhanceWithAI(features, recommendations, {
+                subjectName: subjectInfo?.subName,
+                context,
+                urgency
+            });
+
+            if (aiResult.enhanced) {
+                recommendations = aiResult.recommendations;
+            }
+        }
+
         res.json({
             studentId,
+            subject,
             recommendations: recommendations,
+            studentFeatures: {
+                performance: features.performance,
+                engagement: features.engagement,
+                learningStyle: features.learningStyle,
+                trend: features.recentTrend
+            },
             context: context,
             generatedAt: new Date()
         });
@@ -239,13 +236,8 @@ const getKnowledgeMap = async (req, res) => {
             return res.status(404).json({ message: '学生不存在' });
         }
 
-        // 构建个性化知识图谱
         const knowledgeMap = await buildPersonalizedKnowledgeMap(studentId, subject);
-
-        // 标记掌握状态
         const masteryMap = await getMasteryStatus(studentId, knowledgeMap);
-
-        // 生成学习路径可视化
         const pathVisualization = await generatePathVisualization(knowledgeMap, masteryMap);
 
         res.json({
@@ -272,37 +264,41 @@ const getKnowledgeMap = async (req, res) => {
 const recordLearningActivity = async (req, res) => {
     try {
         const { studentId } = req.params;
-        const { activityType, content, duration, outcome } = req.body;
+        const { subject, activityType, content, duration, outcome, score, phaseId, notes } = req.body;
 
         const student = await Student.findById(studentId);
         if (!student) {
             return res.status(404).json({ message: '学生不存在' });
         }
 
-        // 记录学习活动
         const activity = {
-            studentId,
-            type: activityType,
-            content: content,
-            duration: duration,
-            outcome: outcome,
-            timestamp: new Date()
+            date: new Date(),
+            activityType,
+            content,
+            duration,
+            outcome,
+            score,
+            phaseId,
+            notes
         };
 
-        await saveActivityRecord(activity);
+        let currentPath = await LearningPath.findActiveByStudentSubject(studentId, subject);
 
-        // 更新学习路径进度
-        await updatePathProgress(studentId, activity);
+        if (!currentPath) {
+            currentPath = await learningPathService.createLearningPath(studentId, subject);
+        }
 
-        // 触发自适应调整
-        const adaptiveAdjustments = await triggerAdaptiveAdjustments(studentId, activity);
+        await currentPath.addActivity(activity);
+
+        const adaptiveAdjustments = await triggerAdaptiveAdjustments(studentId, currentPath, activity);
 
         res.json({
             message: '学习活动记录成功',
             data: {
                 activity: activity,
                 pathUpdated: adaptiveAdjustments.pathUpdated,
-                adjustments: adaptiveAdjustments.adjustments
+                adjustments: adaptiveAdjustments.adjustments,
+                currentProgress: currentPath.progress
             }
         });
 
@@ -315,313 +311,384 @@ const recordLearningActivity = async (req, res) => {
     }
 };
 
-// 辅助函数
+/**
+ * 获取每日推荐
+ */
+const getDailyRecommendations = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const { subject, useAI = true } = req.query;
+
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: '学生不存在' });
+        }
+
+        const dailyRecommendations = await learningPathService.generateDailyRecommendations(
+            studentId,
+            subject,
+            { useAI: useAI === 'true' || useAI === true }
+        );
+
+        res.json({
+            studentId,
+            subject,
+            ...dailyRecommendations
+        });
+
+    } catch (error) {
+        console.error('获取每日推荐错误:', error);
+        res.status(500).json({
+            message: '获取每日推荐失败',
+            error: error.message
+        });
+    }
+};
 
 /**
- * 获取综合学生数据
+ * 获取学生所有学习路径
  */
-const getComprehensiveStudentData = async (studentId, subject) => {
-    // 获取答题历史
-    const answers = await Answer.find({
-        student: studentId,
-        submitTime: { $gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) }
-    }).populate('question', 'knowledgePoints difficulty type');
+const getStudentLearningPaths = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const { status } = req.query;
 
-    // 获取练习记录
-    const practices = await PracticeRecord.find({
-        student: studentId,
-        status: 'completed',
-        endTime: { $gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) }
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: '学生不存在' });
+        }
+
+        const query = { student: studentId };
+        if (status) query.status = status;
+
+        const paths = await LearningPath.find(query)
+            .populate('subject', 'subName subCode')
+            .sort({ lastUpdated: -1 });
+
+        res.json({
+            studentId,
+            paths: paths.map(p => ({
+                id: p._id,
+                subject: p.subject,
+                status: p.status,
+                progress: p.progress,
+                totalDuration: p.totalDuration,
+                aiGenerated: p.aiGenerated,
+                generatedAt: p.generatedAt,
+                lastUpdated: p.lastUpdated,
+                currentPhase: p.getCurrentPhase()
+            }))
+        });
+
+    } catch (error) {
+        console.error('获取学习路径列表错误:', error);
+        res.status(500).json({
+            message: '获取学习路径列表失败',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * 暂停/恢复学习路径
+ */
+const toggleLearningPathStatus = async (req, res) => {
+    try {
+        const { studentId, pathId } = req.params;
+        const { action } = req.body;
+
+        const path = await LearningPath.findById(pathId);
+        if (!path || path.student.toString() !== studentId) {
+            return res.status(404).json({ message: '学习路径不存在' });
+        }
+
+        if (action === 'pause') {
+            path.status = 'paused';
+        } else if (action === 'resume') {
+            path.status = 'active';
+        } else if (action === 'complete') {
+            path.status = 'completed';
+            path.progress = 100;
+        }
+
+        path.lastUpdated = new Date();
+        await path.save();
+
+        res.json({
+            message: `学习路径已${action === 'pause' ? '暂停' : action === 'resume' ? '恢复' : '完成'}`,
+            data: {
+                pathId: path._id,
+                status: path.status,
+                progress: path.progress
+            }
+        });
+
+    } catch (error) {
+        console.error('切换学习路径状态错误:', error);
+        res.status(500).json({
+            message: '操作失败',
+            error: error.message
+        });
+    }
+};
+
+// ============ 辅助函数 ============
+
+/**
+ * 计算学习进度
+ */
+const calculateLearningProgress = async (studentId, currentPath) => {
+    const recentActivities = currentPath.learningActivities.slice(-20);
+
+    const phaseProgress = currentPath.phases.map(phase => {
+        const phaseActivities = recentActivities.filter(a => a.phaseId === phase.id);
+        const completedCount = phaseActivities.filter(a => a.outcome === 'success').length;
+        const totalActivities = phaseActivities.length || 1;
+
+        return {
+            phaseId: phase.id,
+            name: phase.name,
+            progress: Math.round((completedCount / totalActivities) * 100),
+            status: phase.status,
+            completedActivities: completedCount,
+            totalActivities: phaseActivities.length
+        };
     });
 
-    // 分析学习数据
-    const currentLevel = analyzeCurrentLevel(answers, practices);
-    const strengths = identifyStrengths(answers);
-    const weaknesses = identifyWeaknesses(answers);
-    const learningHistory = extractLearningHistory(answers, practices);
-    const learningStyle = analyzeLearningStyle(practices);
+    const totalTimeSpent = recentActivities.reduce((sum, a) => sum + (a.duration || 0), 0);
+    const estimatedRemaining = Math.max(0, (currentPath.totalDuration * 60) - totalTimeSpent);
 
     return {
-        currentLevel,
-        strengths,
-        weaknesses,
-        learningHistory,
-        learningStyle,
-        totalActivities: answers.length + practices.length,
-        averagePerformance: calculateAveragePerformance(answers, practices)
+        overallProgress: currentPath.calculateProgress(),
+        phaseProgress,
+        completedActivities: recentActivities.filter(a => a.outcome === 'success').length,
+        totalActivities: recentActivities.length,
+        timeSpent: Math.round(totalTimeSpent / 60),
+        estimatedTimeRemaining: Math.round(estimatedRemaining / 60)
     };
 };
 
 /**
- * 获取课程体系结构
+ * 分析学习效果
  */
-const getCurriculumStructure = async (subject, classId) => {
-    // 获取科目信息
-    const subjectInfo = await Subject.findById(subject);
-    
-    // 获取知识库内容
+const analyzeLearningEffectiveness = async (studentId, currentPath) => {
+    const activities = currentPath.learningActivities;
+    if (activities.length < 5) {
+        return {
+            effectivenessScore: 50,
+            learningVelocity: 'insufficient_data',
+            retentionRate: 50,
+            engagementLevel: 'unknown',
+            adaptationNeeded: false
+        };
+    }
+
+    const recentActivities = activities.slice(-20);
+    const successRate = recentActivities.filter(a => a.outcome === 'success').length / recentActivities.length;
+
+    const avgDuration = recentActivities.reduce((sum, a) => sum + (a.duration || 0), 0) / recentActivities.length;
+
+    const velocity = successRate > 0.7 ? 'fast' : successRate > 0.5 ? 'normal' : 'slow';
+
+    const lastWeekActivities = activities.filter(a => {
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        return a.date >= weekAgo;
+    });
+    const engagementLevel = lastWeekActivities.length >= 5 ? 'high' :
+        lastWeekActivities.length >= 2 ? 'medium' : 'low';
+
+    return {
+        effectivenessScore: Math.round(successRate * 100),
+        learningVelocity: velocity,
+        retentionRate: Math.round((successRate + 0.1) * 100),
+        engagementLevel,
+        adaptationNeeded: successRate < 0.5 || engagementLevel === 'low'
+    };
+};
+
+/**
+ * 生成路径调整建议
+ */
+const generatePathAdjustments = async (progress, effectiveness) => {
+    const suggestions = [];
+
+    if (effectiveness.learningVelocity === 'slow') {
+        suggestions.push({
+            type: 'pace_adjustment',
+            suggestion: '建议放慢学习节奏，增加复习时间',
+            reason: '当前理解速度较慢，需要更多巩固'
+        });
+    }
+
+    if (effectiveness.engagementLevel === 'low') {
+        suggestions.push({
+            type: 'engagement_boost',
+            suggestion: '尝试更换学习方式或调整学习时段',
+            reason: '近期学习活跃度较低'
+        });
+    }
+
+    if (progress.phaseProgress.some(p => p.progress < 30 && p.status === 'in_progress')) {
+        suggestions.push({
+            type: 'difficulty_adjustment',
+            suggestion: '考虑降低当前阶段难度或补充基础知识',
+            reason: '当前阶段进度缓慢'
+        });
+    }
+
+    return suggestions;
+};
+
+/**
+ * 构建个性化知识图谱
+ */
+const buildPersonalizedKnowledgeMap = async (studentId, subject) => {
     const knowledgeBase = await KnowledgeBase.find({
         subject: subject,
         isActive: true
     }).select('title tags');
 
-    // 构建课程体系
-    return {
-        subject: subjectInfo.subName,
-        level: 'intermediate', // 根据班级确定
-        modules: extractCurriculumModules(knowledgeBase),
-        prerequisites: [],
-        learningObjectives: [],
-        estimatedDuration: 120 // 小时
-    };
-};
+    const answers = await Answer.find({ student: studentId })
+        .populate('question', 'knowledgePoints')
+        .lean();
 
-/**
- * 生成基础学习路径
- */
-const generateBasicLearningPath = async (studentData, curriculum) => {
-    return {
-        phases: [
-            {
-                id: 1,
-                name: '基础巩固',
-                description: '巩固基础知识',
-                duration: 30,
-                topics: studentData.weaknesses.slice(0, 3),
-                activities: ['复习', '练习', '测试'],
-                resources: []
-            },
-            {
-                id: 2,
-                name: '能力提升',
-                description: '提升核心能力',
-                duration: 60,
-                topics: ['核心概念', '应用技能'],
-                activities: ['学习', '实践', '项目'],
-                resources: []
-            },
-            {
-                id: 3,
-                name: '综合应用',
-                description: '综合运用知识',
-                duration: 30,
-                topics: ['综合应用', '创新思维'],
-                activities: ['项目实战', '创新练习'],
-                resources: []
-            }
-        ],
-        totalDuration: 120,
-        difficulty: 'adaptive',
-        personalizedElements: {
-            focusAreas: studentData.weaknesses,
-            strengthAreas: studentData.strengths,
-            learningStyle: studentData.learningStyle
+    const knownPoints = new Set();
+    answers.forEach(a => {
+        if (a.isCorrect && a.question?.knowledgePoints) {
+            a.question.knowledgePoints.forEach(p => knownPoints.add(p));
         }
-    };
-};
+    });
 
-/**
- * 计算预计完成时间
- */
-const calculateEstimatedCompletion = (learningPath, timeframe) => {
-    const totalHours = learningPath.totalDuration || 120;
-    const weeklyHours = timeframe?.weeklyHours || 10;
-    const weeks = Math.ceil(totalHours / weeklyHours);
-    
-    const startDate = new Date();
-    const completionDate = new Date(startDate.getTime() + weeks * 7 * 24 * 60 * 60 * 1000);
-    
-    return {
-        estimatedWeeks: weeks,
-        estimatedHours: totalHours,
-        startDate: startDate,
-        completionDate: completionDate
-    };
-};
+    const nodes = knowledgeBase.map(kb => ({
+        id: kb._id,
+        name: kb.title,
+        tags: kb.tags,
+        known: kb.tags?.some(t => knownPoints.has(t)) || false
+    }));
 
-/**
- * 获取下一步行动
- */
-const getNextSteps = (learningPath) => {
-    if (!learningPath.phases || learningPath.phases.length === 0) {
-        return ['开始学习基础知识'];
+    const edges = [];
+    for (let i = 0; i < nodes.length - 1; i++) {
+        const commonTags = nodes[i].tags?.filter(t => nodes[i + 1].tags?.includes(t)) || [];
+        if (commonTags.length > 0) {
+            edges.push({
+                from: nodes[i].id,
+                to: nodes[i + 1].id,
+                type: 'related',
+                weight: commonTags.length
+            });
+        }
     }
 
-    const firstPhase = learningPath.phases[0];
-    return [
-        `开始${firstPhase.name}阶段`,
-        `重点学习：${firstPhase.topics.join(', ')}`,
-        `建议活动：${firstPhase.activities.join(', ')}`
-    ];
+    return { nodes, edges };
 };
 
-// 其他辅助函数的简化实现
-const getCurrentLearningPath = async (studentId, subject) => {
-    // 简化实现：返回模拟数据
-    return {
-        id: 'path_' + studentId,
-        studentId,
-        subject,
-        status: 'active',
-        progress: 25,
-        phases: []
-    };
-};
-
-const calculateLearningProgress = async (studentId, currentPath) => {
-    return {
-        overallProgress: 25,
-        phaseProgress: [
-            { phaseId: 1, progress: 80, status: 'completed' },
-            { phaseId: 2, progress: 30, status: 'in_progress' },
-            { phaseId: 3, progress: 0, status: 'not_started' }
-        ],
-        completedActivities: 15,
-        totalActivities: 60,
-        timeSpent: 45,
-        estimatedTimeRemaining: 135
-    };
-};
-
-const analyzeLearningEffectiveness = async (studentId, currentPath) => {
-    return {
-        effectivenessScore: 75,
-        learningVelocity: 'normal',
-        retentionRate: 85,
-        engagementLevel: 'high',
-        adaptationNeeded: false
-    };
-};
-
-const generatePathAdjustments = async (progress, effectiveness) => {
-    return [
-        {
-            type: 'pace_adjustment',
-            suggestion: '可以适当加快学习节奏',
-            reason: '当前进度良好，理解能力强'
-        }
-    ];
-};
-
-const applyPathUpdates = async (currentPath, updates, reason) => {
-    return { ...currentPath, ...updates, lastUpdated: new Date() };
-};
-
-const recordPathUpdate = async (studentId, updateRecord) => {
-    console.log('记录路径更新:', updateRecord);
-};
-
-const getCurrentStudentState = async (studentId) => {
-    return {
-        currentLevel: 'intermediate',
-        recentPerformance: 'good',
-        motivationLevel: 'high',
-        availableTime: 'normal'
-    };
-};
-
-const generatePersonalizedRecommendations = async (studentState, options) => {
-    return [
-        {
-            type: 'study_method',
-            title: '学习方法建议',
-            description: '建议采用间隔重复学习法',
-            priority: 'high'
-        },
-        {
-            type: 'resource',
-            title: '学习资源推荐',
-            description: '推荐相关视频教程',
-            priority: 'medium'
-        }
-    ];
-};
-
-const buildPersonalizedKnowledgeMap = async (studentId, subject) => {
-    return {
-        nodes: [
-            { id: 'basic_concepts', name: '基础概念', level: 1 },
-            { id: 'advanced_topics', name: '高级主题', level: 2 }
-        ],
-        edges: [
-            { from: 'basic_concepts', to: 'advanced_topics', type: 'prerequisite' }
-        ]
-    };
-};
-
+/**
+ * 获取掌握状态
+ */
 const getMasteryStatus = async (studentId, knowledgeMap) => {
-    return {
-        'basic_concepts': { mastery: 80, status: 'mastered' },
-        'advanced_topics': { mastery: 30, status: 'learning' }
-    };
+    const answers = await Answer.find({ student: studentId })
+        .populate('question', 'knowledgePoints')
+        .lean();
+
+    const mastery = {};
+
+    knowledgeMap.nodes.forEach(node => {
+        const relevantAnswers = answers.filter(a =>
+            a.question?.knowledgePoints?.some(p => node.tags?.includes(p))
+        );
+
+        if (relevantAnswers.length > 0) {
+            const correctRate = relevantAnswers.filter(a => a.isCorrect).length / relevantAnswers.length;
+            mastery[node.id] = {
+                mastery: Math.round(correctRate * 100),
+                status: correctRate >= 0.8 ? 'mastered' : correctRate >= 0.5 ? 'learning' : 'weak',
+                attempts: relevantAnswers.length
+            };
+        } else {
+            mastery[node.id] = {
+                mastery: 0,
+                status: 'unknown',
+                attempts: 0
+            };
+        }
+    });
+
+    return mastery;
 };
 
+/**
+ * 生成路径可视化数据
+ */
 const generatePathVisualization = async (knowledgeMap, masteryMap) => {
-    return {
-        type: 'tree',
-        layout: 'hierarchical',
-        data: knowledgeMap
-    };
-};
-
-const saveActivityRecord = async (activity) => {
-    console.log('保存学习活动:', activity);
-};
-
-const updatePathProgress = async (studentId, activity) => {
-    console.log('更新路径进度:', studentId, activity.type);
-};
-
-const triggerAdaptiveAdjustments = async (studentId, activity) => {
-    return {
-        pathUpdated: false,
-        adjustments: []
-    };
-};
-
-// 数据分析辅助函数
-const analyzeCurrentLevel = (answers, practices) => {
-    const avgScore = answers.reduce((sum, a) => sum + (a.score / a.maxScore), 0) / answers.length || 0;
-    if (avgScore >= 0.8) return 'advanced';
-    if (avgScore >= 0.6) return 'intermediate';
-    return 'beginner';
-};
-
-const identifyStrengths = (answers) => {
-    const correctAnswers = answers.filter(a => a.isCorrect);
-    const knowledgePoints = correctAnswers.flatMap(a => a.question?.knowledgePoints || []);
-    return [...new Set(knowledgePoints)].slice(0, 5);
-};
-
-const identifyWeaknesses = (answers) => {
-    const wrongAnswers = answers.filter(a => !a.isCorrect);
-    const knowledgePoints = wrongAnswers.flatMap(a => a.question?.knowledgePoints || []);
-    return [...new Set(knowledgePoints)].slice(0, 5);
-};
-
-const extractLearningHistory = (answers, practices) => {
-    return {
-        totalActivities: answers.length + practices.length,
-        recentTopics: [...new Set(answers.flatMap(a => a.question?.knowledgePoints || []))].slice(0, 10),
-        studyPattern: 'regular'
-    };
-};
-
-const analyzeLearningStyle = (practices) => {
-    return 'visual'; // 简化实现
-};
-
-const calculateAveragePerformance = (answers, practices) => {
-    const answerPerf = answers.reduce((sum, a) => sum + (a.score / a.maxScore), 0) / answers.length || 0;
-    const practicePerf = practices.reduce((sum, p) => sum + p.percentage, 0) / practices.length || 0;
-    return (answerPerf + practicePerf) / 2;
-};
-
-const extractCurriculumModules = (knowledgeBase) => {
-    return knowledgeBase.map(kb => ({
-        name: kb.title,
-        topics: kb.tags || []
+    const nodes = knowledgeMap.nodes.map(node => ({
+        id: node.id,
+        label: node.name,
+        group: masteryMap[node.id]?.status || 'unknown',
+        value: masteryMap[node.id]?.mastery || 0
     }));
+
+    const edges = knowledgeMap.edges.map(edge => ({
+        from: edge.from,
+        to: edge.to,
+        value: edge.weight
+    }));
+
+    return {
+        type: 'network',
+        layout: 'hierarchical',
+        data: { nodes, edges }
+    };
+};
+
+/**
+ * 触发自适应调整
+ */
+const triggerAdaptiveAdjustments = async (studentId, currentPath, activity) => {
+    const adjustments = [];
+    let pathUpdated = false;
+
+    if (activity.outcome === 'failed' && activity.score < 50) {
+        adjustments.push({
+            type: 'add_review',
+            message: '建议增加相关知识点复习',
+            priority: 'high'
+        });
+    }
+
+    if (activity.outcome === 'success' && activity.score >= 90) {
+        adjustments.push({
+            type: 'advance',
+            message: '表现优秀，可以考虑进入下一阶段',
+            priority: 'medium'
+        });
+    }
+
+    const recentActivities = currentPath.learningActivities.slice(-5);
+    const failCount = recentActivities.filter(a => a.outcome === 'failed').length;
+
+    if (failCount >= 3) {
+        adjustments.push({
+            type: 'difficulty_decrease',
+            message: '连续多次失败，建议降低难度',
+            priority: 'high'
+        });
+
+        if (currentPath.personalizedElements.difficulty !== 'beginner') {
+            const difficultyOrder = ['beginner', 'intermediate', 'advanced'];
+            const currentIndex = difficultyOrder.indexOf(currentPath.personalizedElements.difficulty);
+            if (currentIndex > 0) {
+                currentPath.personalizedElements.difficulty = difficultyOrder[currentIndex - 1];
+                pathUpdated = true;
+            }
+        }
+    }
+
+    if (pathUpdated) {
+        currentPath.lastUpdated = new Date();
+        await currentPath.save();
+    }
+
+    return { pathUpdated, adjustments };
 };
 
 module.exports = {
@@ -630,5 +697,8 @@ module.exports = {
     updateLearningPath,
     getLearningRecommendations,
     getKnowledgeMap,
-    recordLearningActivity
+    recordLearningActivity,
+    getDailyRecommendations,
+    getStudentLearningPaths,
+    toggleLearningPathStatus
 };

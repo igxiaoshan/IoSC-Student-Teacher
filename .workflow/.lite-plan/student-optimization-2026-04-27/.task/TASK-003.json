@@ -1,0 +1,39 @@
+{
+  "id": "TASK-003",
+  "title": "分离AI路由到独立模块",
+  "description": "从StudentDashboard和StudentSideBar中移除AI相关路由配置和导航项。涉及7个AI路由：LearningAssistant、PracticeAssistant、JimengImageGenerator、JimengVideoGenerator、KnowledgeVideoGenerator、StudentMistakeBook、AICoursewareGenerator。",
+  "scope": "frontend/src/pages/student/",
+  "priority": 2,
+  "files": [
+    {
+      "path": "frontend/src/pages/student/StudentDashboard.js",
+      "change": "移除AI路由配置(lines 95-101)和AI组件导入(lines 23-27)",
+      "lines": "23-27, 95-101"
+    },
+    {
+      "path": "frontend/src/pages/student/StudentSideBar.js",
+      "change": "移除AI导航区块(lines 70-98)",
+      "lines": "70-98"
+    }
+  ],
+  "dependencies": ["TASK-002"],
+  "depends_on": ["TASK-002"],
+  "convergence": {
+    "criteria": [
+      "StudentDashboard无AI路由配置",
+      "StudentSideBar无AI导航区块",
+      "无AI组件导入语句"
+    ],
+    "verification": "检查代码无AI相关引用，运行前端验证导航正确"
+  },
+  "implementation_notes": [
+    "保留StudentMistakeBook路由（非AI功能，是错题本）",
+    "移除LearningAssistant、PracticeAssistant、JimengImageGenerator、JimengVideoGenerator、KnowledgeVideoGenerator路由",
+    "移除SideBar中AI助手区块整体"
+  ],
+  "_metadata": {
+    "created_at": "2026-04-27T16:35:00+08:00",
+    "source": "implementation_scope[2]",
+    "estimated_time": "15-20 minutes"
+  }
+}

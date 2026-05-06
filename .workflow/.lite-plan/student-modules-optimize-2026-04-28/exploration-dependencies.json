@@ -1,0 +1,121 @@
+{
+  "relevant_files": [
+    {
+      "path": "backend/models/studentSchema.js",
+      "relevance": 0.95,
+      "role": "core-data",
+      "rationale": "核心数据模型，attendance 数组需扩展，learningRecords 需新增",
+      "key_code": ["attendance: []", "selectedSubjects: []", "examResult: []"],
+      "topic_relation": "数据模型扩展"
+    },
+    {
+      "path": "frontend/src/components/student/LearningProgressRing.js",
+      "relevance": 0.85,
+      "role": "dependency",
+      "rationale": "已有 Chart.js Doughnut 组件，趋势图可复用注册",
+      "key_code": ["Chart as ChartJS", "ArcElement", "Doughnut"],
+      "topic_relation": "Chart.js 依赖"
+    },
+    {
+      "path": "frontend/src/components/student/WeeklyStudyChart.js",
+      "relevance": 0.85,
+      "role": "dependency",
+      "rationale": "已注册 LineElement，趋势图可直接使用 Line 组件",
+      "key_code": ["PointElement", "LineElement", "Line"],
+      "topic_relation": "Line Chart 依赖"
+    },
+    {
+      "path": "backend/services/difyService.js",
+      "relevance": 0.80,
+      "role": "dependency",
+      "rationale": "AI 服务集成，学习路径推荐可调用 Dify API",
+      "key_code": ["chatCompletion", "streamChat"],
+      "topic_relation": "AI 服务依赖"
+    },
+    {
+      "path": "backend/controllers/studentCalendar-controller.js",
+      "relevance": 0.75,
+      "role": "dependency",
+      "rationale": "日历提醒系统实现，预警通知可复用模式",
+      "key_code": ["generateAIStudyPlan", "addPersonalEvent"],
+      "topic_relation": "通知系统依赖"
+    }
+  ],
+  "dependencies": {
+    "frontend": [
+      {
+        "package": "chart.js",
+        "version": "^4.x",
+        "status": "已安装",
+        "usage": "趋势图、进度环",
+        "action": "无需额外安装"
+      },
+      {
+        "package": "react-chartjs-2",
+        "version": "^5.x",
+        "status": "已安装",
+        "usage": "Line, Doughnut 组件",
+        "action": "无需额外安装"
+      },
+      {
+        "package": "@mui/material",
+        "version": "^5.x",
+        "status": "已安装",
+        "usage": "Card, Alert, Dialog 等",
+        "action": "无需额外安装"
+      }
+    ],
+    "backend": [
+      {
+        "package": "mongoose",
+        "version": "^7.x",
+        "status": "已安装",
+        "usage": "Schema 扩展",
+        "action": "无需额外安装"
+      },
+      {
+        "package": "axios",
+        "version": "已安装",
+        "status": "已安装",
+        "usage": "Dify API 调用",
+        "action": "无需额外安装"
+      }
+    ]
+  },
+  "data_dependencies": [
+    {
+      "model": "studentSchema.attendance",
+      "current_fields": ["date", "status", "subName"],
+      "extension_needed": ["reason", "notified", "makeupStatus"],
+      "impact": "低影响，可选字段"
+    },
+    {
+      "model": "studentSchema.learningRecords",
+      "current_fields": "不存在",
+      "extension_needed": "新建子文档",
+      "impact": "新增字段，无破坏性变更"
+    },
+    {
+      "model": "learningPathSchema (新建)",
+      "fields": ["currentPath", "dailyRecommendations", "aiInsights"],
+      "impact": "新 Schema，无依赖冲突"
+    },
+    {
+      "model": "attendanceRuleSchema (新建)",
+      "fields": ["ruleType", "threshold", "notifyTargets", "notifyMethods"],
+      "impact": "新 Schema，无依赖冲突"
+    }
+  ],
+  "constraints": [
+    "Chart.js 组件需在同一文件注册，避免重复注册警告",
+    "Mongoose Schema 扩展需要考虑现有数据的默认值",
+    "AI 服务调用需要错误处理和降级策略"
+  ],
+  "clarification_needs": [],
+  "_metadata": {
+    "exploration_angle": "dependencies",
+    "exploration_index": 3,
+    "source": "lite-plan-from-brainstorm",
+    "timestamp": "2026-04-28T11:45:00Z"
+  }
+}

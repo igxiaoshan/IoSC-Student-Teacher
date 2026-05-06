@@ -9,10 +9,18 @@
       "mcp__context7__resolve-library-id",
       "mcp__fetch__fetch",
       "mcp__context7__query-docs",
+      "mcp__ace-tool__search_context",
+      "mcp__grok-search__plan_intent",
+      "mcp__grok-search__plan_complexity",
+      "mcp__grok-search__plan_sub_query",
+      "mcp__grok-search__plan_search_term",
+      "mcp__grok-search__plan_tool_mapping",
       "Bash(npx eslint:*)",
       "Bash(npm run:*)",
       "Bash(npm ls:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Skill(workflow:brainstorm-with-file)",
+      "Skill(workflow-lite-plan)"
     ]
   }
 }

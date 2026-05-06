@@ -1,0 +1,258 @@
+{
+  "perspective": "User Experience",
+  "relevant_files": [
+    {
+      "file": "frontend/src/pages/student/StudentDashboard.js",
+      "description": "主容器，包含路由和侧边栏控制",
+      "ux_focus": "导航体验、响应式布局"
+    },
+    {
+      "file": "frontend/src/pages/student/StudentSideBar.js",
+      "description": "侧边栏导航组件",
+      "ux_focus": "导航交互、状态反馈"
+    },
+    {
+      "file": "frontend/src/pages/student/StudentHomePage.js",
+      "description": "首页仪表盘，包含多个统计卡片和图表",
+      "ux_focus": "加载状态、数据展示、可视化"
+    },
+    {
+      "file": "frontend/src/pages/student/StudentProfile.js",
+      "description": "个人资料展示页面",
+      "ux_focus": "信息展示、空状态处理"
+    },
+    {
+      "file": "frontend/src/pages/student/StudentSubjects.js",
+      "description": "科目成绩展示页面",
+      "ux_focus": "多视图切换、卡片交互、信息层次"
+    },
+    {
+      "file": "frontend/src/pages/student/ViewStdAttendance.js",
+      "description": "考勤记录查看页面",
+      "ux_focus": "加载状态、错误处理、国际化一致性"
+    },
+    {
+      "file": "frontend/src/hooks/useTranslation.js",
+      "description": "国际化Hook",
+      "ux_focus": "多语言支持、翻译可用性"
+    },
+    {
+      "file": "frontend/src/utils/apiClient.js",
+      "description": "API客户端封装",
+      "ux_focus": "错误处理、用户反馈"
+    }
+  ],
+  "key_findings": [
+    {
+      "category": "Loading States",
+      "severity": "good",
+      "finding": "学生端实现了完善的加载状态处理，使用Skeleton组件提供视觉反馈",
+      "recommendation": "保持现有模式"
+    },
+    {
+      "category": "Navigation Flow",
+      "severity": "good",
+      "finding": "侧边栏导航清晰，使用useLocation实现当前路由高亮",
+      "recommendation": "可考虑添加面包屑导航"
+    },
+    {
+      "category": "Error Handling",
+      "severity": "moderate",
+      "finding": "错误处理主要通过console.log输出，用户界面反馈不足",
+      "recommendation": "添加Snackbar/Alert提示"
+    },
+    {
+      "category": "i18n Consistency",
+      "severity": "moderate",
+      "finding": "部分页面翻译键不完整，存在硬编码中文文本",
+      "recommendation": "统一使用useTranslation"
+    },
+    {
+      "category": "Responsive Design",
+      "severity": "moderate",
+      "finding": "小屏幕下侧边栏隐藏但没有替代导航方式",
+      "recommendation": "添加汉堡菜单"
+    },
+    {
+      "category": "Empty States",
+      "severity": "good",
+      "finding": "空状态处理完善，提供友好的提示文本",
+      "recommendation": "可添加空状态插图"
+    },
+    {
+      "category": "Visual Feedback",
+      "severity": "good",
+      "finding": "交互元素有明确的状态反馈",
+      "recommendation": "保持现有模式"
+    },
+    {
+      "category": "Data Visualization",
+      "severity": "good",
+      "finding": "使用Chart.js提供丰富的数据可视化",
+      "recommendation": "可添加图表交互"
+    },
+    {
+      "category": "Form Validation",
+      "severity": "low",
+      "finding": "学生端主要是只读展示，缺少表单验证场景",
+      "recommendation": "如需编辑功能再考虑"
+    }
+  ],
+  "code_anchors": [
+    {
+      "file": "frontend/src/pages/student/StudentDashboard.js",
+      "lines": "70-80",
+      "snippet": "Drawer hideDrawer style",
+      "significance": "小屏幕下侧边栏隐藏但没有替代导航方案"
+    },
+    {
+      "file": "frontend/src/pages/student/StudentSideBar.js",
+      "lines": "26-31",
+      "snippet": "location.pathname check",
+      "significance": "使用useLocation判断当前路由高亮"
+    },
+    {
+      "file": "frontend/src/pages/student/StudentHomePage.js",
+      "lines": "373-384",
+      "snippet": "fetchDashboardData try/catch",
+      "significance": "catch块仅console.log缺少UI提示"
+    },
+    {
+      "file": "frontend/src/pages/student/StudentHomePage.js",
+      "lines": "510-521",
+      "snippet": "four states handling",
+      "significance": "response/loading/empty/data四种状态处理完善"
+    },
+    {
+      "file": "frontend/src/pages/student/StudentSubjects.js",
+      "lines": "49-55",
+      "snippet": "knowledgePoints hardcoded",
+      "significance": "知识点名称未国际化"
+    },
+    {
+      "file": "frontend/src/pages/student/StudentSubjects.js",
+      "lines": "529-547",
+      "snippet": "BottomNavigation fixed",
+      "significance": "底部固定导航提供视图切换"
+    },
+    {
+      "file": "frontend/src/pages/student/ViewStdAttendance.js",
+      "lines": "71-82",
+      "snippet": "hardcoded Chinese text",
+      "significance": "所有文本硬编码中文未使用useTranslation"
+    },
+    {
+      "file": "frontend/src/pages/student/ViewStdAttendance.js",
+      "lines": "156-162",
+      "snippet": "simple loading div",
+      "significance": "仅显示加载中文字未用Skeleton"
+    },
+    {
+      "file": "frontend/src/hooks/useTranslation.js",
+      "lines": "18-27",
+      "snippet": "namespace functions",
+      "significance": "命名空间函数简洁易用支持fallback"
+    },
+    {
+      "file": "frontend/src/utils/apiClient.js",
+      "lines": "86-97",
+      "snippet": "401 handling",
+      "significance": "认证错误自动清理跳转但无用户提示"
+    }
+  ],
+  "call_chains": [
+    {
+      "entry": "StudentDashboard.js",
+      "chain": [
+        "StudentDashboard",
+        "StudentSideBar",
+        "Link",
+        "Route"
+      ],
+      "files": [
+        "StudentDashboard.js",
+        "StudentSideBar.js"
+      ],
+      "description": "导航流程"
+    },
+    {
+      "entry": "StudentHomePage.js",
+      "chain": [
+        "useEffect",
+        "getUserDetails",
+        "Redux",
+        "CustomPieChart"
+      ],
+      "files": [
+        "StudentHomePage.js",
+        "userHandle.js"
+      ],
+      "description": "数据流获取用户详情渲染图表"
+    },
+    {
+      "entry": "StudentHomePage.js",
+      "chain": [
+        "fetchDashboardData",
+        "studentAPI",
+        "apiClient"
+      ],
+      "files": [
+        "StudentHomePage.js",
+        "apiClient.js"
+      ],
+      "description": "API调用获取仪表盘数据"
+    },
+    {
+      "entry": "StudentSubjects.js",
+      "chain": [
+        "handleSubjectExpand",
+        "setExpandedSubject",
+        "Collapse"
+      ],
+      "files": [
+        "StudentSubjects.js"
+      ],
+      "description": "交互流点击卡片展开详情"
+    }
+  ],
+  "questions_for_user": [
+    {
+      "id": "UX-001",
+      "question": "ViewStdAttendance.js国际化缺失是否需要补全翻译键?",
+      "priority": "medium"
+    },
+    {
+      "id": "UX-002",
+      "question": "小屏幕下侧边栏隐藏是否有替代导航方案?",
+      "priority": "high"
+    },
+    {
+      "id": "UX-003",
+      "question": "API错误是否需要显示Snackbar或Alert提示?",
+      "priority": "high"
+    },
+    {
+      "id": "UX-004",
+      "question": "知识点数据是否应该从后端获取?",
+      "priority": "low"
+    },
+    {
+      "id": "UX-005",
+      "question": "是否需要添加个人资料编辑功能?",
+      "priority": "low"
+    }
+  ],
+  "_metadata": {
+    "analysis_date": "2026-04-27",
+    "perspective": "User Experience",
+    "total_files_analyzed": 8,
+    "findings_count": 9,
+    "code_anchors_count": 10,
+    "questions_count": 5,
+    "severity_summary": {
+      "good": 4,
+      "moderate": 3,
+      "low": 1
+    }
+  }
+}

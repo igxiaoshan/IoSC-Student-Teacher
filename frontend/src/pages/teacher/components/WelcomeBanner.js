@@ -31,10 +31,10 @@ const WelcomeBanner = ({ currentUser }) => {
             >
                 <Box>
                     <Typography variant="h5" gutterBottom>
-                        {tTeacher('welcomeBack') || '欢迎回来'}, {safeGet(currentUser, 'name', '老师')}!
+                        {tTeacher('welcomeBack') || '欢迎回来'}, {safeGet(currentUser, 'name', tTeacher('teacher') || '老师')}!
                     </Typography>
                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                        {tTeacher('teachingSubject') || '任教科目'}: {safeGet(currentUser, 'teachSubject.subName', '未分配')} · {safeGet(currentUser, 'teachSclass.sclassName', '未分配班级')}
+                        {tTeacher('teachingSubject') || '任教科目'}: {safeGet(currentUser, 'teachSubject.subName', tTeacher('unassigned') || '未分配')} · {safeGet(currentUser, 'teachSclass.sclassName', tTeacher('unassignedClass') || '未分配班级')}
                     </Typography>
                 </Box>
                 {!isMobile && (

@@ -1,0 +1,41 @@
+{
+  "id": "TASK-010",
+  "title": "国际化支持与最终集成",
+  "description": "为新功能添加国际化翻译支持，确保中英文切换正常。最终集成验证，确保所有模块协同工作。",
+  "scope": "integration",
+  "files": [
+    {
+      "path": "frontend/src/i18n/locales/zh-CN.json",
+      "change": "添加趋势、提醒、学习路径相关翻译键"
+    },
+    {
+      "path": "frontend/src/i18n/locales/en-US.json",
+      "change": "添加英文翻译"
+    },
+    {
+      "path": "frontend/src/pages/student/StudentDashboard.js",
+      "change": "确保新组件路由正确配置"
+    }
+  ],
+  "acceptance_criteria": [
+    "所有新增 UI 文本有中英文翻译",
+    "语言切换后新功能显示正确",
+    "路由配置正确，无 404 错误",
+    "前后端集成无报错"
+  ],
+  "dependencies": ["TASK-001", "TASK-003", "TASK-005", "TASK-008"],
+  "estimated_time": "1-2 hours",
+  "priority": 10,
+  "convergence": {
+    "criteria": [
+      "国际化完整覆盖",
+      "集成无错误",
+      "用户体验流畅"
+    ],
+    "verification": "手动验证 + E2E 测试"
+  },
+  "_metadata": {
+    "phase": "integration",
+    "created": "2026-04-28T12:00:00Z"
+  }
+}

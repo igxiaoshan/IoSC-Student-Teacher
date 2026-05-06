@@ -138,6 +138,48 @@ export const moduleAPI = {
 };
 ```
 
+## 多模型协作工作流
+
+项目支持多模型协作自动化：
+
+### 可用工具
+
+| 工具 | 用途 | 命令/配置 |
+|------|------|-----------|
+| `gemini-flash` | 代码生成/分析 | `D:/core/app/dev/nodejs/gemini-flash.bat` |
+| Grok-Search MCP | 网络搜索 + AI | MCP tool |
+| Ace-Tool MCP | 代码库语义搜索 | MCP tool |
+
+### 工作流 API
+
+| 端点 | 用途 |
+|------|------|
+| `/api/workflow/code-review` | 代码审查 |
+| `/api/workflow/develop` | 功能开发 |
+| `/api/workflow/debug` | 问题调试 |
+| `/api/workflow/design-api` | API 设计 |
+| `/api/workflow/design-schema` | Schema 设计 |
+| `/api/workflow/generate-tests` | 测试生成 |
+
+### SKILLs 配置
+
+项目 SKILLs 定义在 `.claude/SKILLS.md`
+
+### 使用示例
+
+```javascript
+const workflow = require('./backend/services/multiModelWorkflow');
+
+// 代码审查
+await workflow.codeReview(context, issue);
+
+// 功能开发
+await workflow.developFeature(requirement, context);
+
+// 问题调试
+await workflow.debug(issue, errorLog);
+```
+
 ## AI 集成架构
 
 项目支持多种 AI 服务集成，使用单例模式的服务类封装：
@@ -149,6 +191,7 @@ export const moduleAPI = {
 | Dify | `backend/config/difyConfig.js` | `backend/services/difyService.js` | 课件生成、评估、对话 |
 | Ollama | `backend/config/ollamaConfig.js` | `backend/services/ollamaService.js` | 本地模型支持 |
 | 即梦AI | `backend/config/jimengConfig.js` | `backend/services/jimengService.js` | 文生图、文生视频 |
+| Gemini | `backend/services/aiConfig.js` | `backend/services/geminiService.js` | 通用 AI 推理 |
 
 ### 新增 AI 服务模式
 
