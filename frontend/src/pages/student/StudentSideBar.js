@@ -10,6 +10,10 @@ import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import SchoolIcon from '@mui/icons-material/School';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import QuizIcon from '@mui/icons-material/Quiz';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 
 const StudentSideBar = () => {
     const location = useLocation();
@@ -46,6 +50,37 @@ const StudentSideBar = () => {
                         <CalendarTodayIcon color={location.pathname.startsWith("/Student/calendar") ? 'primary' : 'inherit'} />
                     </ListItemIcon>
                     <ListItemText primary={tStudent('courseCalendar')} />
+                </ListItemButton>
+            </React.Fragment>
+            <Divider sx={{ my: 1 }} />
+            {/* AI学习助手模块 */}
+            <React.Fragment>
+                <ListSubheader component="div" inset>
+                    {tStudent('aiAssistant')}
+                </ListSubheader>
+                <ListItemButton component={Link} to="/Student/learning-assistant">
+                    <ListItemIcon>
+                        <SmartToyIcon color={location.pathname.startsWith("/Student/learning-assistant") ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary={tStudent('learningAssistant')} />
+                </ListItemButton>
+                <ListItemButton component={Link} to="/Student/practice-assistant">
+                    <ListItemIcon>
+                        <QuizIcon color={location.pathname.startsWith("/Student/practice-assistant") ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary={tStudent('practiceAssistant')} />
+                </ListItemButton>
+                <ListItemButton component={Link} to="/Student/ai-image-generator">
+                    <ListItemIcon>
+                        <AutoAwesomeIcon color={location.pathname.startsWith("/Student/ai-image-generator") ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary={tStudent('aiImageGenerator')} />
+                </ListItemButton>
+                <ListItemButton component={Link} to="/Student/knowledge-video-generator">
+                    <ListItemIcon>
+                        <VideoLibraryIcon color={location.pathname.startsWith("/Student/knowledge-video-generator") ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText primary={tStudent('knowledgeVideo')} />
                 </ListItemButton>
             </React.Fragment>
             <Divider sx={{ my: 1 }} />

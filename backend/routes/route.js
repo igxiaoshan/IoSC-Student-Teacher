@@ -13,6 +13,8 @@ const classRoutes = require('./classRoutes');
 const subjectRoutes = require('./subjectRoutes');
 const aiRoutes = require('./aiRoutes');
 const studentAiRoutes = require('./studentAiRoutes');
+const studentSubjectRoutes = require('./studentSubjectRoutes');
+const studentCalendarRoutes = require('./studentCalendarRoutes');
 const noticeRoutes = require('./noticeRoutes');
 const adminDashboardRoutes = require('./adminDashboard');
 const studentDashboardRoutes = require('./studentDashboard');
@@ -46,7 +48,7 @@ router.use('/', noticeRoutes);
 router.use('/ai', aiRoutes);
 
 // 学生 AI 助手
-router.use('/student', studentAiRoutes);
+router.use('/student/ai', studentAiRoutes);
 
 // 实训练习
 router.use('/ai/practical-exercise', require('./practicalExercise'));
@@ -58,17 +60,11 @@ router.use('/learning-path', require('./learningPath'));
 // 学生功能路由
 // ============================================
 
-// 学生日历（兼容旧路由）
-router.get('/student/:studentId/calendar', (req, res, next) => {
-    const { getStudentCalendar } = require('../controllers/studentCalendar-controller.js');
-    getStudentCalendar(req, res, next);
-});
+// 学生科目
+router.use('/student', studentSubjectRoutes);
 
-// 学生科目时间线
-router.get('/student/:studentId/subjects/:subjectId/timeline', (req, res, next) => {
-    const { getSubjectTimeline } = require('../controllers/studentSubject-controller.js');
-    getSubjectTimeline(req, res, next);
-});
+// 学生日历
+router.use('/student', studentCalendarRoutes);
 
 // ============================================
 // 仪表盘路由

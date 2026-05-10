@@ -21,6 +21,10 @@ import ViewStdAttendance from './ViewStdAttendance';
 import StudentComplain from './StudentComplain';
 import StudentCalendar from './StudentCalendar';
 import StudentMistakeBook from './StudentMistakeBook';
+import LearningAssistant from './LearningAssistant';
+import PracticeAssistant from './PracticeAssistant';
+import JimengImageGenerator from './JimengImageGenerator';
+import KnowledgeVideoGenerator from './KnowledgeVideoGenerator';
 import Logout from '../Logout'
 import AccountMenu from '../../components/AccountMenu';
 import { AppBar, Drawer } from '../../components/styles';
@@ -86,6 +90,13 @@ const StudentDashboard = () => {
                         <Route path="/Student/attendance" element={<ViewStdAttendance />} />
                         <Route path="/Student/calendar" element={<StudentCalendar />} />
                         <Route path="/Student/complain" element={<StudentComplain />} />
+                        <Route path="/Student/mistake-book" element={<StudentMistakeBook />} />
+
+                        {/* AI学习助手模块 */}
+                        <Route path="/Student/learning-assistant" element={<LearningAssistant />} />
+                        <Route path="/Student/practice-assistant" element={<PracticeAssistant />} />
+                        <Route path="/Student/ai-image-generator" element={<JimengImageGenerator />} />
+                        <Route path="/Student/knowledge-video-generator" element={<KnowledgeVideoGenerator />} />
 
                         <Route path="/logout" element={<Logout />} />
                     </Routes>
