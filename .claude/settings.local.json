@@ -20,7 +20,11 @@
       "Bash(npm ls:*)",
       "Bash(npm install:*)",
       "Skill(workflow:brainstorm-with-file)",
-      "Skill(workflow-lite-plan)"
+      "Skill(workflow-lite-plan)",
+      "Bash(node -c controllers/student_controller.js)",
+      "Bash(node:*)",
+      "mcp__ide__getDiagnostics",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }
