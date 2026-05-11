@@ -52,7 +52,7 @@ const TeacherClassManager = ({ open, onClose, teacher, onUpdate }) => {
 
         setLoading(true);
         try {
-            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/Teacher/addClass`, {
+            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/Teacher/addClass`, {
                 teacherId: teacher.id,
                 classId: selectedClassId
             });
@@ -88,7 +88,7 @@ const TeacherClassManager = ({ open, onClose, teacher, onUpdate }) => {
 
         setLoading(true);
         try {
-            const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/Teacher/removeClass`, {
+            const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/Teacher/removeClass`, {
                 data: {
                     teacherId: teacher.id,
                     classId: classId

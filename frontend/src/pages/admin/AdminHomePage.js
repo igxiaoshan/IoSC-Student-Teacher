@@ -48,7 +48,7 @@ const AdminHomePage = () => {
         setLoading(true);
         try {
             const response = await axios.get(
-                `${process.env.REACT_APP_BASE_URL}/adminDashboard/${adminID}?timeRange=${timeRange}`
+                `${process.env.REACT_APP_BASE_URL}/api/adminDashboard/${adminID}?timeRange=${timeRange}`
             );
             setDashboardData(response.data);
         } catch (error) {

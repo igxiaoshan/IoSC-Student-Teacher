@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const path = require("path");
 const app = express();
 
 // 路由
@@ -26,6 +27,10 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json({ limit: '10mb' }));
 app.use(cors());
 
+// 静态文件服务（上传文件和视频）
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/videos', express.static(path.join(__dirname, 'videos')));
+
 // 用户数据过滤中间件（自动移除密码等敏感字段）
 app.use(userFilterMiddleware);
 
@@ -35,7 +40,7 @@ app.use('/api/chat', chatbotRoutes);
 app.use('/api/gemini', geminiRoutes);
 app.use('/api/workflow', workflowRoutes);
 app.use('/api', healthRoutes); // 健康检查和监控端点
-app.use('/', Routes);
+app.use('/api', Routes);
 
 // 404 处理
 app.use(notFoundHandler);

@@ -3,7 +3,7 @@
  * 处理Server-Sent Events (SSE) 流式响应
  */
 
-const REACT_APP_BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5000";
+const REACT_APP_BASE_URL = process.env.REACT_APP_BASE_URL ?? "http://localhost:5000";
 
 /**
  * 流式学习助手API调用

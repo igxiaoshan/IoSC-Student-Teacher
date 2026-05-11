@@ -73,7 +73,7 @@ const LearningAssistant = () => {
             if (studentId) {
                 console.log('获取学生科目，学生ID:', studentId);
 
-                const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/student/${studentId}/subjects`);
+                const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/student/${studentId}/subjects`);
 
                 if (response.data && response.data.success) {
                     console.log('获取到学生科目列表:', response.data.data.subjects);
@@ -139,7 +139,7 @@ const LearningAssistant = () => {
         setError('');
 
         try {
-            const response = await fetch(`${process.env.REACT_APP_BASE_URL}/student/ai/ask/stream`, {
+            const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/student/ai/ask/stream`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -243,7 +243,7 @@ const LearningAssistant = () => {
         setError('');
 
         try {
-            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/student/ai/ask`, {
+            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/student/ai/ask`, {
                 studentId: safeGet(currentUser, '_id'),
                 subjectId: selectedSubject,
                 question: inputMessage,

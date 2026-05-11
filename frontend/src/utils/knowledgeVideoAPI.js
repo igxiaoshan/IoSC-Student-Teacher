@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-const BASE_URL = process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+const BASE_URL = process.env.REACT_APP_BASE_URL ?? 'http://localhost:5000';
 
 const apiClient = axios.create({
-    baseURL: BASE_URL,
+    baseURL: BASE_URL ? `${BASE_URL}/api` : '/api',
     timeout: 120000,
     headers: {
         'Content-Type': 'application/json',
@@ -18,16 +18,16 @@ export const knowledgeVideoAPI = {
         if (subject) data.subject = subject;
         if (userId) data.userId = userId;
         if (userType) data.userType = userType;
-        return apiClient.post('/api/knowledge/video-generate', data);
+        return apiClient.post('/knowledge/video-generate', data);
     },
 
     // 获取知识视频历史记录
     getHistory: (userId, limit = 20) =>
-        apiClient.get(`/api/knowledge/video-history/${userId}`, { params: { limit } }),
+        apiClient.get(`/knowledge/video-history/${userId}`, { params: { limit } }),
 
     // 查询任务状态（复用jimengAPI）
     getTaskStatus: (taskId, type = 'video') =>
-        apiClient.get(`/api/jimeng/task/${taskId}`, { params: { type } }),
+        apiClient.get(`/jimeng/task/${taskId}`, { params: { type } }),
 };
 
 export default knowledgeVideoAPI;

@@ -40,7 +40,7 @@ const EditClass = () => {
     const fetchClassData = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/Sclass/${id}`);
+            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/Sclass/${id}`);
             
             if (response.data && !response.data.message) {
                 const data = response.data.data || response.data;
@@ -84,7 +84,7 @@ const EditClass = () => {
         setSuccess('');
 
         try {
-            const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/Sclass/${id}`, {
+            const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/Sclass/${id}`, {
                 sclassName: classData.sclassName.trim(),
                 description: classData.description.trim(),
                 grade: classData.grade.trim(),

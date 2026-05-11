@@ -43,7 +43,7 @@ const EditSubject = () => {
     const fetchSubjectData = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/Subject/Detail/${id}`);
+            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/Subject/Detail/${id}`);
             
             if (response.data && !response.data.message) {
                 setSubjectData({
@@ -65,7 +65,7 @@ const EditSubject = () => {
 
     const fetchClasses = async () => {
         try {
-            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/SclassList/${currentUser._id}`);
+            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/SclassList/${currentUser._id}`);
             if (response.data && response.data.success !== false) {
                 // 处理分页数据结构
                 const classesData = response.data.data || response.data;
@@ -101,7 +101,7 @@ const EditSubject = () => {
         setSuccess('');
 
         try {
-            const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/Subject/${id}`, {
+            const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/Subject/${id}`, {
                 subName: subjectData.subName.trim(),
                 subCode: subjectData.subCode.trim(),
                 sessions: subjectData.sessions.trim(),

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MongoDB 数据库
   mongodb:
@@ -10,8 +8,9 @@ services:
       MONGO_INITDB_DATABASE: school
     volumes:
       - mongodb_data:/data/db
-    ports:
-      - "27017:27017"
+    # MongoDB 仅在内网可访问，不暴露公网端口
+    # ports:
+    #   - "27017:27017"
     networks:
       - school-network
     healthcheck:
@@ -49,9 +48,10 @@ services:
       OLLAMA_URL: ${OLLAMA_URL:-http://localhost:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-deepseek-r1}
       # CORS
-      CORS_ORIGIN: http://localhost
-    ports:
-      - "5000:5000"
+      CORS_ORIGIN: http://118.178.111.88
+    # 后端仅在内网可访问，不暴露公网端口
+    # ports:
+    #   - "5000:5000"
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/videos:/app/videos
@@ -61,7 +61,7 @@ services:
     networks:
       - school-network
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5000/api/"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -11,7 +11,8 @@ RUN npm ci
 COPY frontend/ ./
 
 # 构建生产版本
-ENV REACT_APP_BASE_URL=http://localhost:5000
+# Docker 部署时 BASE_URL 设为空，使用 Nginx 代理
+ENV REACT_APP_BASE_URL=
 RUN npm run build
 
 # 生产镜像

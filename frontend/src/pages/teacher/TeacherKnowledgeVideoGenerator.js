@@ -104,7 +104,7 @@ const TeacherKnowledgeVideoGenerator = () => {
 
         // 相对路径（本地代理URL）需要拼接完整的后端地址
         if (url.startsWith('/api/')) {
-            const backendUrl = process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+            const backendUrl = process.env.REACT_APP_BASE_URL ?? 'http://localhost:5000';
             url = `${backendUrl}${url}`;
         }
 

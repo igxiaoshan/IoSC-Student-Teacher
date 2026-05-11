@@ -39,7 +39,7 @@ export const getAllSclasses = (id, address, filters = {}) => async (dispatch) =>
         if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
         if (filters.sortOrder) queryParams.append('sortOrder', filters.sortOrder);
 
-        const url = `${process.env.REACT_APP_BASE_URL}/${address}List/${id}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+        const url = `${process.env.REACT_APP_BASE_URL}/api/${address}List/${id}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
         const result = await axios.get(url);
 
         if (result.data.success === false || result.data.message) {
@@ -57,7 +57,7 @@ export const getClassStudents = (id) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/Sclass/Students/${id}`);
+        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/Sclass/Students/${id}`);
         if (result.data.message) {
             dispatch(getFailedTwo(result.data.message));
         } else {
@@ -73,7 +73,7 @@ export const getClassTeachers = (id) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/Sclass/Teachers/${id}`);
+        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/Sclass/Teachers/${id}`);
         if (result.data.success === false || result.data.message) {
             dispatch(getFailedTwo(result.data.message || '获取班级教师失败'));
         } else {
@@ -89,7 +89,7 @@ export const getClassDetails = (id, address) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`);
+        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/${address}/${id}`);
         if (result.data) {
             dispatch(detailsSuccess(result.data));
         }
@@ -103,7 +103,7 @@ export const getSubjectList = (id, address) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`);
+        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/${address}/${id}`);
         if (result.data.message) {
             dispatch(getFailed(result.data.message));
         } else {
@@ -119,7 +119,7 @@ export const getTeacherFreeClassSubjects = (id) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/FreeSubjectList/${id}`);
+        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/FreeSubjectList/${id}`);
         if (result.data.message) {
             dispatch(getFailed(result.data.message));
         } else {
@@ -135,7 +135,7 @@ export const getSubjectDetails = (id, address) => async (dispatch) => {
     dispatch(getSubDetailsRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`);
+        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/${address}/${id}`);
         if (result.data) {
             dispatch(getSubDetailsSuccess(result.data));
         }
@@ -149,7 +149,7 @@ export const getClassStatistics = (schoolId) => async (dispatch) => {
     dispatch(getStatsRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/SclassStats/${schoolId}`);
+        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/SclassStats/${schoolId}`);
         if (result.data.success) {
             dispatch(getStatsSuccess(result.data));
         } else {
@@ -166,7 +166,7 @@ export const batchDeleteClasses = (schoolId, classIds) => async (dispatch) => {
     dispatch(getBatchRequest());
 
     try {
-        const result = await axios.delete(`${process.env.REACT_APP_BASE_URL}/SclassBatch/${schoolId}`, {
+        const result = await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/SclassBatch/${schoolId}`, {
             data: { classIds }
         });
 
@@ -191,7 +191,7 @@ export const createClass = (classData) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.post(`${process.env.REACT_APP_BASE_URL}/SclassCreate`, classData, {
+        const result = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/SclassCreate`, classData, {
             headers: { 'Content-Type': 'application/json' },
         });
 
@@ -221,7 +221,7 @@ export const getClassOverviewStats = (classId) => async (dispatch) => {
     console.log('[getClassOverviewStats] Fetching for classId:', classId);
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/ClassOverviewStats/${classId}`);
+        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/ClassOverviewStats/${classId}`);
         console.log('[getClassOverviewStats] Response:', result.data);
         if (result.data.success) {
             dispatch(getOverviewSuccess(result.data.data));

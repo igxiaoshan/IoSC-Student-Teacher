@@ -86,7 +86,7 @@ const PracticeAssistant = () => {
             if (studentId) {
                 console.log('获取学生科目，学生ID:', studentId);
 
-                const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/student/${studentId}/subjects`);
+                const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/student/${studentId}/subjects`);
 
                 if (response.data && response.data.success) {
                     console.log('获取到学生科目列表:', response.data.data.subjects);
@@ -145,7 +145,7 @@ const PracticeAssistant = () => {
             // 获取选中科目的详细信息
             const selectedSubject = subjects.find(s => s._id === practiceConfig.subjectId);
 
-            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/student/ai/practice/generate`, {
+            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/student/ai/practice/generate`, {
                 studentId: studentId,
                 subjectName: selectedSubject?.subName || '通用',
                 ...practiceConfig
@@ -220,7 +220,7 @@ const PracticeAssistant = () => {
             // 计算实际答题时间（秒）
             const timeTaken = Math.round((Date.now() - questionStartTime) / 1000);
 
-            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/student/ai/practice/submit`, {
+            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/student/ai/practice/submit`, {
                 studentId: studentId,
                 subjectId: practiceConfig.subjectId,
                 practiceId: practiceData.practiceId,

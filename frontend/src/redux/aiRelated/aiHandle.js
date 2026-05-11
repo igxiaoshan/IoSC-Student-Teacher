@@ -33,7 +33,7 @@ import {
     decisionSupportFailure
 } from './aiSlice';
 
-const REACT_APP_BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5000";
+const REACT_APP_BASE_URL = process.env.REACT_APP_BASE_URL ?? "http://localhost:5000";
 
 // 学习助手API
 export const askStudyAssistant = (questionData) => async (dispatch) => {

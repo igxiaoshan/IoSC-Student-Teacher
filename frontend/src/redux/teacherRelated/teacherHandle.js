@@ -12,7 +12,7 @@ export const getAllTeachers = (id) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/Teachers/${id}`);
+        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/Teachers/${id}`);
 
         // 处理新的API响应格式
         if (result.data.success === false) {
@@ -34,7 +34,7 @@ export const getTeacherDetails = (id) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/Teacher/${id}`);
+        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/Teacher/${id}`);
         if (result.data) {
             dispatch(doneSuccess(result.data));
         }
@@ -47,7 +47,7 @@ export const updateTeachSubject = (teacherId, teachSubject) => async (dispatch) 
     dispatch(getRequest());
 
     try {
-        await axios.put(`${process.env.REACT_APP_BASE_URL}/TeacherSubject`, { teacherId, teachSubject }, {
+        await axios.put(`${process.env.REACT_APP_BASE_URL}/api/TeacherSubject`, { teacherId, teachSubject }, {
             headers: { 'Content-Type': 'application/json' },
         });
         dispatch(postDone());

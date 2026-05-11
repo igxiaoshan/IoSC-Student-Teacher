@@ -78,10 +78,10 @@ router.use('/student-dashboard', studentDashboardRoutes);
 // ============================================
 
 // 即梦 AI
-router.use('/api/jimeng', require('./jimeng'));
+router.use('/jimeng', require('./jimeng'));
 
 // 知识视频
-router.use('/api/knowledge', require('./knowledgeVideo'));
+router.use('/knowledge', require('./knowledgeVideo'));
 
 // ============================================
 // 服务测试路由

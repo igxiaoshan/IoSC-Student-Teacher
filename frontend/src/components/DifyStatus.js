@@ -29,7 +29,7 @@ const DifyStatus = () => {
 
     const fetchServiceInfo = async () => {
         try {
-            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/dify/info`);
+            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/dify/info`);
             if (response.data.success) {
                 setServiceInfo(response.data.serviceInfo);
             }
@@ -44,7 +44,7 @@ const DifyStatus = () => {
         setTestResult(null);
 
         try {
-            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/dify/test`);
+            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/dify/test`);
             setTestResult(response.data);
         } catch (err) {
             setError('连接测试失败: ' + (err.response?.data?.message || err.message));

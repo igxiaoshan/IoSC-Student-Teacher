@@ -52,7 +52,7 @@ const SubjectClassManager = ({ open, onClose, subject, onUpdate }) => {
 
         setLoading(true);
         try {
-            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/Subject/addClass`, {
+            const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/Subject/addClass`, {
                 subjectId: subject.id,
                 classId: selectedClassId
             });
@@ -88,7 +88,7 @@ const SubjectClassManager = ({ open, onClose, subject, onUpdate }) => {
 
         setLoading(true);
         try {
-            const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/Subject/removeClass`, {
+            const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/Subject/removeClass`, {
                 data: {
                     subjectId: subject.id,
                     classId: classId

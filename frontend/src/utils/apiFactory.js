@@ -6,13 +6,13 @@
 import axios from 'axios';
 
 // 基础 URL
-const BASE_URL = process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+const BASE_URL = process.env.REACT_APP_BASE_URL ?? 'http://localhost:5000';
 
 /**
  * 创建 API 客户端（带请求/响应拦截器）
  */
 const apiClient = axios.create({
-    baseURL: BASE_URL,
+    baseURL: BASE_URL ? `${BASE_URL}/api` : '/api',
     timeout: 30000,
     headers: {
         'Content-Type': 'application/json',
