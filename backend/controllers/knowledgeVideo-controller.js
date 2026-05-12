@@ -360,11 +360,12 @@ const queryDifyKnowledge = async (keyword, subject) => {
         console.log('[Dify] 开始查询知识库, 关键词:', keyword);
 
         const request = {
-            inputs: {
-                question: keyword,
-                subject: subject || '通用',
-            },
-            query: `请详细介绍"${keyword}"这个知识点。要求：
+            inputs: {},
+            query: `[角色: 知识讲解专家]
+[学科: ${subject || '通用'}]
+[知识点: ${keyword}]
+
+请详细介绍"${keyword}"这个知识点。要求：
 1. 使用Markdown格式化输出
 2. 包含概念定义、核心原理、应用示例三个部分
 3. 如果有相关公式或代码，请用代码块展示

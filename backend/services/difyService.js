@@ -382,21 +382,45 @@ class DifyService {
         };
     }
 
+    // 流式消息发送 (供 teacherAI 等控制器使用)
+    async sendStreamingMessage(appType, data, onData, onEnd, onError) {
+        const { query, inputs, user } = data;
+        const requestData = {
+            inputs: {},
+            query: query || '请开始',
+            response_mode: 'streaming',
+            user: user || 'teacher'
+        };
+
+        const onChunk = (chunk) => {
+            try {
+                const eventData = JSON.parse(chunk);
+                onData(eventData);
+            } catch (e) {
+                console.warn('[sendStreamingMessage] 解析chunk失败:', e.message);
+            }
+        };
+
+        const onComplete = (result) => {
+            if (onEnd) onEnd(result);
+        };
+
+        return this.callDifyStreamingAPI('/chat-messages', requestData, onChunk, onComplete, onError);
+    }
+
     // 学习助手对话
     async chatWithLearningAssistant(message, context = {}) {
         const { studentId, subjectId, courseContent, studentHistory } = context;
         
         try {
-            // 将上下文信息作为inputs传递给Dify工作流的开始节点变量
-            // query只包含用户的问题，由Dify工作流处理角色识别、知识库检索和格式化
             const requestData = {
-                inputs: {
-                    subjectName: context.subjectName || '通用',
-                    courseContent: courseContent || '暂无特定教学内容',
-                    studentHistory: studentHistory || '暂无历史记录',
-                    userType: context.userType || '学生',
-                },
-                query: message,
+                inputs: {},
+                query: `[角色: 学习助手]
+[学科: ${context.subjectName || '通用'}]
+[教学内容: ${courseContent || '暂无特定教学内容'}]
+[学生历史: ${studentHistory || '暂无历史记录'}]
+
+${message}`,
                 response_mode: 'blocking',
                 user: `student_${studentId || 'anonymous'}`
             };
@@ -432,15 +456,14 @@ class DifyService {
         const { studentId, subjectId, courseContent, studentHistory } = context;
 
         try {
-            // 将上下文信息作为inputs传递给Dify工作流的开始节点变量
             const requestData = {
-                inputs: {
-                    subjectName: context.subjectName || '通用',
-                    courseContent: courseContent || '暂无特定教学内容',
-                    studentHistory: studentHistory || '暂无历史记录',
-                    userType: context.userType || '学生',
-                },
-                query: message,
+                inputs: {},
+                query: `[角色: 学习助手]
+[学科: ${context.subjectName || '通用'}]
+[教学内容: ${courseContent || '暂无特定教学内容'}]
+[学生历史: ${studentHistory || '暂无历史记录'}]
+
+${message}`,
                 response_mode: 'streaming',
                 user: `student_${studentId || 'anonymous'}`
             };
@@ -522,18 +545,8 @@ class DifyService {
 
         try {
             const response = await this.callDifyAPI('/chat-messages', {
-                inputs: {
-                    generation_type: 'practice_questions',
-                    subject: context.subjectName || '通用',
-                    chapter: chapterContent || '基础内容',
-                    difficulty: difficulty || '中等',
-                    count: questionCount.toString(),
-                    types: questionTypes.join(','),
-                    weak_areas: studentWeakAreas.join(','),
-                    format: 'json',
-                    system_prompt: systemPrompt
-                },
-                query: `请严格按照JSON格式为${context.subjectName || '通用'}科目生成${questionCount}道${difficulty || '中等'}难度的练习题。题型：${questionTypes.join('、')}。必须返回有效的JSON格式，包含questions数组。`,
+                inputs: {},
+                query: systemPrompt,
                 response_mode: 'blocking',
                 user: `student_${studentId || 'anonymous'}`,
                 auto_generate_name: false
@@ -674,15 +687,8 @@ class DifyService {
 
         try {
             const response = await this.callDifyAPI('/chat-messages', {
-                inputs: {
-                    evaluation_type: 'answer_check',
-                    question_text: question.questionText || question.question || '',
-                    correct_answer: question.correctAnswer || question.answer || '',
-                    student_answer: studentAnswer || '',
-                    question_type: question.questionType || '选择题',
-                    system_prompt: systemPrompt
-                },
-                query: `请评估以下答案：题目："${question.questionText || question.question}"，学生答案："${studentAnswer}"，正确答案："${question.correctAnswer || question.answer}"`,
+                inputs: {},
+                query: systemPrompt,
                 response_mode: 'blocking',
                 user: `student_${context.studentId || 'anonymous'}`,
                 auto_generate_name: false
@@ -1284,16 +1290,8 @@ ${studentAnswers.map((answer, index) => `
 
         try {
             const response = await this.callDifyAPI('/chat-messages', {
-                inputs: {
-                    analysis_type: 'student_performance',
-                    subject: subject,
-                    teacher_id: teacherId,
-                    question_count: questions.length,
-                    student_count: studentAnswers.length,
-                    class_stats: JSON.stringify(classStats),
-                    system_prompt: systemPrompt
-                },
-                query: `请对${subject}科目的学生学习表现进行深度分析，共${questions.length}道题目，${studentAnswers.length}名学生参与。请提供详细的教学建议和改进方案。`,
+                inputs: {},
+                query: systemPrompt,
                 response_mode: 'blocking',
                 user: `teacher_${teacherId}`,
                 auto_generate_name: false
@@ -1537,15 +1535,8 @@ ${studyGoals || '提高整体成绩'}
 
         try {
             const response = await this.callDifyAPI('/chat-messages', {
-                inputs: {
-                    recommendation_type: 'learning_plan',
-                    student_performance: JSON.stringify(recentPerformance || []),
-                    weak_areas: weakAreas.join(', ') || '无',
-                    study_goals: studyGoals || '提高整体成绩',
-                    student_id: studentId || 'anonymous',
-                    system_prompt: systemPrompt
-                },
-                query: `请根据我的学习表现制定个性化学习计划。我的薄弱环节是：${weakAreas.join('、') || '无'}，学习目标是：${studyGoals || '提高整体成绩'}`,
+                inputs: {},
+                query: systemPrompt,
                 response_mode: 'blocking',
                 user: `student_${studentId}`,
                 auto_generate_name: false
@@ -1651,9 +1642,8 @@ ${studyGoals || '提高整体成绩'}
 }`;
 
         try {
-            // 使用Dify API生成课件内容
             const response = await this.callDifyAPI('/chat-messages', {
-                inputs: inputData,
+                inputs: {},
                 query: systemPrompt,
                 response_mode: 'blocking',
                 conversation_id: '',
@@ -1733,9 +1723,8 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
                 return this.generateMockAssessmentResponse(inputData);
             }
 
-            // 使用与课件生成相同的调用方式
             const response = await this.callDifyAPI('/chat-messages', {
-                inputs: inputData,  // 直接传递原始inputData，与课件生成保持一致
+                inputs: {},
                 query: systemPrompt,
                 response_mode: 'blocking',
                 conversation_id: '',
@@ -2495,7 +2484,7 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
                 console.log(`超时设置: ${this.timeout}ms`);
 
                 const response = await this.callDifyAPI('/chat-messages', {
-                    inputs: inputData,
+                    inputs: {},
                     query: systemPrompt,
                     response_mode: 'blocking',
                     conversation_id: '',

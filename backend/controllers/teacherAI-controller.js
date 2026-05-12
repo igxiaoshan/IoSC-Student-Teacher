@@ -214,13 +214,15 @@ const streamLessonPlan = async (req, res) => {
         await difyService.sendStreamingMessage(
             'teacher-lesson-planning',
             {
-                query: `请基于以下课程信息设计教学内容：
-课程名称：${lessonData.courseName}
-课程大纲：${lessonData.syllabus}
-学时安排：${lessonData.duration}小时
-学生水平：${lessonData.studentLevel}
-教学目标：${lessonData.objectives}`,
-                inputs: lessonData,
+                query: `[角色: 备课助手]
+[课程名称: ${lessonData.courseName}]
+[课程大纲: ${lessonData.syllabus}]
+[学时安排: ${lessonData.duration}小时]
+[学生水平: ${lessonData.studentLevel}]
+[教学目标: ${lessonData.objectives}]
+
+请基于以上课程信息设计教学内容。`,
+                inputs: {},
                 user: teacherId
             },
             // onData
@@ -292,13 +294,15 @@ const streamExamGeneration = async (req, res) => {
         await difyService.sendStreamingMessage(
             'teacher-exam-generation',
             {
-                query: `请基于以下要求生成考核内容：
-教学内容：${examData.teachingContent}
-考核类型：${examData.examType}
-题目数量：${examData.questionCount}
-难度等级：${examData.difficulty}
-学科领域：${examData.subject}`,
-                inputs: examData,
+                query: `[角色: 考核生成助手]
+[教学内容: ${examData.teachingContent}]
+[考核类型: ${examData.examType}]
+[题目数量: ${examData.questionCount}]
+[难度等级: ${examData.difficulty}]
+[学科领域: ${examData.subject}]
+
+请基于以上要求生成考核内容。`,
+                inputs: {},
                 user: teacherId
             },
             // onData

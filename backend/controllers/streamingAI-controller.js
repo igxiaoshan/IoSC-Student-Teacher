@@ -29,26 +29,26 @@ const streamStudyAssistant = async (req, res) => {
 
         // 构建Dify API请求
         const difyRequest = {
-            inputs: {
-                question: question,
-                subject: subject || '通用',
-                student_context: JSON.stringify(context || {})
-            },
-            query: question,
+            inputs: {},
+            query: `[角色: 学习助手]
+[学科: ${subject || '通用'}]
+[上下文: ${JSON.stringify(context || {})}]
+
+${question}`,
             response_mode: 'streaming',
             conversation_id: context?.conversationId || '',
             user: studentId
         };
 
         console.log('[Dify Request]:', {
-            url: `${DIFY_API_BASE}/v1/chat-messages`,
+            url: `${DIFY_API_BASE}/chat-messages`,
             headers: { 'Authorization': `Bearer ${DIFY_API_KEY}` },
             data: difyRequest
         });
 
         // 调用Dify流式API
         const difyResponse = await axios.post(
-            `${DIFY_API_BASE}/v1/chat-messages`,
+            `${DIFY_API_BASE}/chat-messages`,
             difyRequest,
             {
                 headers: {
@@ -187,19 +187,18 @@ const streamLearningCompanion = async (req, res) => {
 
         // 构建Dify API请求 (学习伙伴应用)
         const difyRequest = {
-            inputs: {
-                user_message: message,
-                student_id: studentId,
-                companion_role: 'learning_buddy'
-            },
-            query: message,
+            inputs: {},
+            query: `[角色: 学习伙伴]
+[学生ID: ${studentId}]
+
+${message}`,
             response_mode: 'streaming',
             user: studentId
         };
 
         // 调用Dify流式API
         const difyResponse = await axios.post(
-            `${DIFY_API_BASE}/v1/chat-messages`,
+            `${DIFY_API_BASE}/chat-messages`,
             difyRequest,
             {
                 headers: {

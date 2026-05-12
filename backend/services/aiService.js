@@ -30,12 +30,12 @@ class AIService {
      */
     async queryKnowledgeBase(query, conversationId = null, context = {}) {
         try {
+            const contextStr = Object.keys(context).length > 0
+                ? `[上下文]\n${JSON.stringify(context, null, 2)}\n\n` : '';
+
             const payload = {
-                inputs: {
-                    query: query,
-                    ...context
-                },
-                query: query,
+                inputs: {},
+                query: `${contextStr}${query}`,
                 response_mode: 'blocking',
                 user: context.userId || 'anonymous'
             };
