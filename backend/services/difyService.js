@@ -383,25 +383,17 @@ class DifyService {
     async chatWithLearningAssistant(message, context = {}) {
         const { studentId, subjectId, courseContent, studentHistory } = context;
         
-        const systemPrompt = `你是一名专业的学习助手，专门帮助学生解答学习问题。
-
-学生信息：
-- 学生ID: ${studentId || '未知'}
-- 科目: ${context.subjectName || '通用'}
-
-教学内容参考：
-${courseContent || '暂无特定教学内容'}
-
-学生历史表现：
-${studentHistory || '暂无历史记录'}
-
-请根据以上信息，为学生提供准确、详细、易懂的解答。如果是数学题目，请提供步骤详解。`;
-
         try {
-            // 根据Dify官方文档的正确格式
+            // 将上下文信息作为inputs传递给Dify工作流的开始节点变量
+            // query只包含用户的问题，由Dify工作流处理角色识别、知识库检索和格式化
             const requestData = {
-                inputs: {},  // 空的inputs对象，系统提示应该在应用配置中设置
-                query: `${message}\n\n学生信息：${context.subjectName || '通用'}科目\n${systemPrompt}`,
+                inputs: {
+                    subjectName: context.subjectName || '通用',
+                    courseContent: courseContent || '暂无特定教学内容',
+                    studentHistory: studentHistory || '暂无历史记录',
+                    userType: 'student',
+                },
+                query: message,
                 response_mode: 'blocking',
                 user: `student_${studentId || 'anonymous'}`
             };
@@ -436,24 +428,16 @@ ${studentHistory || '暂无历史记录'}
     async chatWithLearningAssistantStream(message, context = {}, onChunk, onComplete, onError) {
         const { studentId, subjectId, courseContent, studentHistory } = context;
 
-        const systemPrompt = `你是一名专业的学习助手，专门帮助学生解答学习问题。
-
-学生信息：
-- 学生ID: ${studentId || '未知'}
-- 科目: ${context.subjectName || '通用'}
-
-教学内容参考：
-${courseContent || '暂无特定教学内容'}
-
-学生历史表现：
-${studentHistory || '暂无历史记录'}
-
-请根据以上信息，为学生提供准确、详细、易懂的解答。如果是数学题目，请提供步骤详解。`;
-
         try {
+            // 将上下文信息作为inputs传递给Dify工作流的开始节点变量
             const requestData = {
-                inputs: {},
-                query: `${message}\n\n学生信息：${context.subjectName || '通用'}科目\n${systemPrompt}`,
+                inputs: {
+                    subjectName: context.subjectName || '通用',
+                    courseContent: courseContent || '暂无特定教学内容',
+                    studentHistory: studentHistory || '暂无历史记录',
+                    userType: 'student',
+                },
+                query: message,
                 response_mode: 'streaming',
                 user: `student_${studentId || 'anonymous'}`
             };

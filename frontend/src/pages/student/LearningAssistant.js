@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import {
     Box,
     Container,
@@ -287,13 +288,30 @@ const LearningAssistant = () => {
     };
 
     const formatMessage = (content) => {
-        // 简单的消息格式化，支持换行
-        return content.split('\n').map((line, index) => (
-            <React.Fragment key={index}>
-                {line}
-                {index < content.split('\n').length - 1 && <br />}
-            </React.Fragment>
-        ));
+        // 使用ReactMarkdown渲染Markdown格式内容
+        // Dify工作流返回的AI回答已包含Markdown格式（标题、列表、代码块等）
+        return (
+            <ReactMarkdown
+                components={{
+                    h3: ({node, ...props}) => <Typography variant="subtitle1" sx={{fontWeight: 'bold', mt: 2, mb: 1}} {...props} />,
+                    p: ({node, ...props}) => <Typography variant="body1" sx={{mb: 1}} {...props} />,
+                    ul: ({node, ...props}) => <Box component="ul" sx={{pl: 2, mb: 1}} {...props} />,
+                    ol: ({node, ...props}) => <Box component="ol" sx={{pl: 2, mb: 1}} {...props} />,
+                    li: ({node, ...props}) => <Typography component="li" variant="body1" {...props} />,
+                    code: ({node, inline, ...props}) =>
+                        inline ?
+                            <Box component="code" sx={{bgcolor: 'action.hover', px: 0.5, borderRadius: 0.5, fontFamily: 'monospace', fontSize: '0.9em'}} {...props} /> :
+                            <Box component="pre" sx={{bgcolor: 'grey.100', p: 1.5, borderRadius: 1, overflow: 'auto', mb: 1}}>
+                                <Box component="code" sx={{fontFamily: 'monospace', fontSize: '0.85em'}} {...props} />
+                            </Box>,
+                    blockquote: ({node, ...props}) => <Box component="blockquote" sx={{borderLeft: 3, borderColor: 'primary.main', pl: 2, ml: 0, color: 'text.secondary', fontStyle: 'italic'}} {...props} />,
+                    strong: ({node, ...props}) => <Box component="strong" sx={{fontWeight: 'bold'}} {...props} />,
+                    hr: ({node, ...props}) => <Box component="hr" sx={{border: 'none', borderTop: '1px solid', borderColor: 'divider', my: 2}} {...props} />,
+                }}
+            >
+                {content}
+            </ReactMarkdown>
+        );
     };
 
     const getQuickQuestions = () => {
@@ -425,9 +443,9 @@ const LearningAssistant = () => {
                                                 color: message.type === 'user' ? 'white' : 'text.primary'
                                             }}
                                         >
-                                            <Typography variant="body1">
+                                            <Box sx={{ '& > *:first-child': { mt: 0 } }}>
                                                 {formatMessage(message.content)}
-                                            </Typography>
+                                            </Box>
                                             <Typography variant="caption" sx={{ opacity: 0.7, mt: 1, display: 'block' }}>
                                                 {message.timestamp.toLocaleTimeString()}
                                             </Typography>
@@ -458,9 +476,9 @@ const LearningAssistant = () => {
                                             <SmartToyIcon />
                                         </Avatar>
                                         <Paper sx={{ p: 2, bgcolor: 'grey.100', position: 'relative' }}>
-                                            <Typography variant="body2">
+                                            <Box sx={{ '& > *:first-child': { mt: 0 } }}>
                                                 {formatMessage(streamingMessage)}
-                                            </Typography>
+                                            </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                                                 <CircularProgress size={12} sx={{ mr: 1 }} />
                                                 <Typography variant="caption" sx={{ opacity: 0.7 }}>

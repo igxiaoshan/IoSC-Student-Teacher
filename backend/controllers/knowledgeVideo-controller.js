@@ -364,7 +364,11 @@ const queryDifyKnowledge = async (keyword, subject) => {
                 question: keyword,
                 subject: subject || '通用',
             },
-            query: `请详细介绍"${keyword}"这个知识点，包括概念、原理和应用示例`,
+            query: `请详细介绍"${keyword}"这个知识点。要求：
+1. 使用Markdown格式化输出
+2. 包含概念定义、核心原理、应用示例三个部分
+3. 如果有相关公式或代码，请用代码块展示
+4. 内容要准确、简洁、易懂`,
             response_mode: 'blocking',
             user: 'knowledge-video-system',
         };
