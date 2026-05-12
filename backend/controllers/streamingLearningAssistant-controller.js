@@ -7,7 +7,9 @@ const Subject = require('../models/subjectSchema');
  */
 const streamLearningAssistant = async (req, res) => {
     try {
-        const { studentId, subjectId, question, conversationId } = req.body;
+        const { studentId, subjectId, question, conversationId, userType } = req.body;
+
+  const difyUserType = userType === 'teacher' ? '老师' : '学生';
 
         console.log(`[流式学习助手] 学生${studentId}提问:`, {
             question: question?.substring(0, 50) + '...',
@@ -141,7 +143,9 @@ const streamLearningAssistant = async (req, res) => {
  */
 const chatLearningAssistant = async (req, res) => {
     try {
-        const { studentId, subjectId, question, conversationId } = req.body;
+        const { studentId, subjectId, question, conversationId, userType } = req.body;
+
+  const difyUserType = userType === 'teacher' ? '老师' : '学生';
 
         console.log(`[学习助手] 学生${studentId}提问:`, {
             question: question?.substring(0, 50) + '...',

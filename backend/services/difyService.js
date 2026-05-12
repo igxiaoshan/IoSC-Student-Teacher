@@ -253,6 +253,7 @@ class DifyService {
             let conversationId = '';
             let messageId = '';
             let fullContent = '';
+    let completed = false;
             let isInThinkTag = false;
             let thinkContent = '';
 
@@ -266,7 +267,8 @@ class DifyService {
                         try {
                             const jsonStr = line.slice(6);
                             if (jsonStr === '[DONE]') {
-                                if (onComplete) {
+                                if (onComplete && !completed) {
+                                    completed = true;
                                     onComplete({
                                         conversationId,
                                         messageId,
@@ -307,7 +309,8 @@ class DifyService {
             });
 
             response.data.on('end', () => {
-                if (onComplete) {
+                if (onComplete && !completed) {
+                    completed = true;
                     onComplete({
                         conversationId,
                         messageId,
@@ -391,7 +394,7 @@ class DifyService {
                     subjectName: context.subjectName || '通用',
                     courseContent: courseContent || '暂无特定教学内容',
                     studentHistory: studentHistory || '暂无历史记录',
-                    userType: 'student',
+                    userType: context.userType || '学生',
                 },
                 query: message,
                 response_mode: 'blocking',
@@ -435,7 +438,7 @@ class DifyService {
                     subjectName: context.subjectName || '通用',
                     courseContent: courseContent || '暂无特定教学内容',
                     studentHistory: studentHistory || '暂无历史记录',
-                    userType: 'student',
+                    userType: context.userType || '学生',
                 },
                 query: message,
                 response_mode: 'streaming',

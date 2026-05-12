@@ -1,0 +1,1007 @@
+app:
+  description: IoSC智能学习助手 - 自动识别学生/老师角色，优先知识库检索，未命中时由LLM生成，格式化输出
+  icon: 🎓
+  icon_background: '#E3F2FD'
+  mode: advanced-chat
+  name: IoSC学习助手-优化版
+  use_icon_as_answer_icon: false
+kind: app
+version: 0.1.2
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      - .PDF
+      - .DOC
+      - .DOCX
+      - .TXT
+      allowed_file_types:
+      - image
+      - document
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: true
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: '你好！我是IoSC智能学习助手🎓
+
+
+      我会根据你的角色（学生或老师）自动提供学习或教学相关的资料和解答。
+
+
+      📚 **学生**可以问我：概念解释、题目求解、复习指导、作业帮助、考试准备等
+
+      📚 **老师**可以问我：教案设计、教学计划、课程安排、学生管理、教学评估等
+
+
+      请直接输入你的问题！'
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - 帮我解释一下这个概念
+    - 这道题怎么解？
+    - 帮我设计一份教案
+    suggested_questions_after_answer:
+      enabled: true
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: parameter-extractor
+      id: start-to-param
+      source: '1001'
+      sourceHandle: source
+      target: '1002'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: parameter-extractor
+        targetType: if-else
+      id: param-to-role
+      source: '1002'
+      sourceHandle: source
+      target: '1003'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: knowledge-retrieval
+      id: role-student-to-kb
+      source: '1003'
+      sourceHandle: 'true'
+      target: '1004'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: knowledge-retrieval
+      id: role-teacher-to-kb
+      source: '1003'
+      sourceHandle: 'false'
+      target: '1005'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: knowledge-retrieval
+        targetType: if-else
+      id: student-kb-to-check
+      source: '1004'
+      sourceHandle: source
+      target: '1006'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: knowledge-retrieval
+        targetType: if-else
+      id: teacher-kb-to-check
+      source: '1005'
+      sourceHandle: source
+      target: '1007'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: teacher-hit-to-format
+      source: '1007'
+      sourceHandle: 'true'
+      target: '1015'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: teacher-miss-to-llm
+      source: '1007'
+      sourceHandle: 'false'
+      target: '1011'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: teacher-format-to-answer
+      source: '1015'
+      sourceHandle: source
+      target: '1010'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: teacher-llm-to-answer
+      source: '1011'
+      sourceHandle: source
+      target: '1013'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: 1006-true-1014-target
+      source: '1006'
+      sourceHandle: 'true'
+      target: '1014'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 1014-source-1008-target
+      source: '1014'
+      sourceHandle: source
+      target: '1008'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: 1006-false-1009-target
+      source: '1006'
+      sourceHandle: 'false'
+      target: '1009'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 1009-source-1012-target
+      source: '1009'
+      sourceHandle: source
+      target: '1012'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: 用户输入
+        type: start
+        variables:
+        - label: 科目名称
+          max_length: 100
+          name: subjectName
+          options: []
+          required: false
+          type: text-input
+          variable: subjectName
+        - label: 教学内容
+          max_length: 2000
+          name: courseContent
+          options: []
+          required: false
+          type: paragraph
+          variable: courseContent
+        - label: 学生历史
+          max_length: 1000
+          name: studentHistory
+          options: []
+          required: false
+          type: paragraph
+          variable: studentHistory
+        - label: 用户类型
+          max_length: 20
+          name: userType
+          options:
+          - 学生
+          - 老师
+          required: false
+          type: select
+          variable: userType
+      height: 168
+      id: '1001'
+      position:
+        x: 30
+        y: 284
+      positionAbsolute:
+        x: 30
+        y: 284
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: 从对话内容自动判断用户是学生还是老师
+        instruction: '你是一个角色识别器，根据用户的提问内容和语境判断用户角色。只返回"student"或"teacher"，不要返回任何其他内容。
+
+
+          ## 判定规则
+
+
+          ### 判定为 student 的情况：
+
+          1. 询问概念解释、定义、原理（如"什么是XX"、"XX是什么意思"）
+
+          2. 请求解题步骤、作业帮助（如"这道题怎么做"、"帮我解一下"）
+
+          3. 复习、备考、学习建议（如"怎么复习"、"考试重点"）
+
+          4. 学习方法、笔记整理（如"怎么做笔记"、"怎么学XX"）
+
+          5. 请教知识、不理解的内容（如"我不懂XX"、"XX搞不明白"）
+
+          6. 使用学生口吻（如"老师好"、"我在学XX"）
+
+
+          ### 判定为 teacher 的情况：
+
+          1. 教案设计、教学计划（如"帮我设计教案"、"教学方案"）
+
+          2. 课程安排、教学进度（如"课程规划"、"教学进度表"）
+
+          3. 学生管理、班级管理（如"学生纪律"、"班级管理方法"）
+
+          4. 教学评估、出题（如"出一份试卷"、"评估学生"）
+
+          5. 教学方法、教学策略（如"怎么教XX"、"教学创新"）
+
+          6. 使用教师口吻（如"我的学生"、"我教的班"）
+
+
+          ### 默认规则：
+
+          - 无法明确判断时，默认返回 student
+
+          - 同时包含学习和教学特征时，优先判断为 teacher（教师意图更明确）
+
+
+          请根据以上规则判断用户角色，只返回 student 或 teacher。
+
+          '
+        model:
+          completion_params:
+            temperature: 0
+          mode: chat
+          name: qwen-plus
+          provider: tongyi
+        parameters:
+        - description: 用户角色，student或teacher
+          name: role
+          required: true
+          type: string
+        query:
+        - '1001'
+        - sys.query
+        reasoning_mode: prompt
+        selected: false
+        title: 角色识别
+        type: parameter-extractor
+        variables: []
+        vision:
+          enabled: false
+      height: 142
+      id: '1002'
+      position:
+        x: 334
+        y: 284
+      positionAbsolute:
+        x: 334
+        y: 284
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: cond-role-student-001
+            value: student
+            varType: string
+            variable_selector:
+            - '1002'
+            - role
+          id: 'true'
+          logical_operator: and
+        id: 'true'
+        logical_operator: and
+        selected: false
+        title: 角色判断
+        type: if-else
+      height: 126
+      id: '1003'
+      position:
+        x: 638
+        y: 284
+      positionAbsolute:
+        x: 638
+        y: 284
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        dataset_ids:
+        - 2d7467b6-b0e1-4552-a901-4415a09c74ca
+        multiple_retrieval_config:
+          reranking_enable: true
+          reranking_mode: weighted_score
+          reranking_model:
+            model: gte-rerank
+            provider: tongyi
+          score_threshold: 0.13
+          top_k: 1
+          weights:
+            keyword_setting:
+              keyword_weight: 0.7
+            vector_setting:
+              embedding_model_name: text-embedding-v2
+              embedding_provider_name: tongyi
+              vector_weight: 0.3
+            weight_type: customized
+        query_variable_selector:
+        - sys
+        - query
+        retrieval_mode: multiple
+        selected: false
+        title: 学生知识检索
+        type: knowledge-retrieval
+      height: 92
+      id: '1004'
+      position:
+        x: 942
+        y: 284
+      positionAbsolute:
+        x: 942
+        y: 284
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        dataset_ids:
+        - 2d7467b6-b0e1-4552-a901-4415a09c74ca
+        multiple_retrieval_config:
+          reranking_enable: true
+          reranking_mode: weighted_score
+          reranking_model:
+            model: gte-rerank
+            provider: tongyi
+          score_threshold: 0.21
+          top_k: 1
+          weights:
+            keyword_setting:
+              keyword_weight: 0.6
+            vector_setting:
+              embedding_model_name: text-embedding-v2
+              embedding_provider_name: tongyi
+              vector_weight: 0.4
+            weight_type: customized
+        query_variable_selector:
+        - '1001'
+        - sys.query
+        retrieval_mode: multiple
+        selected: false
+        title: 老师知识检索
+        type: knowledge-retrieval
+      height: 92
+      id: '1005'
+      position:
+        x: 942
+        y: 570
+      positionAbsolute:
+        x: 942
+        y: 570
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: not empty
+            id: cond-student-kb-hit-001
+            value: ''
+            varType: array[object]
+            variable_selector:
+            - '1004'
+            - result
+          id: 'true'
+          logical_operator: and
+        id: 'true'
+        logical_operator: and
+        selected: false
+        title: 学生-检查命中
+        type: if-else
+      height: 126
+      id: '1006'
+      position:
+        x: 1246
+        y: 284
+      positionAbsolute:
+        x: 1246
+        y: 284
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: not empty
+            id: cond-teacher-kb-hit-001
+            value: ''
+            varType: array[object]
+            variable_selector:
+            - '1005'
+            - result
+          id: 'true'
+          logical_operator: and
+        id: 'true'
+        logical_operator: and
+        selected: false
+        title: 老师-检查命中
+        type: if-else
+      height: 126
+      id: '1007'
+      position:
+        x: 1246
+        y: 570
+      positionAbsolute:
+        x: 1246
+        y: 570
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1014.text#}}'
+        selected: false
+        title: 学生-知识库回答
+        type: answer
+        variables: []
+      height: 103
+      id: '1008'
+      position:
+        x: 1854
+        y: 284
+      positionAbsolute:
+        x: 1854
+        y: 284
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1004'
+          - result
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: qwen-plus
+          provider: tongyi
+        prompt_template:
+        - id: student-llm-system-001
+          role: system
+          text: '你是一名专业的学习助手，专门帮助学生解答学习问题。你的名字叫"IoSC学习助手"。
+
+
+            ## 学生上下文信息
+
+            - 科目：{{#1001.subjectName#}}
+
+            - 教学内容参考：{{#1001.courseContent#}}
+
+            - 学生历史表现：{{#1001.studentHistory#}}
+
+
+            ## 你的职责
+
+            根据学生的问题，结合知识库检索结果和自身知识，提供准确、详细、易懂的回答。
+
+
+            ## 回答原则
+
+            1. 优先使用知识库中的信息，如果检索结果与问题相关，基于检索结果回答
+
+            2. 如果检索结果与问题无关或不充分，直接运用自身知识回答，不要强行引用无关内容
+
+            3. 对于数学或编程题目，必须提供分步骤详解
+
+            4. 引用相关知识点时注明出处
+
+            5. 如果问题完全超出知识范围，诚实说明并建议其他学习资源
+
+
+            ## 输出格式要求
+
+            请使用Markdown格式化输出，遵循以下模板：
+
+
+            ### 问题分析
+
+            简要说明问题的核心和涉及的知识点。
+
+
+            ### 详细解答
+
+            提供完整的解答过程。如果是计算题或编程题，使用分步骤格式：
+
+            **步骤1**: ...
+
+            **步骤2**: ...
+
+            ...
+
+
+            ### 知识要点
+
+            - 列出本题涉及的关键知识点
+
+            - 每个知识点用简洁的一句话概括
+
+
+            ### 学习建议
+
+            给出相关的学习建议或延伸阅读方向。
+
+
+            ---
+
+            > 📚 以上内容由IoSC学习助手生成
+
+            /'
+        - id: student-llm-user-001
+          role: user
+          text: '{{#sys.query#}}'
+        - id: d20c9ec9-348b-4b07-b73e-e19f14bf8195
+          role: assistant
+          text: ''
+        selected: false
+        title: 学生-LLM生成
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: '1009'
+      position:
+        x: 1550
+        y: 427
+      positionAbsolute:
+        x: 1550
+        y: 427
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1015.text#}}'
+        selected: false
+        title: 老师-知识库回答
+        type: answer
+        variables: []
+      height: 103
+      id: '1010'
+      position:
+        x: 1854
+        y: 570
+      positionAbsolute:
+        x: 1854
+        y: 570
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - sys
+          - query
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: qwen-plus
+          provider: tongyi
+        prompt_template:
+        - id: teacher-llm-system-001
+          role: system
+          text: '你是一名专业的教学助手，专门帮助老师进行教学相关工作。你的名字叫"IoSC学习助手"。
+
+
+            ## 老师上下文信息
+
+            - 科目：{{#1001.subjectName#}}
+
+            - 教学内容参考：{{#1001.courseContent#}}
+
+
+            ## 你的职责
+
+            根据老师的问题，结合知识库检索结果和自身知识，提供专业、实用、可操作的教学建议。
+
+
+            ## 回答原则
+
+            1. 优先使用知识库中的信息，如果检索结果与问题相关，基于检索结果回答
+
+            2. 如果检索结果与问题无关或不充分，直接运用自身知识回答，不要强行引用无关内容
+
+            3. 提供具体、可操作的教学建议和方法
+
+            4. 结合课程标准和教学实践给出建议
+
+            5. 如果问题完全超出知识范围，诚实说明并建议其他资源
+
+
+            ## 输出格式要求
+
+            请使用Markdown格式化输出，遵循以下模板：
+
+
+            ### 需求分析
+
+            简要说明老师的需求核心和教学场景。
+
+
+            ### 解决方案
+
+            提供完整的解决方案。包含具体步骤和操作方法：
+
+            **步骤1**: ...
+
+            **步骤2**: ...
+
+            ...
+
+
+            ### 实施要点
+
+            - 列出实施过程中的关键注意事项
+
+            - 每个要点用简洁的一句话概括
+
+
+            ### 延伸资源
+
+            推荐相关的教学工具、参考资料或培训课程。
+
+
+            ---
+
+            > 📚 以上内容由IoSC学习助手生成
+
+            '
+        - id: teacher-llm-user-001
+          role: user
+          text: '{{#sys.query#}}'
+        selected: true
+        title: 老师-LLM生成
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: '1011'
+      position:
+        x: 1550
+        y: 713
+      positionAbsolute:
+        x: 1550
+        y: 713
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1009.text#}}'
+        selected: false
+        title: 学生-AI回答
+        type: answer
+        variables: []
+      height: 103
+      id: '1012'
+      position:
+        x: 1854
+        y: 427
+      positionAbsolute:
+        x: 1854
+        y: 427
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1011.text#}}'
+        selected: false
+        title: 老师-AI回答
+        type: answer
+        variables: []
+      height: 103
+      id: '1013'
+      position:
+        x: 1854
+        y: 713
+      positionAbsolute:
+        x: 1854
+        y: 713
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1004'
+          - result
+        model:
+          completion_params:
+            temperature: 0.3
+          mode: chat
+          name: qwen-plus
+          provider: tongyi
+        prompt_template:
+        - id: student-kb-format-system-001
+          role: system
+          text: '你是一名专业的学习助手，负责将知识库检索结果整理为清晰易懂的回答。你的名字叫"IoSC学习助手"。
+
+
+            ## 学生上下文信息
+
+            - 科目：{{#1001.subjectName#}}
+
+            - 教学内容参考：{{#1001.courseContent#}}
+
+            - 学生历史表现：{{#1001.studentHistory#}}
+
+
+            ## 核心任务
+
+            1. **相关性判断**：先判断知识库检索结果是否与学生的实际问题相关
+
+            2. **如果相关**：基于检索结果，用清晰的结构化格式回答学生的问题
+
+            3. **如果不相关**：忽略检索结果，直接运用自身知识回答学生的问题
+
+
+            ## 输出格式要求
+
+            请使用Markdown格式化输出，遵循以下模板：
+
+
+            ### 问题分析
+
+            简要说明问题的核心和涉及的知识点。
+
+
+            ### 详细解答
+
+            提供完整的解答过程。如果是计算题或编程题，使用分步骤格式：
+
+            **步骤1**: ...
+
+            **步骤2**: ...
+
+            ...
+
+
+            ### 知识要点
+
+            - 列出本题涉及的关键知识点
+
+            - 每个知识点用简洁的一句话概括
+
+
+            ### 学习建议
+
+            给出相关的学习建议或延伸阅读方向。
+
+
+            ---
+
+            > 📚 以上内容由IoSC学习助手基于知识库生成
+
+            '
+        - edition_type: basic
+          id: student-kb-format-user-001
+          role: user
+          text: '学生的提问：{{#sys.query#}}
+
+            知识库检索结果：{{#1004.result#}}'
+        selected: false
+        title: 学生-KB格式化
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: '1014'
+      position:
+        x: 1550
+        y: 284
+      positionAbsolute:
+        x: 1550
+        y: 284
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1005'
+          - result
+        model:
+          completion_params:
+            temperature: 0.3
+          mode: chat
+          name: qwen-plus
+          provider: tongyi
+        prompt_template:
+        - id: teacher-kb-format-system-001
+          role: system
+          text: '你是一名专业的教学助手，负责将知识库检索结果整理为清晰实用的教学建议。你的名字叫"IoSC学习助手"。
+
+
+            ## 老师上下文信息
+
+            - 科目：{{#1001.subjectName#}}
+
+            - 教学内容参考：{{#1001.courseContent#}}
+
+
+            ## 核心任务
+
+            1. **相关性判断**：先判断知识库检索结果是否与老师的实际问题相关
+
+            2. **如果相关**：基于检索结果，用清晰的结构化格式回答老师的问题
+
+            3. **如果不相关**：忽略检索结果，直接运用自身知识回答老师的问题
+
+
+            ## 输出格式要求
+
+            请使用Markdown格式化输出，遵循以下模板：
+
+
+            ### 需求分析
+
+            简要说明老师的需求核心和教学场景。
+
+
+            ### 解决方案
+
+            提供完整的解决方案。包含具体步骤和操作方法：
+
+            **步骤1**: ...
+
+            **步骤2**: ...
+
+            ...
+
+
+            ### 实施要点
+
+            - 列出实施过程中的关键注意事项
+
+            - 每个要点用简洁的一句话概括
+
+
+            ### 延伸资源
+
+            推荐相关的教学工具、参考资料或培训课程。
+
+
+            ---
+
+            > 📚 以上内容由IoSC学习助手基于知识库生成
+
+            '
+        - id: teacher-kb-format-user-001
+          role: user
+          text: '老师的提问:   {{#sys.query#}}
+
+            知识库检索结果：{{#1005.result#}}'
+        selected: false
+        title: 老师-KB格式化
+        type: llm
+        vision:
+          enabled: false
+      height: 98
+      id: '1015'
+      position:
+        x: 1550
+        y: 570
+      positionAbsolute:
+        x: 1550
+        y: 570
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    viewport:
+      x: -596.5391547971826
+      y: -61.18926395265788
+      zoom: 1.0610015965572788

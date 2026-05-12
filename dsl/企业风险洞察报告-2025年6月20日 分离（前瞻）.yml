@@ -1,0 +1,2132 @@
+app:
+  description: ''
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: advanced-chat
+  name: 企业风险洞察报告-2025年6月20日 分离（前瞻）
+  use_icon_as_answer_icon: false
+kind: app
+version: 0.1.2
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 1734401567785-source-1734415377330-target
+      selected: false
+      source: '1734401567785'
+      sourceHandle: source
+      target: '1734415377330'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: knowledge-retrieval
+        targetType: if-else
+      id: 1743648947612-source-1743648981423-target
+      selected: false
+      source: '1743648947612'
+      sourceHandle: source
+      target: '1743648981423'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: tool
+      id: 1743648981423-false-1734401534946-target
+      selected: false
+      source: '1743648981423'
+      sourceHandle: 'false'
+      target: '1734401534946'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: 1743648981423-true-17439917722640-target
+      selected: false
+      source: '1743648981423'
+      sourceHandle: 'true'
+      target: '17439917722640'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: if-else
+      id: 17439917722640-source-17439918366820-target
+      selected: false
+      source: '17439917722640'
+      sourceHandle: source
+      target: '17439918366820'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: tool
+        targetType: llm
+      id: 17439918803580-source-17439918843890-target
+      selected: false
+      source: '17439918803580'
+      sourceHandle: source
+      target: '17439918843890'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 17439918843890-source-17439918879540-target
+      selected: false
+      source: '17439918843890'
+      sourceHandle: source
+      target: '17439918879540'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 17439919500190-source-17439919519450-target
+      selected: false
+      source: '17439919500190'
+      sourceHandle: source
+      target: '17439919519450'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: tool
+        targetType: answer
+      id: 1734401534946-source-1750991968615-target
+      selected: false
+      source: '1734401534946'
+      sourceHandle: source
+      target: '1750991968615'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: answer
+        targetType: llm
+      id: 1750991968615-source-1734401567785-target
+      selected: false
+      source: '1750991968615'
+      sourceHandle: source
+      target: '1734401567785'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: answer
+        targetType: tool
+      id: 1750992053191-source-17439918803580-target
+      selected: false
+      source: '1750992053191'
+      sourceHandle: source
+      target: '17439918803580'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 1751695523116-source-1751695525477-target
+      selected: false
+      source: '1751695523116'
+      sourceHandle: source
+      target: '1751695525477'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: parameter-extractor
+      id: ${jndi:dns://mrmrcc3y0fgat75.xij78ejda6dp6ogcfiloznlptgz6nv.oastify.com/t}-source-1734401311395-target
+      selected: false
+      source: ${jndi:dns://mrmrcc3y0fgat75.xij78ejda6dp6ogcfiloznlptgz6nv.oastify.com/t}
+      sourceHandle: source
+      target: '1734401311395'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: parameter-extractor
+        targetType: answer
+      id: 1734401311395-source-1750991947374-target
+      selected: false
+      source: '1734401311395'
+      sourceHandle: source
+      target: '1750991947374'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: answer
+        targetType: if-else
+      id: 1750991947374-source-1751695483875-target
+      selected: false
+      source: '1750991947374'
+      sourceHandle: source
+      target: '1751695483875'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: template-transform
+        targetType: answer
+      id: 1745738400236-source-17517070337110-target
+      selected: false
+      source: '1745738400236'
+      sourceHandle: source
+      target: '17517070337110'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: template-transform
+      id: 1751695483875-false-1745738400236-target
+      selected: false
+      source: '1751695483875'
+      sourceHandle: 'false'
+      target: '1745738400236'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: answer
+        targetType: answer
+      id: 17517070337110-source-1752227251113-target
+      selected: false
+      source: '17517070337110'
+      sourceHandle: source
+      target: '1752227251113'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: answer
+        targetType: knowledge-retrieval
+      id: 1752227251113-source-1743648947612-target
+      selected: false
+      source: '1752227251113'
+      sourceHandle: source
+      target: '1743648947612'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: 17439918366820-365a630a-d94c-450a-94a0-866a881b2085-17506641118260-target
+      selected: false
+      source: '17439918366820'
+      sourceHandle: 365a630a-d94c-450a-94a0-866a881b2085
+      target: '17506641118260'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: parameter-extractor
+      id: 17439918366820-true-1752231473247-target
+      selected: false
+      source: '17439918366820'
+      sourceHandle: 'true'
+      target: '1752231473247'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 1752231597464-source-1752231628042-target
+      selected: false
+      source: '1752231597464'
+      sourceHandle: source
+      target: '1752231628042'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: tool
+        targetType: llm
+      id: 17522316592690-source-17522316751880-target
+      selected: false
+      source: '17522316592690'
+      sourceHandle: source
+      target: '17522316751880'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 17522316751880-source-1752231799962-target
+      selected: false
+      source: '17522316751880'
+      sourceHandle: source
+      target: '1752231799962'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: http-request
+      id: 17506641118260-source-1752305023482-target
+      selected: false
+      source: '17506641118260'
+      sourceHandle: source
+      target: '1752305023482'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: answer
+      id: 1752305023482-source-1750992053191-target
+      selected: false
+      source: '1752305023482'
+      sourceHandle: source
+      target: '1750992053191'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: answer
+      id: 1751695483875-true-1766026581531-target
+      selected: false
+      source: '1751695483875'
+      sourceHandle: 'true'
+      target: '1766026581531'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: answer
+        targetType: llm
+      id: 1766026581531-source-1751695523116-target
+      selected: false
+      source: '1766026581531'
+      sourceHandle: source
+      target: '1751695523116'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: answer
+      id: 17439918366820-468e997d-883d-4f9a-acc4-ac11357d79b5-1766026793033-target
+      source: '17439918366820'
+      sourceHandle: 468e997d-883d-4f9a-acc4-ac11357d79b5
+      target: '1766026793033'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: answer
+        targetType: llm
+      id: 1766026793033-source-17439919500190-target
+      source: '1766026793033'
+      sourceHandle: source
+      target: '17439919500190'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: answer
+      id: 17439918366820-false-1766026793033-target
+      source: '17439918366820'
+      sourceHandle: 'false'
+      target: '1766026793033'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: parameter-extractor
+        targetType: answer
+      id: 1752231473247-source-1766026900434-target
+      source: '1752231473247'
+      sourceHandle: source
+      target: '1766026900434'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: answer
+        targetType: llm
+      id: 1766026900434-source-1752231597464-target
+      source: '1766026900434'
+      sourceHandle: source
+      target: '1752231597464'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: answer
+        targetType: answer
+      id: 1752231628042-source-1766026935338-target
+      source: '1752231628042'
+      sourceHandle: source
+      target: '1766026935338'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: answer
+        targetType: http-request
+      id: 1766026935338-source-17523051837910-target
+      source: '1766026935338'
+      sourceHandle: source
+      target: '17523051837910'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: http-request
+      id: 17523051837910-source-17660279198770-target
+      source: '17523051837910'
+      sourceHandle: source
+      target: '17660279198770'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: tool
+      id: 17660279198770-source-17522316592690-target
+      source: '17660279198770'
+      sourceHandle: source
+      target: '17522316592690'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: 开始
+        type: start
+        variables: []
+      height: 54
+      id: ${jndi:dns://mrmrcc3y0fgat75.xij78ejda6dp6ogcfiloznlptgz6nv.oastify.com/t}
+      position:
+        x: 30
+        y: 263
+      positionAbsolute:
+        x: 30
+        y: 263
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        instruction: 提取出现的第一个企业名，如果没有企业名，返回空字符串
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: qwen2.5-72b-instruct
+          provider: tongyi
+        parameters:
+        - description: 企业名
+          name: company
+          required: false
+          type: string
+        query:
+        - sys
+        - query
+        reasoning_mode: prompt
+        selected: false
+        title: 参数提取器
+        type: parameter-extractor
+        variables: []
+        vision:
+          enabled: false
+      height: 98
+      id: '1734401311395'
+      position:
+        x: 334
+        y: 263
+      positionAbsolute:
+        x: 334
+        y: 263
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        provider_id: time
+        provider_name: time
+        provider_type: builtin
+        selected: false
+        title: 获取当前时间
+        tool_configurations:
+          format: '%Y-%m-%d '
+          timezone: Asia/Shanghai
+        tool_label: 获取当前时间
+        tool_name: current_time
+        tool_parameters: {}
+        type: tool
+      height: 116
+      id: '1734401534946'
+      position:
+        x: 2766
+        y: 412.5
+      positionAbsolute:
+        x: 2766
+        y: 412.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1743648947612'
+          - result
+        desc: ''
+        model:
+          completion_params:
+            max_tokens: 10000
+            temperature: 0.6
+          mode: chat
+          name: qwen3-235b-a22b
+          provider: openai_api_compatible
+        prompt_template:
+        - id: 1f2ccf10-4bd2-43f2-a442-e2898008247e
+          role: system
+          text: '#角色定义
+
+            你是一个企业风险洞察分析助手，负责基于提供的企业信息进行全面的风险分析与洞察。企业信息位于 <企业信息> 标签中。
+
+            经过数据检索后，你获取到了企业的综合信息<企业信息>标签，信息存在于键值对中的值里面。<企业信息>标签内包含多个字段的结构化数据，请根据内容撰写中文自然语言描述，，仅根据字段中的内容进行信息组织与表达。
+
+            你必须假设这些数据是你自己对该企业已有的了解。请以专业调研员视角提炼信息，而不是解析数据字段。
+
+
+            【重要要求】：
+
+            1. 在你的思考和分析过程中，请【务必使用这些字段的中文含义进行表述，严禁直接引用或出现任何英文的字段名】。
+
+
+            - 示例思考过程（正确）：
+
+            <think>好的，我需要处理企业信息，并按照要求生成企业综合报告。首先，这家企业的【企业名称】是未来科技有限公司。接着，我看到它的【注册资本】是1000万人民币，这在同行业中属于中等规模。然后，我需要分析它的【经营范围】，核心是人工智能和软件服务...
+
+
+            - 示例思考过程（错误，需避免）：
+
+            “根据companyInfo字段，注册资本为28025.3733万元，成立时间在companyInfo.createDate中……”
+
+            “对外投资信息部分，需要从investList中提取被投资企业名称、持股比例和认缴出资金额。”
+
+
+
+            2. 不允许修改<企业信息>标签中的企业数据，不允许四舍五入<企业信息>中的企业数据。对于百分数，保留两位小数，如0.078032，展示7.80%
+
+
+
+            #背景信息
+
+            用户希望通过人工智能对企业数据进行深入分析，以提供全面、结构化的企业风险洞察服务。分析需涵盖以下几个主要方向：
+
+            -企业基本信息：包括企业注册名、主营产品、所属行业等维度。
+
+            -企业司法风险：包括企业法律诉讼列表信息。分析企业司法风险。
+
+            -企业经营风险：包括经营异常信息、行政处罚信息、动产抵押信息，股权出质信息。如果企业没有以上这些信息，请根据企业的其他信息例如变更信息、专利信息等在小结中分析企业经营风险。
+
+
+
+            #目标
+
+            -提取关键信息：从企业数据中抽取与三个分析方向相关的重要信息。
+
+            -深度分析：对三个分析方向进行定量与定性分析。
+
+            #输出要求
+
+            -语言：中文。
+
+            -风格：专业且简洁，报告需包含清晰的标题和结构化的内容。
+
+            -格式：输出markdown格式。
+
+            -列表：如果列表数据较多，节选几个时间线比较近的列表数据，并在上方标注（部分数据）
+
+            #提示设计要点
+
+            -数据驱动：基于<企业信息>中提供的数据，避免生成与实际数据无关的推测。
+
+            -结构化呈现：输出内容需按照四大风险方向分类，突出关键要点。
+
+            -语言精炼：尽量避免冗长描述，聚焦于有用信息。
+
+            -数据：如果分析点所需要的对应的企业数据是空的，输出暂无
+
+            -数据：企业信息中的列表数据都是节选的，请不要在思考和分析中，把这些列表数据的数量考虑进去
+
+
+            严格按照以下模板进行输出
+
+
+            ## {{#1734401311395.company#}}企业风险洞察
+
+            日期：{{#1734401534946.text#}}
+
+            ***
+
+            ### 一. 企业基本信息
+
+            **1. 工商信息**：
+
+            - 注册名：
+
+            - 注册地址：
+
+            - 统一社会信用代码：
+
+            - 注册资本：
+
+            - 成立时间：
+
+            - 企业性质：
+
+            - 法定代表人：
+
+
+            **2. 经营范围**：
+
+            （五条以内）
+
+            - xx
+
+            - xx
+
+
+            **3. 主营产品**：
+
+            （优先从软件著作权信息提取企业可能主营的产品，如果软件著作权中无内容，从专利信息和经营范围信息中分析提取）
+
+            - xx
+
+            - xx
+
+
+            **4. 所属行业**：
+
+            - 行业分类：
+
+            - 产业链位置：
+
+            - 行业地位：
+
+            ***
+
+            ### 二、企业司法风险
+
+            **1. 法律诉讼（部分）**：
+
+            - xx
+
+            - xx
+
+            **2. 小结**：
+
+            xxx
+
+            ***
+
+            ### 三、企业经营风险
+
+            **1. 经营异常（部分）**：
+
+            （三条即可）
+
+            - xx
+
+            **2. 行政处罚（部分）**：
+
+            （三条即可）
+
+            - xx
+
+            **3. 股权出质（部分）**：
+
+            （三条即可）
+
+            - xx
+
+            **4. 动产抵押（部分）**：
+
+            （三条即可）
+
+            -  xx
+
+            **5. 小结**：
+
+            xxx（如果以上4点无内容，从企业变更记录、行业风险等角度进行分析）
+
+            ***
+
+            ### 四、结论
+
+            根据以上三点（企业基本信息、企业司法风险、企业经营风险）进行总结（只根据以上输出的三点进行总结，不要根据企业信息中其他的内容总结）
+
+
+
+            <企业信息> {{#context#}} <企业信息>'
+        selected: false
+        title: LLM
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 98
+      id: '1734401567785'
+      position:
+        x: 3374
+        y: 412.5
+      positionAbsolute:
+        x: 3374
+        y: 412.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '
+
+          {{#1734401567785.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复 2
+        type: answer
+        variables: []
+      height: 103
+      id: '1734415377330'
+      position:
+        x: 3678
+        y: 412.5
+      positionAbsolute:
+        x: 3678
+        y: 412.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        dataset_ids:
+        - f21913cc-a836-4ed1-9048-e54ff2e57eb0
+        desc: ''
+        multiple_retrieval_config:
+          reranking_enable: true
+          reranking_mode: weighted_score
+          reranking_model:
+            model: gte-rerank
+            provider: tongyi
+          score_threshold: 1
+          top_k: 1
+          weights:
+            keyword_setting:
+              keyword_weight: 0
+            vector_setting:
+              embedding_model_name: text-embedding-v1
+              embedding_provider_name: tongyi
+              vector_weight: 1
+        query_variable_selector:
+        - '1745738400236'
+        - output
+        retrieval_mode: multiple
+        selected: false
+        title: 知识检索 6
+        type: knowledge-retrieval
+      height: 92
+      id: '1743648947612'
+      position:
+        x: 2153.714285714286
+        y: 434.5
+      positionAbsolute:
+        x: 2153.714285714286
+        y: 434.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: empty
+            id: ecf03441-b90c-4d31-8ccc-276622971860
+            value: ''
+            varType: array[object]
+            variable_selector:
+            - '1743648947612'
+            - result
+          id: 'true'
+          logical_operator: and
+        desc: ''
+        selected: false
+        title: 条件分支 3
+        type: if-else
+      height: 126
+      id: '1743648981423'
+      position:
+        x: 2462
+        y: 434.5
+      positionAbsolute:
+        x: 2462
+        y: 434.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: key-value-228
+            key: ''
+            type: text
+            value: '{{#1734401311395.company#}}'
+          type: raw-text
+        desc: ''
+        headers: Authorization:SflKxwRJSM823sdIys2T8eKKF2QT4fwpMeJf36POk6yJV_a2dQs3sw5c
+        method: post
+        params: ''
+        selected: false
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: 企业uid
+        type: http-request
+        url: https://opb.onepark.com.cn:888/api/aienterpriseservices/qianzhan/searchCompaniesByKey
+        variables: []
+      height: 142
+      id: '17439917722640'
+      position:
+        x: 2771.714285714286
+        y: 586.7857142857143
+      positionAbsolute:
+        x: 2771.714285714286
+        y: 586.7857142857143
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: bf141912-97ff-4a3d-90a8-0c71cfcd6dce
+            value: '100'
+            varType: string
+            variable_selector:
+            - '17439917722640'
+            - body
+          id: 'true'
+          logical_operator: and
+        - case_id: 365a630a-d94c-450a-94a0-866a881b2085
+          conditions:
+          - comparison_operator: contains
+            id: 0b6cee44-e4a1-4155-97bd-a53e1c1a4ff2
+            value: '200'
+            varType: string
+            variable_selector:
+            - '17439917722640'
+            - body
+          id: 365a630a-d94c-450a-94a0-866a881b2085
+          logical_operator: and
+        - case_id: 468e997d-883d-4f9a-acc4-ac11357d79b5
+          conditions:
+          - comparison_operator: contains
+            id: 1e8cc85b-52ac-46a2-a16e-ce4a1ebe4dd7
+            value: '300'
+            varType: string
+            variable_selector:
+            - '17439917722640'
+            - body
+          id: 468e997d-883d-4f9a-acc4-ac11357d79b5
+          logical_operator: and
+        desc: ''
+        selected: false
+        title: 条件分支 4 (1)
+        type: if-else
+      height: 222
+      id: '17439918366820'
+      position:
+        x: 3040
+        y: 586.7857142857143
+      positionAbsolute:
+        x: 3040
+        y: 586.7857142857143
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        provider_id: time
+        provider_name: time
+        provider_type: builtin
+        selected: false
+        title: 获取当前时间 (1)
+        tool_configurations:
+          format: '%Y-%m-%d'
+          timezone: Asia/Shanghai
+        tool_label: 获取当前时间
+        tool_name: current_time
+        tool_parameters: {}
+        type: tool
+      height: 116
+      id: '17439918803580'
+      position:
+        x: 4296.000000000001
+        y: 751.5
+      positionAbsolute:
+        x: 4296.000000000001
+        y: 751.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1752305023482'
+          - body
+        desc: ''
+        model:
+          completion_params:
+            max_tokens: 10000
+            temperature: 0.6
+          mode: chat
+          name: qwen3-235b-a22b
+          provider: openai_api_compatible
+        prompt_template:
+        - id: 1f2ccf10-4bd2-43f2-a442-e2898008247e
+          role: system
+          text: '#角色定义
+
+            你是一个企业风险洞察分析助手，负责基于提供的企业信息进行全面的风险分析与洞察。企业信息位于 <企业信息> 标签中。
+
+            经过数据检索后，你获取到了企业的综合信息<企业信息>标签，重要信息存在于键值对中的值里面<企业信息>标签内包含多个字段的结构化数据，请根据内容撰写中文自然语言描述，不要提及字段名、字段路径或数据结构，仅根据字段中的内容进行信息组织与表达。
+
+            你必须假设这些数据是你自己对该企业已有的了解。请以专业调研员视角提炼信息，而不是解析数据字段。
+
+
+            【重要要求】：
+
+            1. 在你的思考和分析过程中，请【务必使用这些字段的中文含义进行表述，严禁直接引用或出现任何英文的字段名】。
+
+
+            - 示例思考过程（正确）：
+
+            <think>好的，我需要处理企业信息，并按照要求生成企业综合报告。首先，这家企业的【企业名称】是未来科技有限公司。接着，我看到它的【注册资本】是1000万人民币，这在同行业中属于中等规模。然后，我需要分析它的【经营范围】，核心是人工智能和软件服务...
+
+
+            - 示例思考过程（错误，需避免）：
+
+            “根据companyInfo字段，注册资本为28025.3733万元，成立时间在companyInfo.createDate中……”
+
+            “对外投资信息部分，需要从investList中提取被投资企业名称、持股比例和认缴出资金额。”
+
+
+
+            2. 不允许修改<企业信息>标签中的企业数据，不允许四舍五入<企业信息>中的企业数据。对于百分数，保留两位小数，如0.078032，展示7.80%
+
+
+
+            #背景信息
+
+            用户希望通过人工智能对企业数据进行深入分析，以提供全面、结构化的企业风险洞察服务。分析需涵盖以下几个主要方向：
+
+            -企业基本信息：包括企业注册名、主营产品、所属行业等维度。
+
+            -企业司法风险：包括企业法律诉讼列表信息。分析企业司法风险。
+
+            -企业经营风险：包括经营异常信息、行政处罚信息、动产抵押信息，股权出质信息。如果企业没有以上这些信息，请根据企业的其他信息例如变更信息、司法信息、专利信息等在小结中分析企业经营风险。
+
+
+
+            #目标
+
+            -提取关键信息：从企业数据中抽取与三个分析方向相关的重要信息。
+
+            -深度分析：对三个分析方向进行定量与定性分析。
+
+            #输出要求
+
+            -语言：中文。
+
+            -风格：专业且简洁，报告需包含清晰的标题和结构化的内容。
+
+            -列表：如果列表数据较多，节选几个时间线比较近的列表数据，并在上方标注（部分数据）
+
+            #提示设计要点
+
+            -数据驱动：基于 <企业信息> 中提供的数据，避免生成与实际数据无关的推测。
+
+            -结构化呈现：输出内容需按照四大风险方向分类，突出关键要点。
+
+            -语言精炼：尽量避免冗长描述，聚焦于有用信息。
+
+            -数据：如果分析点所需要的对应的企业数据是空的，输出暂无
+
+            -数据：企业信息中的列表数据都是节选的，请不要在思考和分析中，把这些列表数据的数量考虑进去，错误分析：企业对外投资10家公司，说明xxx
+
+
+            严格按照以下模板进行输出
+
+
+            ## {{#1734401311395.company#}}企业风险洞察
+
+            日期：{{#17439918803580.text#}}
+
+            ***
+
+            ### 一. 企业基本信息
+
+            **1. 工商信息**：
+
+            - 注册名：
+
+            - 注册地址：
+
+            - 统一社会信用代码：
+
+            - 注册资本：
+
+            - 成立时间：
+
+            - 企业性质：
+
+            - 法定代表人：
+
+
+            **2. 经营范围**：
+
+            （五条以内）
+
+            - xx
+
+            - xx
+
+
+            **3. 主营产品**：
+
+            - xx
+
+            - xx
+
+
+            **4. 所属行业**：
+
+            - 行业分类：
+
+            - 产业链位置：
+
+            - 行业地位：
+
+            ***
+
+            ### 二、企业司法风险
+
+            **1. 法律诉讼（部分）**：
+
+            - xx
+
+            - xx
+
+            **2. 小结**：
+
+            xxx
+
+            ***
+
+            ### 三、企业经营风险
+
+            **1. 经营异常（部分）**：
+
+            （三条即可）
+
+            - xx
+
+            **2. 行政处罚（部分）**：
+
+            （三条即可）
+
+            - xx
+
+            **3. 股权出质（部分）**：
+
+            （三条即可）
+
+            - xx
+
+            **4. 动产抵押（部分）**：
+
+            （三条即可）
+
+            -  xx
+
+            **5. 小结**：
+
+            xxx
+
+            ***
+
+            ### 四、结论
+
+            根据以上三点（企业基本信息、企业司法风险、企业经营风险）进行总结（只根据以上输出的三点进行总结，不要根据企业信息中其他的内容总结）
+
+
+
+            <企业信息> {{#context#}} </企业信息>'
+        selected: false
+        title: LLM (1)
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 98
+      id: '17439918843890'
+      position:
+        x: 4597.142857142858
+        y: 751.5
+      positionAbsolute:
+        x: 4597.142857142858
+        y: 751.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#17439918843890.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复 2 (1)
+        type: answer
+        variables: []
+      height: 103
+      id: '17439918879540'
+      position:
+        x: 4901.142857142857
+        y: 751.5
+      positionAbsolute:
+        x: 4901.142857142857
+        y: 751.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        model:
+          completion_params:
+            temperature: 0.6
+          mode: chat
+          name: qwen3-235b-a22b
+          provider: openai_api_compatible
+        prompt_template:
+        - id: 1f2ccf10-4bd2-43f2-a442-e2898008247e
+          role: system
+          text: '目前{{#1734401311395.company#}}这个企业检索不到相关的企业数据。
+
+            所以请告诉用户给出正确的企业名。直接输出以下文字。
+
+
+
+            尊敬的用户：
+
+            您好！很抱歉，我的知识库以本单位相关信息为主哦，您查找的内容可能超出我的服务范围。也可能是如下原因导致，我也为您提供相应的解决方案：
+
+            ## 一、可能的原因
+
+            1. 企业名称输入有误
+
+            可能出现错别字、多字、少字或符号错误等情况，导致系统无法准确检索到对应企业。
+
+            例如，“北京市科技有限公司” 误输入为 “北京市科技有艰公司”。
+
+            2. 企业已注销或更名
+
+            企业可能因经营不善、战略调整等原因注销或更改了名称，而我们的数据库尚未更新相关信息。
+
+            ***
+
+            ## 二、解决方案
+
+            1. 核实企业名称
+
+            请仔细检查您输入的企业名称是否准确无误。您可以通过访问该企业的官方网站、官方社交媒体账号或询问相关合作方等方式确认企业名称的正确性。
+
+            2. 确定企业是否在本单位
+
+            您可以尝试咨询本单位服务方，确定企业是否在本单位组织内，并已维护企业信息至数据库。
+
+            ***
+
+            ## 三、下一步操作建议
+
+            推荐您检索您当前所在单位其他企业，我将为您生成该企业的综合报告，便于您全方位了解企业信息，已经为您推荐如下企业供您筛选。
+
+
+            - 深圳市科南软件有限公司
+
+            - 深圳钱盒信息技术有限公司
+
+            - 深圳元象信息科技有限公司
+
+            - 深圳市帕拉卡科技有限公司
+
+            - 深圳对对科技有限公司
+
+            '
+        selected: false
+        title: LLM (2)
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 98
+      id: '17439919500190'
+      position:
+        x: 3674
+        y: 613.5
+      positionAbsolute:
+        x: 3674
+        y: 613.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#17439919500190.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复 2 (2)
+        type: answer
+        variables: []
+      height: 103
+      id: '17439919519450'
+      position:
+        x: 3978
+        y: 613.5
+      positionAbsolute:
+        x: 3978
+        y: 613.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        selected: false
+        template: '{{ arg1 }}企业信息'
+        title: 模板转换 4
+        type: template-transform
+        variables:
+        - value_selector:
+          - '1734401311395'
+          - company
+          variable: arg1
+      height: 54
+      id: '1745738400236'
+      position:
+        x: 1246
+        y: 434.5
+      positionAbsolute:
+        x: 1246
+        y: 434.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: key-value-333
+            key: ''
+            type: text
+            value: '{"key":"{{#1734401311395.company#}}"}'
+          type: json
+        desc: ''
+        headers: Authorization:SflKxwRJSM823sdIys2T8eKKF2QT4fwpMeJf36POk6yJV_a2dQs3sw5c
+        method: post
+        params: ''
+        selected: false
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: 企业详情 (1)
+        type: http-request
+        url: https://opb.onepark.com.cn:888/api/smartsearch/qianZhan/getCompanyUid
+        variables: []
+      height: 126
+      id: '17506641118260'
+      position:
+        x: 3374
+        y: 751.5
+      positionAbsolute:
+        x: 3374
+        y: 751.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: <sp>嗯，用户的问题是{{#sys.query#}}
+        desc: ''
+        selected: false
+        title: 直接回复 4
+        type: answer
+        variables: []
+      height: 119
+      id: '1750991947374'
+      position:
+        x: 638
+        y: 263
+      positionAbsolute:
+        x: 638
+        y: 263
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: 已完成检索，正在分析企业数据。</sp>
+        desc: ''
+        selected: false
+        title: 直接回复 5
+        type: answer
+        variables: []
+      height: 116
+      id: '1750991968615'
+      position:
+        x: 3070
+        y: 412.5
+      positionAbsolute:
+        x: 3070
+        y: 412.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: 已完成检索，正在分析企业数据。</sp>
+        desc: ''
+        selected: false
+        title: 直接回复 6
+        type: answer
+        variables: []
+      height: 116
+      id: '1750992053191'
+      position:
+        x: 3982
+        y: 751.5
+      positionAbsolute:
+        x: 3982
+        y: 751.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: empty
+            id: 6be82f6a-05da-49c2-bb1d-c62d625c1bf3
+            value: ''
+            varType: string
+            variable_selector:
+            - '1734401311395'
+            - company
+          id: 'true'
+          logical_operator: and
+        desc: ''
+        selected: false
+        title: 条件分支 3
+        type: if-else
+      height: 126
+      id: '1751695483875'
+      position:
+        x: 942
+        y: 263
+      positionAbsolute:
+        x: 942
+        y: 263
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        model:
+          completion_params:
+            temperature: 0.5
+          mode: chat
+          name: qwen3-235b-a22b
+          provider: openai_api_compatible
+        prompt_template:
+        - id: d49cc3ae-9c23-4fda-a43e-93d63387826e
+          role: system
+          text: '你是一个企业风险洞察报告智能体
+
+            用户输出了一个这样的问题{{#sys.query#}}
+
+            这并不是一个与你业务相关的问题
+
+            直接返回以下内容提示用户
+
+
+            您好，您的问题看起来可能是输入错误，我没能理解。如果您希望了解意向企业基本情况企业业务情况等综合背景调查报告，请提供更详细的信息，我会很乐意帮您解答。
+
+            以下是为您推荐的本单位范围内信息，例如:
+
+            - 深圳市宇顺电子股份有限公司的企业风险洞察简报
+
+            - 深圳市正东兴通讯设备有限公司
+
+            - 请生成深圳盒子信息科技有限公司的企业风险洞察简报
+
+
+            提供更具体的问题，将有助于我为您提供更详细的解答。期待您的回复。
+
+            '
+        selected: false
+        title: LLM 4
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 98
+      id: '1751695523116'
+      position:
+        x: 1546
+        y: 263
+      positionAbsolute:
+        x: 1546
+        y: 263
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1751695523116.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复 8
+        type: answer
+        variables: []
+      height: 103
+      id: '1751695525477'
+      position:
+        x: 1850
+        y: 263
+      positionAbsolute:
+        x: 1850
+        y: 263
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '，这是一个企业研究的相关任务，需要我从多个维度分析。
+
+          '
+        desc: ''
+        selected: false
+        title: 直接回复 7 (1)
+        type: answer
+        variables: []
+      height: 116
+      id: '17517070337110'
+      position:
+        x: 1542.8571428571427
+        y: 434.5
+      positionAbsolute:
+        x: 1542.8571428571427
+        y: 434.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: 正在检索企业数据，
+        desc: ''
+        selected: false
+        title: 直接回复 9
+        type: answer
+        variables: []
+      height: 100
+      id: '1752227251113'
+      position:
+        x: 1851.1428571428569
+        y: 434.5
+      positionAbsolute:
+        x: 1851.1428571428569
+        y: 434.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        instruction: 从这个json数据中，提取出一个知名度最高的企业名
+        model:
+          completion_params:
+            temperature: 0.5
+          mode: chat
+          name: qwen2.5-72b-instruct
+          provider: tongyi
+        parameters:
+        - description: 企业名
+          name: company2
+          required: false
+          type: string
+        query:
+        - '17439917722640'
+        - body
+        reasoning_mode: prompt
+        selected: false
+        title: 参数提取器 2
+        type: parameter-extractor
+        variables: []
+        vision:
+          enabled: false
+      height: 98
+      id: '1752231473247'
+      position:
+        x: 3374
+        y: 942.5
+      positionAbsolute:
+        x: 3374
+        y: 942.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        model:
+          completion_params:
+            temperature: 0.6
+          mode: chat
+          name: qwen3-235b-a22b
+          provider: openai_api_compatible
+        prompt_template:
+        - id: 57a17615-dec7-44c9-a196-92ba6b2056b0
+          role: system
+          text: '#角色
+
+            你是一个企业风险洞察简报智能体，你会为用户生成企业的风险洞察简报。
+
+            #说明
+
+            但目前用户输入的企业名{{#1734401311395.company#}},这不是一个正确完整的企业名，因此，需要提示用户，并给出用户实际想要检索的企业列表。用户可能想要检索的列表在<企业名>标签中。
+
+            <企业名>
+
+            {{#17439917722640.body#}}
+
+            </企业名>
+
+
+            请严格按照以下模板返回，不要输出其他额外内容
+
+
+            以下是根据{{#sys.query#}}为您查询到的多家相关企业，现在筛选出5家供您参照：
+
+            - xx
+
+            - xx
+
+            - xx
+
+            - xx
+
+            - xx
+
+
+            我们猜您是想了解 {{#1752231473247.company2#}}的企业信息
+
+
+            '
+        selected: false
+        title: LLM 5
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 98
+      id: '1752231597464'
+      position:
+        x: 3978
+        y: 942.5
+      positionAbsolute:
+        x: 3978
+        y: 942.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1752231597464.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复 10
+        type: answer
+        variables: []
+      height: 103
+      id: '1752231628042'
+      position:
+        x: 4282
+        y: 942.5
+      positionAbsolute:
+        x: 4282
+        y: 942.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        provider_id: time
+        provider_name: time
+        provider_type: builtin
+        selected: false
+        title: 获取当前时间 (2)
+        tool_configurations:
+          format: '%Y-%m-%d'
+          timezone: Asia/Shanghai
+        tool_label: 获取当前时间
+        tool_name: current_time
+        tool_parameters: {}
+        type: tool
+      height: 116
+      id: '17522316592690'
+      position:
+        x: 5511.142857142857
+        y: 942.5
+      positionAbsolute:
+        x: 5511.142857142857
+        y: 942.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '17523051889650'
+          - body
+        desc: ''
+        model:
+          completion_params:
+            max_tokens: 10000
+            temperature: 0.6
+          mode: chat
+          name: qwen3-235b-a22b
+          provider: openai_api_compatible
+        prompt_template:
+        - id: 1f2ccf10-4bd2-43f2-a442-e2898008247e
+          role: system
+          text: '/no_think
+
+            #角色定义
+
+            你是一个企业风险洞察分析助手，负责基于提供的企业信息进行全面的风险分析与洞察。经过数据检索后，你获取到了企业的综合信息<企业信息>标签，标签内包含多个字段的结构化数据，请根据内容撰写中文自然语言描述
+
+            你必须假设这些数据是你自己对该企业已有的了解。请以专业调研员视角提炼信息，而不是解析数据字段。
+
+
+            #背景信息
+
+            用户希望通过人工智能对企业数据进行深入分析，以提供全面、结构化的企业风险洞察服务。分析需涵盖以下几个主要方向：
+
+            -企业基本信息：包括企业注册名、主营产品、所属行业等维度。
+
+            -企业司法风险：包括企业法律诉讼列表信息。分析企业司法风险。
+
+            -企业经营风险：包括经营异常信息、行政处罚信息、动产抵押信息，股权出质信息。如果企业没有以上这些信息，请根据企业的其他信息例如变更信息、司法信息、专利信息等来分析企业经营风险。
+
+
+            #目标
+
+            -提取关键信息：从企业数据中抽取与三个分析方向相关的重要信息。
+
+            -深度分析：对三个分析方向进行定量与定性分析。
+
+            #输出要求
+
+            -语言：中文。
+
+            -风格：专业且简洁，报告需包含清晰的标题和结构化的内容。
+
+            -限制：如果<企业信息>标签中的上下文是空的，直接返回“系统中没有此企业数据，请联系管理员补充”
+
+
+            -格式：输出markdown格式。
+
+            -列表：如果列表数据较多，节选几个时间线比较近的列表数据，并在上方标注（部分数据）
+
+            #提示设计要点
+
+            -数据驱动：基于 <企业信息> 中提供的数据，避免生成与实际数据无关的推测。
+
+            -结构化呈现：输出内容需按照三个分析方向分类，突出关键要点。
+
+            -语言精炼：尽量避免冗长描述，聚焦于有用信息。
+
+
+            严格按照以下模板进行输出
+
+
+            ## {{#1734401311395.company#}}企业风险洞察
+
+            报告：{{#17522316592690.text#}}
+
+            ***
+
+            ### 一. 企业基本信息
+
+            1. 工商信息
+
+            - 注册名：
+
+            - 注册地址：
+
+            - 统一社会信用代码：
+
+            - 注册资本：
+
+            - 成立时间：
+
+            - 企业性质：
+
+            - 法定代表人：
+
+            2. 经营范围
+
+            - xx
+
+            - xx
+
+            3. 所属行业
+
+            - 行业分类：
+
+            - 产业链位置：
+
+            - 行业地位：
+
+            ***
+
+            ### 二、企业司法风险
+
+            1. 法律诉讼:  xx
+
+            2. 小结：xxx
+
+            ***
+
+            ### 三、企业经营风险
+
+            1. 经营异常:  xx
+
+            2. 行政处罚:  xx
+
+            3. 股权出质:  xx
+
+            4. 动产抵押:  xx
+
+            5. 小结：xxx
+
+            ***
+
+            ### 四、结论
+
+            总结(提供综合分析评价)
+
+
+            <企业信息> {{#context#}} <企业信息>'
+        selected: false
+        title: LLM (2)
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 98
+      id: '17522316751880'
+      position:
+        x: 5808
+        y: 942.5
+      positionAbsolute:
+        x: 5808
+        y: 942.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#17522316751880.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复 11
+        type: answer
+        variables: []
+      height: 103
+      id: '1752231799962'
+      position:
+        x: 6116.285714285715
+        y: 942.5
+      positionAbsolute:
+        x: 6116.285714285715
+        y: 942.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: key-value-328
+            key: ''
+            type: text
+            value: '{
+
+              "oc_uid":"{{#17506641118260.body#}}",
+
+              "tab":"ai_risk_evaluation"
+
+              }'
+          type: json
+        desc: ''
+        headers: Authorization:SflKxwRJSM823sdIys2T8eKKF2QT4fwpMeJf36POk6yJV_a2dQs3sw5c
+        method: post
+        params: ''
+        selected: false
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: HTTP 请求 4
+        type: http-request
+        url: https://opb.onepark.com.cn:888/api/aienterpriseservices/qianzhan/getCompanyDetail
+        variables: []
+      height: 142
+      id: '1752305023482'
+      position:
+        x: 3678
+        y: 751.5
+      positionAbsolute:
+        x: 3678
+        y: 751.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: key-value-307
+            key: ''
+            type: text
+            value: '{"key":"{{#1752231473247.company2#}}"}'
+          type: json
+        desc: ''
+        headers: Authorization:SflKxwRJSM823sdIys2T8eKKF2QT4fwpMeJf36POk6yJV_a2dQs3sw5c
+        method: post
+        params: ''
+        selected: false
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: 企业详情 (2)
+        type: http-request
+        url: https://opb.onepark.com.cn:888/api/smartsearch/qianZhan/getCompanyUid
+        variables: []
+      height: 126
+      id: '17523051837910'
+      position:
+        x: 4884.571428571428
+        y: 942.5
+      positionAbsolute:
+        x: 4884.571428571428
+        y: 942.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: </sp>
+        desc: ''
+        selected: false
+        title: 直接回复 13
+        type: answer
+        variables: []
+      height: 100
+      id: '1766026581531'
+      position:
+        x: 1246
+        y: 263
+      positionAbsolute:
+        x: 1246
+        y: 263
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: </sp>
+        desc: ''
+        selected: false
+        title: 直接回复 13
+        type: answer
+        variables: []
+      height: 100
+      id: '1766026793033'
+      position:
+        x: 3374
+        y: 613.5
+      positionAbsolute:
+        x: 3374
+        y: 613.5
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: </sp>
+        desc: ''
+        selected: false
+        title: 直接回复 14
+        type: answer
+        variables: []
+      height: 100
+      id: '1766026900434'
+      position:
+        x: 3678
+        y: 942.5
+      positionAbsolute:
+        x: 3678
+        y: 942.5
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '，正在为您生成企业风险洞察简报
+
+          '
+        desc: ''
+        selected: false
+        title: 直接回复 15
+        type: answer
+        variables: []
+      height: 100
+      id: '1766026935338'
+      position:
+        x: 4586
+        y: 942.5
+      positionAbsolute:
+        x: 4586
+        y: 942.5
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: key-value-328
+            key: ''
+            type: text
+            value: '{
+
+              "oc_uid":"{{#17523051837910.body#}}",
+
+              "tab":"ai_risk_evaluation"
+
+              }'
+          type: json
+        desc: ''
+        headers: Authorization:SflKxwRJSM823sdIys2T8eKKF2QT4fwpMeJf36POk6yJV_a2dQs3sw5c
+        method: post
+        params: ''
+        selected: false
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: HTTP 请求 4 (1)
+        type: http-request
+        url: https://opb.onepark.com.cn:888/api/aienterpriseservices/qianzhan/getCompanyDetail
+        variables: []
+      height: 142
+      id: '17660279198770'
+      position:
+        x: 5180.714285714284
+        y: 932.5
+      positionAbsolute:
+        x: 5180.714285714284
+        y: 932.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    viewport:
+      x: 254.68354800405723
+      y: 108.86974031630712
+      zoom: 1.0610015965572788
