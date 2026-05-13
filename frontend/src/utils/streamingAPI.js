@@ -150,6 +150,54 @@ const fetchStreamingResponse = async (url, options, onContent, onComplete, onErr
 };
 
 /**
+ * SSE 流式响应处理函数（扩展版：支持 progress/chunk/complete 事件）
+ * @param {string} url - API URL
+ * @param {object} options - fetch选项
+ * @param {object} callbacks - 回调函数集合 { onContent, onProgress, onChunk, onComplete, onError }
+ * @returns {function} 取消函数
+ */
+export const fetchSSEStream = async (url, options, callbacks = {}) => {
+    const { onContent, onProgress, onChunk, onComplete, onError } = callbacks;
+    const controller = new AbortController();
+
+    try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    try {
+                        const data = JSON.parse(line.slice(6));
+                        if (data.type === 'connected') onProgress && onProgress(data.message || '已连接');
+                        else if (data.type === 'progress') onProgress && onProgress(data.message);
+                        else if (data.type === 'chunk') { onChunk && onChunk(data.content); onContent && onContent(data.content); }
+                        else if (data.type === 'complete') { onComplete && onComplete(data); return; }
+                        else if (data.type === 'error') { onError && onError(new Error(data.message || '未知错误')); return; }
+                        else if (data.type === 'content') onContent && onContent(data.content, data.fullContent);
+                        else if (data.type === 'end') { onComplete && onComplete(data.fullContent, data); return; }
+                    } catch (parseError) { /* 忽略非JSON行 */ }
+                }
+            }
+        }
+    } catch (error) {
+        if (error.name !== 'AbortError') onError && onError(error);
+    }
+    return () => controller.abort();
+};
+
+/**
  * 流式消息状态管理Hook
  */
 export const useStreamingMessage = () => {

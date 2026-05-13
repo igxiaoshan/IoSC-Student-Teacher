@@ -16,6 +16,7 @@ const {
 } = require('../controllers/ai-assessment-controller.js');
 const { analyzeSubmission, getClassAnalysisReport, batchAnalyzeSubmissions, generatePersonalizedRecommendations } = require('../controllers/ai-analysis-controller.js');
 const { upload, uploadCourseDocument, deleteCourseDocument, getCourseDocuments, downloadCourseDocument } = require('../controllers/file-upload-controller.js');
+const { streamGenerateCourseware } = require('../controllers/streamingCourseware-controller.js');
 
 // 文件上传
 router.post('/upload/courseware-document', upload.single('document'), uploadCourseDocument);
@@ -25,6 +26,7 @@ router.get('/upload/courseware/:coursewareId/document/:documentId/download', dow
 
 // 课件生成
 router.post('/courseware/generate', generateCourseware);
+router.post('/courseware/generate/stream', streamGenerateCourseware);
 router.get('/courseware/teacher/:teacherId', getTeacherCourseware);
 router.get('/courseware/teacher/:teacherId/history', getTeacherCoursewareHistory);
 router.put('/courseware/:id', updateCourseware);

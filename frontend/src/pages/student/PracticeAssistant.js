@@ -149,7 +149,7 @@ const PracticeAssistant = () => {
                 studentId: studentId,
                 subjectName: selectedSubject?.subName || '通用',
                 ...practiceConfig
-            });
+            }, { timeout: 120000 });
 
             if (response.data.success) {
                 console.log('练习生成响应:', response.data);
@@ -173,6 +173,7 @@ const PracticeAssistant = () => {
 
                 const practiceData = {
                     ...response.data,
+         dataSource: response.data.dataSource || 'dify',
                     questions: validatedQuestions
                 };
 
@@ -182,7 +183,8 @@ const PracticeAssistant = () => {
                 setCurrentQuestionIndex(0);
                 setQuestionStartTime(Date.now()); // 开始第一题计时
                 setActiveStep(1);
-                setSuccess(`练习题目生成成功！共 ${validatedQuestions.length} 道题目`);
+                const srcLabel = response.data.dataSource === 'cache' ? '（题库缓存）' : response.data.dataSource === 'cache_and_dify' ? '（缓存+AI补充）' : '';
+      setSuccess(`练习题目生成成功！共 ${validatedQuestions.length} 道题目${srcLabel}`);
             } else {
                 setError(response.data.message || '生成练习失败');
             }
@@ -227,7 +229,7 @@ const PracticeAssistant = () => {
                 questionId: questionId,
                 studentAnswer: answer,
                 timeTaken: timeTaken
-            });
+            }, { timeout: 30000 });
 
             if (response.data.success) {
                 setEvaluations(prev => ({
@@ -476,6 +478,11 @@ const PracticeAssistant = () => {
                                     <Typography variant="body2">
                                         {evaluation.feedback}
                                     </Typography>
+                  {evaluation.evaluationMethod === 'local_keyword_preliminary' && (
+                    <Typography variant='caption' color='text.secondary' sx={{ mt: 0.5, display: 'block' }}>
+                                          * 初步判断，AI详细解析正在补充中
+                    </Typography>
+                  )}
                                 </Alert>
 
                                 {evaluation.errorAnalysis && (
@@ -773,7 +780,7 @@ const PracticeAssistant = () => {
                                                 sx={{ mb: 1 }}
                                             >
                                                 <Typography variant="body2">
-                                                    <strong>得分：</strong>{evaluation.score || 0}分
+                                                    <strong>得分：</strong>{evaluation.score || 0}分{'  '}{evaluation.evaluationMethod && evaluation.evaluationMethod.startsWith('local') && (<Chip label='本地判改' size='small' color='info' variant='outlined' sx={{ml:1}}/>)}
                                                 </Typography>
                                                 <Typography variant="body2">
                                                     <strong>反馈：</strong>{evaluation.feedback}

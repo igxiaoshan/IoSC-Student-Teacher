@@ -2,6 +2,7 @@ const StudentLearning = require('../models/studentLearningSchema');
 const Student = require('../models/studentSchema');
 const Subject = require('../models/subjectSchema');
 const Courseware = require('../models/coursewareSchema');
+const PracticeQuestion = require('../models/practiceQuestionSchema');
 const mongoose = require('mongoose');
 
 // 标准化选项格式的辅助函数
@@ -308,94 +309,104 @@ const generatePracticeQuestions = async (req, res) => {
             adjustedDifficulty = difficulty === '困难' ? '中等' : difficulty === '中等' ? '简单' : '简单';
         }
 
-        // 调用Dify生成题目
-        const context = {
-            studentId,
-            subjectId,
-            subjectName: subject.subName,
-            chapterContent,
-            difficulty: adjustedDifficulty,
-            questionCount: questionCount || 5,
-            questionTypes: questionTypes || ['选择题', '填空题'],
-            studentWeakAreas
-        };
 
-        const aiResponse = await difyService.generatePracticeQuestions(context);
+  // 优先从题库缓存获取
+  const query = { subject: subjectId, difficulty: adjustedDifficulty, isActive: true };
+  if (questionTypes && questionTypes.length === 1) query.questionType = questionTypes[0];
 
-        if (aiResponse.success) {
-            console.log('AI响应成功，题目数量:', aiResponse.questions.length);
-            console.log('第一道题目的选项:', aiResponse.questions[0]?.options);
+  const cachedQuestions = await PracticeQuestion.find(query)
+    .sort({ usageCount: 1, correctRate: -1 })
+    .limit(questionCount || 5)
+    .lean();
 
-            // 创建练习记录
-            const practiceId = new mongoose.Types.ObjectId();
-            const practiceRecord = {
-                practiceId: practiceId,
-                generatedAt: new Date(),
-                practiceConfig: {
-                    chapterContent,
-                    difficulty: adjustedDifficulty,
-                    questionCount: aiResponse.questions.length,
-                    questionTypes,
-                    focusAreas: studentWeakAreas
-                },
-                questions: aiResponse.questions.map((q, index) => {
-                    console.log(`处理第${index + 1}道题目:`, {
-                        原始选项: q.options,
-                        选项类型: typeof q.options,
-                        是否数组: Array.isArray(q.options)
-                    });
+  const needed = (questionCount || 5) - cachedQuestions.length;
 
-                    const normalizedOptions = normalizeOptions(q.options);
-                    console.log(`标准化后的选项:`, normalizedOptions);
+  if (needed <= 0) {
+    // 缓存充足，直接使用
+    const practiceId = new mongoose.Types.ObjectId();
+    const practiceRecord = {
+      practiceId,
+      generatedAt: new Date(),
+      practiceConfig: { chapterContent, difficulty: adjustedDifficulty, questionCount: cachedQuestions.length, questionTypes, focusAreas: studentWeakAreas },
+      questions: cachedQuestions.map(q => ({
+        questionId: q._id.toString(),
+        questionText: q.questionText,
+        questionType: q.questionType,
+        options: q.options || [],
+        correctAnswer: q.correctAnswer,
+        correctAnswerText: q.correctAnswerText,
+        explanation: q.explanation || '',
+        difficulty: q.difficulty,
+        points: q.points || 10,
+        knowledgePoints: q.knowledgePoints || [],
+        acceptableAnswers: q.acceptableAnswers || []
+      })),
+      practiceStats: { totalQuestions: cachedQuestions.length, correctAnswers: 0, totalScore: 0, maxScore: cachedQuestions.length * 10, accuracy: 0, averageTime: 0, completionRate: 0 }
+    };
+    learningRecord.practiceHistory.push(practiceRecord);
+    await learningRecord.save();
 
-                    return {
-                        questionId: q.id || `q_${Date.now()}_${Math.random()}`,
-                        questionText: q.questionText || q.question,
-                        questionType: q.questionType || '选择题',
-                        options: normalizedOptions,
-                        correctAnswer: q.correctAnswer || q.answer,
-                        explanation: q.explanation || '',
-                        difficulty: q.difficulty || adjustedDifficulty,
-                        points: q.points || 10,
-                        knowledgePoints: q.knowledgePoints || []
-                    };
-                }),
-                practiceStats: {
-                    totalQuestions: aiResponse.questions.length,
-                    correctAnswers: 0,
-                    totalScore: 0,
-                    maxScore: aiResponse.questions.length * 10,
-                    accuracy: 0,
-                    averageTime: 0,
-                    completionRate: 0
-                }
-            };
+    // 异步更新使用计数
+    PracticeQuestion.updateMany({ _id: { $in: cachedQuestions.map(q => q._id) } }, { $inc: { usageCount: 1 } }).exec();
 
-            learningRecord.practiceHistory.push(practiceRecord);
-            await learningRecord.save();
+    return res.json({
+      success: true, practiceId: practiceId.toString(), dataSource: 'cache',
+      questions: practiceRecord.questions.map(q => ({ questionId: q.questionId, questionText: q.questionText, questionType: q.questionType, options: q.options, difficulty: q.difficulty, points: q.points })),
+      totalQuestions: practiceRecord.questions.length, estimatedTime: practiceRecord.questions.length * 2, difficulty: adjustedDifficulty
+    });
+  }
 
-            res.json({
-                success: true,
-                practiceId: practiceId.toString(),
-                questions: practiceRecord.questions.map(q => ({
-                    questionId: q.questionId,
-                    questionText: q.questionText,
-                    questionType: q.questionType,
-                    options: q.options,
-                    difficulty: q.difficulty,
-                    points: q.points
-                })), // 不返回正确答案
-                totalQuestions: practiceRecord.questions.length,
-                estimatedTime: practiceRecord.questions.length * 2, // 估计每题2分钟
-                difficulty: adjustedDifficulty
-            });
-        } else {
-            res.status(500).json({
-                success: false,
-                message: '题目生成失败',
-                error: aiResponse.error
-            });
-        }
+  // 缓存不足，调用Dify补充
+  let aiQuestions = [];
+  let dataSource = cachedQuestions.length > 0 ? 'cache_fallback' : 'dify';
+  try {
+    const context = { studentId, subjectId, subjectName: subject.subName, chapterContent, difficulty: adjustedDifficulty, questionCount: needed, questionTypes: questionTypes || ['选择题', '填空题'], studentWeakAreas };
+    const aiResponse = await difyService.generatePracticeQuestions(context);
+    if (aiResponse.success && aiResponse.questions.length > 0) {
+      aiQuestions = aiResponse.questions;
+      dataSource = cachedQuestions.length > 0 ? 'cache_and_dify' : 'dify';
+      // 异步写入题库（不阻塞响应）
+      const docs = aiQuestions.map(q => {
+        const no = normalizeOptions(q.options);
+        return { questionText: q.questionText || q.question, questionType: q.questionType || '选择题', subject: subjectId, school: learningRecord.school || null, difficulty: q.difficulty || adjustedDifficulty, options: no, correctAnswer: q.correctAnswer || q.answer, correctAnswerText: q.correctAnswerText || '', explanation: q.explanation || '', knowledgePoints: q.knowledgePoints || [], points: q.points || 10, acceptableAnswers: q.acceptableAnswers || [], source: 'dify' };
+      });
+      PracticeQuestion.insertMany(docs).catch(e => console.error('题库写入失败:', e.message));
+    }
+  } catch (aiErr) {
+    console.error('Dify生成失败，使用缓存回退:', aiErr.message);
+    if (cachedQuestions.length === 0) return res.status(500).json({ success: false, message: '题目生成失败且无缓存', error: aiErr.message });
+  }
+
+  const allQuestions = [...cachedQuestions.map(q => ({
+    questionId: q._id.toString(), questionText: q.questionText, questionType: q.questionType,
+    options: q.options || [], correctAnswer: q.correctAnswer, correctAnswerText: q.correctAnswerText,
+    explanation: q.explanation || '', difficulty: q.difficulty, points: q.points || 10,
+    knowledgePoints: q.knowledgePoints || [], acceptableAnswers: q.acceptableAnswers || []
+  })), ...aiQuestions.map(q => {
+    const no = normalizeOptions(q.options);
+    return {
+      questionId: q.id || 'q_' + Date.now() + '_' + Math.random(), questionText: q.questionText || q.question,
+      questionType: q.questionType || '选择题', options: no, correctAnswer: q.correctAnswer || q.answer,
+      explanation: q.explanation || '', difficulty: q.difficulty || adjustedDifficulty, points: q.points || 10,
+      knowledgePoints: q.knowledgePoints || []
+    };
+  })];
+
+  const practiceId = new mongoose.Types.ObjectId();
+  const practiceRecord = {
+    practiceId, generatedAt: new Date(),
+    practiceConfig: { chapterContent, difficulty: adjustedDifficulty, questionCount: allQuestions.length, questionTypes, focusAreas: studentWeakAreas },
+    questions: allQuestions,
+    practiceStats: { totalQuestions: allQuestions.length, correctAnswers: 0, totalScore: 0, maxScore: allQuestions.length * 10, accuracy: 0, averageTime: 0, completionRate: 0 }
+  };
+  learningRecord.practiceHistory.push(practiceRecord);
+  await learningRecord.save();
+
+  res.json({
+    success: true, practiceId: practiceId.toString(), dataSource,
+    questions: practiceRecord.questions.map(q => ({ questionId: q.questionId, questionText: q.questionText, questionType: q.questionType, options: q.options, difficulty: q.difficulty, points: q.points })),
+    totalQuestions: practiceRecord.questions.length, estimatedTime: practiceRecord.questions.length * 2, difficulty: adjustedDifficulty
+  });
 
     } catch (error) {
         console.error('生成练习题目错误:', error);
@@ -407,154 +418,131 @@ const generatePracticeQuestions = async (req, res) => {
     }
 };
 
-// 提交练习答案并获得评估
+
+// 本地判改引擎
+const evaluateLocally = (question, studentAnswer) => {
+    const qType = question.questionType;
+    const correctAnswer = question.correctAnswer || '';
+
+    if (qType === '选择题') {
+        const ns = String(studentAnswer).trim().toLowerCase();
+        const nc = String(correctAnswer).trim().toLowerCase();
+        let matched = ns === nc;
+        if (!matched && question.options && question.options.length > 0) {
+            const mo = question.options.find(o => o.isCorrect && String(o.text).trim().toLowerCase() === ns);
+            if (mo) matched = true;
+            if (!matched) {
+                const co = question.options.find(o => o.isCorrect);
+                if (co) {
+                    const ci = question.options.indexOf(co);
+                    if (ns === String.fromCharCode(65 + ci).toLowerCase()) matched = true;
+                }
+            }
+        }
+        return { isCorrect: matched, score: matched ? (question.points || 10) : 0, feedback: matched ? '回答正确！' : '正确答案是：' + correctAnswer, evaluationMethod: 'local_exact' };
+    }
+
+    if (qType === '填空题') {
+        const ns = String(studentAnswer).trim().toLowerCase();
+        const nc = String(correctAnswer).trim().toLowerCase();
+        if (ns === nc) return { isCorrect: true, score: question.points || 10, feedback: '回答正确！', evaluationMethod: 'local_exact' };
+        const al = question.acceptableAnswers || [];
+        if (al.length > 0 && al.some(a => String(a).trim().toLowerCase() === ns)) return { isCorrect: true, score: question.points || 10, feedback: '回答正确！', evaluationMethod: 'local_fuzzy' };
+        const ck = nc.split(/[，,、\s]+/).filter(k => k.length > 0);
+        if (ck.length > 0) {
+            const hc = ck.filter(kw => ns.includes(kw)).length;
+            const hr = hc / ck.length;
+            if (hr >= 0.8) return { isCorrect: true, score: question.points || 10, feedback: '回答基本正确', evaluationMethod: 'local_keyword' };
+            if (hr >= 0.5) return { isCorrect: false, score: Math.round((question.points || 10) * hr), feedback: '部分正确，正确答案：' + correctAnswer, evaluationMethod: 'local_keyword' };
+        }
+        return { isCorrect: false, score: 0, feedback: '正确答案是：' + correctAnswer, evaluationMethod: 'local_exact' };
+    }
+
+    if (['简答题', '计算题', '编程题'].includes(qType)) {
+        const ck = String(correctAnswer).split(/[，,、。.；;\s]+/).filter(k => k.length > 1);
+        const sl = String(studentAnswer).trim().toLowerCase();
+        let hr = 0;
+        if (ck.length > 0) hr = ck.filter(kw => sl.includes(kw.toLowerCase())).length / ck.length;
+        return {
+            isCorrect: hr >= 0.7, score: Math.round((question.points || 10) * hr),
+            feedback: hr >= 0.7 ? '初步判断正确，AI详细解析稍后补充' : '初步判断不完整，参考：' + correctAnswer,
+            evaluationMethod: 'local_keyword_preliminary', needsAIFollowUp: true
+        };
+    }
+
+    return { isCorrect: false, score: 0, feedback: '', evaluationMethod: 'unknown', needsAIFollowUp: true };
+};
+
 const submitPracticeAnswer = async (req, res) => {
     try {
         const { studentId, subjectId, practiceId, questionId, studentAnswer, timeTaken } = req.body;
 
-        console.log('提交答案请求:', {
-            studentId,
-            subjectId,
-            practiceId,
-            questionId,
-            studentAnswer,
-            timeTaken
-        });
+        const learningRecord = await StudentLearning.findOne({ student: studentId, subject: subjectId });
+        if (!learningRecord) return res.status(404).json({ success: false, message: '学习记录不存在' });
 
-        // 查找学习记录和练习
-        const learningRecord = await StudentLearning.findOne({
-            student: studentId,
-            subject: subjectId
-        });
-
-        if (!learningRecord) {
-            return res.status(404).json({
-                success: false,
-                message: '学习记录不存在'
-            });
-        }
-
-        console.log('查找练习记录:', {
-            传入的practiceId: practiceId,
-            practiceId类型: typeof practiceId,
-            学习记录中的练习数量: learningRecord.practiceHistory.length,
-            练习记录IDs: learningRecord.practiceHistory.map(p => p.practiceId.toString())
-        });
-
-        const practice = learningRecord.practiceHistory.find(p =>
-            p.practiceId.toString() === practiceId.toString()
-        );
-
-        if (!practice) {
-            return res.status(404).json({
-                success: false,
-                message: '练习记录不存在'
-            });
-        }
+        const practice = learningRecord.practiceHistory.find(p => p.practiceId.toString() === practiceId.toString());
+        if (!practice) return res.status(404).json({ success: false, message: '练习记录不存在' });
 
         const question = practice.questions.find(q => q.questionId === questionId);
+        if (!question) return res.status(404).json({ success: false, message: '题目不存在' });
 
-        if (!question) {
-            return res.status(404).json({
-                success: false,
-                message: '题目不存在'
-            });
-        }
+        const localResult = evaluateLocally(question, studentAnswer);
 
-        // 调用AI评估答案
-        const context = {
-            studentId,
-            subjectId,
-            questionCount: practice.questions.length // 传递题目总数用于计分
+        const evaluation = {
+            isCorrect: localResult.isCorrect,
+            score: localResult.score,
+            feedback: localResult.feedback,
+            evaluationMethod: localResult.evaluationMethod,
+            errorAnalysis: localResult.isCorrect ? null : { errorType: 'answer_mismatch', suggestion: localResult.feedback, relatedConcepts: question.knowledgePoints || [] },
+            detailedExplanation: question.explanation || ''
         };
-        const evaluationResponse = await difyService.evaluateStudentAnswer(
-            question,
-            studentAnswer,
-            context
-        );
 
-        if (evaluationResponse.success) {
-            // 更新题目记录
-            question.studentAnswer = studentAnswer;
-            question.submittedAt = new Date();
-            question.timeTaken = timeTaken || 0;
-            question.evaluation = evaluationResponse.evaluation;
+        question.studentAnswer = studentAnswer;
+        question.submittedAt = new Date();
+        question.timeTaken = timeTaken || 0;
+        question.evaluation = evaluation;
 
-            console.log('题目评估结果:', {
-                questionId: question.questionId,
-                studentAnswer,
-                evaluation: evaluationResponse.evaluation,
-                timeTaken
-            });
-
-            // 更新知识点掌握情况
-            if (question.knowledgePoints && question.knowledgePoints.length > 0) {
-                question.knowledgePoints.forEach(kp => {
-                    learningRecord.updateKnowledgeMastery(kp, evaluationResponse.evaluation.isCorrect);
-                });
-            }
-
-            // 更新练习统计
-            const answeredQuestions = practice.questions.filter(q => q.studentAnswer !== undefined && q.studentAnswer !== null);
-            const correctQuestions = answeredQuestions.filter(q => q.evaluation?.isCorrect === true);
-
-            practice.practiceStats.correctAnswers = correctQuestions.length;
-            practice.practiceStats.totalScore = answeredQuestions.reduce((sum, q) =>
-                sum + (q.evaluation?.score || 0), 0
-            );
-            practice.practiceStats.accuracy = answeredQuestions.length > 0 ?
-                (correctQuestions.length / answeredQuestions.length) * 100 : 0;
-            practice.practiceStats.completionRate =
-                (answeredQuestions.length / practice.questions.length) * 100;
-
-            // 计算平均用时
-            const totalTime = answeredQuestions.reduce((sum, q) => sum + (q.timeTaken || 0), 0);
-            practice.practiceStats.averageTime = answeredQuestions.length > 0 ?
-                totalTime / answeredQuestions.length : 0;
-            practice.practiceStats.totalTime = totalTime;
-
-            console.log('更新练习统计:', {
-                answeredCount: answeredQuestions.length,
-                correctCount: correctQuestions.length,
-                totalScore: practice.practiceStats.totalScore,
-                accuracy: practice.practiceStats.accuracy,
-                averageTime: practice.practiceStats.averageTime
-            });
-
-            // 如果练习完成，更新整体统计
-            if (practice.practiceStats.completionRate === 100) {
-                practice.completedAt = new Date();
-                
-                const overallStats = learningRecord.learningProgress.overallStats;
-                overallStats.totalQuestions += practice.questions.length;
-                overallStats.totalCorrect += practice.practiceStats.correctAnswers;
-                overallStats.overallAccuracy = overallStats.totalQuestions > 0 ? 
-                    (overallStats.totalCorrect / overallStats.totalQuestions) * 100 : 0;
-            }
-
-            await learningRecord.save();
-
-            res.json({
-                success: true,
-                evaluation: evaluationResponse.evaluation,
-                practiceStats: practice.practiceStats,
-                isCompleted: practice.practiceStats.completionRate === 100
-            });
-        } else {
-            res.status(500).json({
-                success: false,
-                message: '答案评估失败',
-                error: evaluationResponse.error
-            });
+        if (question.knowledgePoints && question.knowledgePoints.length > 0) {
+            question.knowledgePoints.forEach(kp => learningRecord.updateKnowledgeMastery(kp, evaluation.isCorrect));
         }
 
+        const aq = practice.questions.filter(q => q.studentAnswer !== undefined && q.studentAnswer !== null);
+        const cq = aq.filter(q => q.evaluation?.isCorrect === true);
+        practice.practiceStats.correctAnswers = cq.length;
+        practice.practiceStats.totalScore = aq.reduce((s, q) => s + (q.evaluation?.score || 0), 0);
+        practice.practiceStats.accuracy = aq.length > 0 ? (cq.length / aq.length) * 100 : 0;
+        practice.practiceStats.completionRate = (aq.length / practice.questions.length) * 100;
+        const tt = aq.reduce((s, q) => s + (q.timeTaken || 0), 0);
+        practice.practiceStats.averageTime = aq.length > 0 ? tt / aq.length : 0;
+        practice.practiceStats.totalTime = tt;
+
+        if (practice.practiceStats.completionRate === 100) {
+            practice.completedAt = new Date();
+            const os = learningRecord.learningProgress.overallStats;
+            os.totalQuestions += practice.questions.length;
+            os.totalCorrect += practice.practiceStats.correctAnswers;
+            os.overallAccuracy = os.totalQuestions > 0 ? (os.totalCorrect / os.totalQuestions) * 100 : 0;
+        }
+
+        await learningRecord.save();
+
+        // 简答题/编程题：后台异步调AI补充详细解析
+        if (localResult.needsAIFollowUp) {
+            const ctx = { studentId, subjectId, questionCount: practice.questions.length };
+            difyService.evaluateStudentAnswer(question, studentAnswer, ctx)
+                .then(r => {
+                    if (r.success && r.evaluation) {
+                        question.evaluation.aiDetailedFeedback = r.evaluation.feedback || r.evaluation.detailedExplanation;
+                        question.evaluation.aiEvaluationComplete = true;
+                        learningRecord.save().catch(e => console.error('异步保存AI解析失败:', e.message));
+                    }
+                }).catch(err => console.error('异步AI解析失败:', err.message));
+        }
+
+        res.json({ success: true, evaluation, practiceStats: practice.practiceStats, isCompleted: practice.practiceStats.completionRate === 100 });
     } catch (error) {
         console.error('提交练习答案错误:', error);
-        res.status(500).json({
-            success: false,
-            message: '提交答案失败',
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: '提交答案失败', error: error.message });
     }
 };
 

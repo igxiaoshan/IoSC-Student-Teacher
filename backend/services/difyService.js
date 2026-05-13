@@ -571,6 +571,8 @@ ${message}`,
 
 请严格按照上述JSON格式返回，确保JSON格式正确，可以被程序解析。`;
 
+  const origTimeout = this.timeout;
+  this.timeout = this.practicalExerciseTimeout;
         try {
             const response = await this.callDifyAPI('/chat-messages', {
                 inputs: {},
@@ -693,6 +695,9 @@ ${message}`,
                 questions: this.createDefaultQuestions(context)
             };
         }
+  finally {
+    this.timeout = origTimeout;
+  }
     }
 
     // 评估学生答案
@@ -3211,6 +3216,259 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
 
         return actions;
     }
+
+    // 流式生成课件
+    async generateLessonPlanStream(inputData, onChunk, onComplete, onError) {
+        const {
+            subject_name, teacher_name, course_title,
+            course_description, course_syllabus, course_level,
+            student_count, duration, focus_areas
+        } = inputData;
+
+        const systemPrompt = `你是一名专业的教学设计专家，负责根据提供的信息生成详细的课件内容。
+
+【重要】请先从知识库中检索与"${course_title}"相关的教学内容，并在生成课件时充分利用检索到的知识。
+
+课程信息：
+- 科目：${subject_name}
+- 教师：${teacher_name}
+- 课程标题：${course_title}
+- 课程描述：${course_description}
+- 课程大纲：${course_syllabus}
+- 课程级别：${course_level}
+- 学生人数：${student_count}
+- 课程时长：${duration}分钟
+- 重点领域：${focus_areas}
+
+请按以下步骤操作：
+1. 首先检索知识库，获取与课程相关的教学内容
+2. 结合检索到的内容和提供的课程信息，生成课件内容
+
+请生成一个完整的课件内容，包括：
+1. 课程介绍
+2. 学习目标
+3. 知识点详解（应包含从知识库检索到的相关教学内容）
+4. 教学活动设计
+5. 练习题目
+6. 课程总结
+
+请以JSON格式返回，包含以下字段：
+{
+  "title": "课程标题",
+  "introduction": "课程介绍",
+  "objectives": ["学习目标1", "学习目标2"],
+  "knowledgePoints": [
+    {
+      "title": "知识点标题",
+      "content": "详细内容",
+      "difficulty": "难度级别",
+      "estimatedTime": 时间(分钟)
+    }
+  ],
+  "teachingActivities": [
+    {
+      "activity": "活动名称",
+      "description": "活动描述",
+      "duration": 时间(分钟)
+    }
+  ],
+  "practiceExercises": [
+    {
+      "title": "练习标题",
+      "description": "练习描述",
+      "difficulty": "难度级别",
+      "estimatedTime": 时间(分钟)
+    }
+  ],
+  "summary": "课程总结"
+}`;
+
+        try {
+            const requestData = {
+                inputs: {
+                    subjectName: subject_name || '通用',
+                    courseContent: course_title || '暂无特定教学内容',
+                    studentHistory: '暂无历史记录',
+                    userType: '老师'
+                },
+                query: systemPrompt,
+                response_mode: 'streaming',
+                conversation_id: '',
+                user: teacher_name || 'teacher'
+            };
+
+            return await this.callDifyStreamingAPI('/chat-messages', requestData, onChunk, onComplete, onError);
+        } catch (error) {
+            console.error('Dify流式课件生成失败:', error);
+            if (onError) onError(error);
+            throw error;
+        }
+    }
+
+    // 流式生成实训练习
+    async generatePracticalExerciseStream(inputData, onChunk, onComplete, onError) {
+        const {
+            subject_name, teacher_name, exercise_title,
+            exercise_description, exercise_type, difficulty_level
+        } = inputData;
+
+        const systemPrompt = `你是一名专业的实训题目设计专家。请根据以下信息设计实训练习。
+
+科目：${subject_name}
+教师：${teacher_name}
+实训标题：${exercise_title}
+实训描述：${exercise_description}
+实训类型：${exercise_type || '综合实训'}
+难度级别：${difficulty_level || '中级'}
+
+请以JSON格式返回，包含以下字段：
+{
+  "title": "实训标题",
+  "description": "实训描述",
+  "objectives": ["目标1", "目标2"],
+  "tasks": [
+    {
+      "taskName": "任务名称",
+      "description": "任务描述",
+      "steps": ["步骤1", "步骤2"],
+      "expectedOutput": "预期输出",
+      "difficulty": "难度",
+      "timeLimit": 时间(分钟)
+    }
+  ],
+  "evaluationCriteria": [
+    {
+      "criterion": "评判标准",
+      "weight": 权重百分比,
+      "description": "标准描述"
+    }
+  ]
+}`;
+
+        try {
+            const originalTimeout = this.timeout;
+            this.timeout = this.practicalExerciseTimeout;
+
+            const requestData = {
+                inputs: {
+                    subjectName: subject_name || '通用',
+                    courseContent: exercise_title || '暂无特定教学内容',
+                    studentHistory: '暂无历史记录',
+                    userType: '老师'
+                },
+                query: systemPrompt,
+                response_mode: 'streaming',
+                conversation_id: '',
+                user: teacher_name || 'teacher'
+            };
+
+            const result = await this.callDifyStreamingAPI('/chat-messages', requestData, onChunk, (result) => {
+                this.timeout = originalTimeout;
+                if (onComplete) onComplete(result);
+            }, (error) => {
+                this.timeout = originalTimeout;
+                if (onError) onError(error);
+            });
+
+            this.timeout = originalTimeout;
+            return result;
+        } catch (error) {
+            this.timeout = this.timeout === this.practicalExerciseTimeout ? 60000 : this.timeout;
+            console.error('Dify流式实训练习生成失败:', error);
+            if (onError) onError(error);
+            throw error;
+        }
+    }
+
+    // 流式生成练习题目（学生端）
+    async generatePracticeQuestionsStream(context, onChunk, onComplete, onError) {
+        const {
+            studentId, subjectId, subjectName,
+            chapterContent, difficulty, questionCount = 5,
+            questionTypes = ['选择题', '填空题'],
+            studentWeakAreas = []
+        } = context;
+
+        const systemPrompt = `你是一名专业的题目生成专家，根据学生的学习情况生成适合的练习题目。
+
+生成要求：
+- 科目: ${subjectName || '通用'}
+- 章节内容: ${chapterContent || '基础内容'}
+- 难度等级: ${difficulty || '中等'}
+- 题目数量: ${questionCount}
+- 题目类型: ${questionTypes.join(', ')}
+- 学生薄弱环节: ${studentWeakAreas.join(', ') || '无特定薄弱环节'}
+
+**重要：必须严格按照以下JSON格式返回，不要添加任何其他文字说明：**
+
+{
+  "questions": [
+    {
+      "questionId": "q1",
+      "questionText": "题目内容",
+      "questionType": "选择题",
+      "options": [
+        {"text": "选项A内容", "label": "A", "isCorrect": false},
+        {"text": "选项B内容", "label": "B", "isCorrect": true},
+        {"text": "选项C内容", "label": "C", "isCorrect": false},
+        {"text": "选项D内容", "label": "D", "isCorrect": false}
+      ],
+      "correctAnswer": "B",
+      "correctAnswerText": "选项B内容",
+      "explanation": "详细解析",
+      "difficulty": "简单",
+      "points": 10,
+      "knowledgePoints": ["相关知识点"]
+    }
+  ]
+}
+
+**关键要求：**
+1. 每道题目必须有明确的正确答案
+2. 选择题的options数组中，只有一个选项的isCorrect为true
+3. correctAnswer字段必须是选项标签（A、B、C、D）
+4. correctAnswerText字段必须是完整的正确答案内容
+5. 正确答案要随机分布，不要总是A选项
+6. 每个选项必须有label字段（A、B、C、D）
+7. 题目要有实际意义，答案要准确无误
+
+请严格按照上述JSON格式返回，确保JSON格式正确，可以被程序解析。`;
+
+        try {
+            const originalTimeout = this.timeout;
+            this.timeout = this.practicalExerciseTimeout;
+
+            const requestData = {
+                inputs: {
+                    subjectName: subjectName || '通用',
+                    courseContent: chapterContent || '基础内容',
+                    studentHistory: studentWeakAreas.join(', ') || '暂无历史记录',
+                    userType: '学生'
+                },
+                query: systemPrompt,
+                response_mode: 'streaming',
+                conversation_id: '',
+                user: `student_${studentId || 'anonymous'}`
+            };
+
+            const result = await this.callDifyStreamingAPI('/chat-messages', requestData, onChunk, (result) => {
+                this.timeout = originalTimeout;
+                if (onComplete) onComplete(result);
+            }, (error) => {
+                this.timeout = originalTimeout;
+                if (onError) onError(error);
+            });
+
+            this.timeout = originalTimeout;
+            return result;
+        } catch (error) {
+            this.timeout = this.timeout === this.practicalExerciseTimeout ? 60000 : this.timeout;
+            console.error('Dify流式练习题目生成失败:', error);
+            if (onError) onError(error);
+            throw error;
+        }
+    }
+
 }
 
 module.exports = new DifyService();

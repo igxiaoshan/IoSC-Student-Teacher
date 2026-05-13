@@ -103,8 +103,10 @@ export const aiAPI = {
     put: (url, data, config) => api.put(url, data, config),
     delete: (url, config) => api.delete(url, config),
 
-    // 课件生成
-    generateCourseware: (data) => api.post('/ai/courseware/generate', data),
+    // 课件生成 - 阻塞式超时提升到120s
+    generateCourseware: (data) => api.post('/ai/courseware/generate', data, { timeout: 120000 }),
+    // SSE 流式课件生成 URL
+    streamCoursewareUrl: `${BASE_URL}/api/ai/courseware/generate/stream`,
     getTeacherCourseware: (teacherId) => api.get(`/ai/courseware/teacher/${teacherId}`),
     getTeacherCoursewareHistory: (teacherId) => api.get(`/ai/courseware/teacher/${teacherId}/history`),
     updateCourseware: (id, data) => api.put(`/ai/courseware/${id}`, data),
@@ -117,8 +119,10 @@ export const aiAPI = {
     updateAssessment: (id, data) => api.put(`/ai/assessment/${id}`, data),
     deleteAssessment: (id) => api.delete(`/ai/assessment/${id}`),
 
-    // 实训练习生成 - 增加超时时间
-    generatePracticalExercise: (teacherId, data) => api.post(`/ai/practical-exercise/generate/${teacherId}`, data, { timeout: 60000 }),
+    // 实训练习生成 - 阻塞式超时提升到120s
+    generatePracticalExercise: (teacherId, data) => api.post(`/ai/practical-exercise/generate/${teacherId}`, data, { timeout: 120000 }),
+    // SSE 流式实训练习生成 URL
+    streamPracticalExerciseUrl: (teacherId) => `${BASE_URL}/api/ai/practical-exercise/generate/stream/${teacherId}`,
     getTeacherPracticalExercises: (teacherId, params) => api.get(`/ai/practical-exercise/teacher/${teacherId}`, { params }),
     getPracticalExerciseById: (exerciseId) => api.get(`/ai/practical-exercise/${exerciseId}`),
     updatePracticalExercise: (exerciseId, data) => api.put(`/ai/practical-exercise/${exerciseId}`, data),

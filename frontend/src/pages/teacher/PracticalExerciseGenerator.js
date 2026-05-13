@@ -74,6 +74,11 @@ const PracticalExerciseGenerator = () => {
     // 生成结果
     const [generatedExercise, setGeneratedExercise] = useState(null);
     const [showGeneratedResult, setShowGeneratedResult] = useState(false);
+
+    // SSE 流式状态
+    const [isStreaming, setIsStreaming] = useState(false);
+    const [streamingContent, setStreamingContent] = useState('');
+    const [progressMessage, setProgressMessage] = useState('');
     
     // 历史记录
     const [exerciseHistory, setExerciseHistory] = useState([]);
@@ -175,6 +180,7 @@ const PracticalExerciseGenerator = () => {
         }));
     };
 
+    // 生成实训练习 - SSE 流式模式
     const generateExercise = async () => {
         if (!formData.title.trim()) {
             setError('请输入实训练习标题');
@@ -189,29 +195,76 @@ const PracticalExerciseGenerator = () => {
         setLoading(true);
         setError('');
         setSuccess('');
+        setIsStreaming(true);
+        setStreamingContent('');
+        setProgressMessage('正在连接AI服务...');
 
         try {
-            const response = await aiAPI.generatePracticalExercise(currentUser._id, {
-                ...formData,
-                subjectId: currentUser.teachSubject,
-                teacherId: currentUser._id
+            const streamUrl = aiAPI.streamPracticalExerciseUrl(currentUser._id);
+            const response = await fetch(streamUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...formData,
+                    subjectId: currentUser.teachSubject,
+                    teacherId: currentUser._id
+                })
             });
 
-            if (response.data.success) {
-                setGeneratedExercise(response.data.exercise);
-                setShowGeneratedResult(true);
-                setSuccess(`实训练习生成成功！数据源：${response.data.dataSource === 'dify' ? 'Dify AI' : '本地智能生成'}`);
-                
-                // 刷新历史记录
-                if (activeTab === 1) {
-                    fetchExerciseHistory();
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+
+                            if (data.type === 'connected') {
+                                setProgressMessage('已连接，等待AI响应...');
+                            } else if (data.type === 'progress') {
+                                setProgressMessage(data.message);
+                            } else if (data.type === 'chunk') {
+                                setStreamingContent(prev => prev + data.content);
+                                setProgressMessage('AI正在生成实训练习...');
+                            } else if (data.type === 'complete') {
+                                setGeneratedExercise(data.exercise);
+                                setShowGeneratedResult(true);
+                                setSuccess(`实训练习生成成功！数据源：${data.dataSource === 'dify_parsed' ? 'Dify AI' : data.dataSource}`);
+                                setIsStreaming(false);
+                                setProgressMessage('');
+                                if (activeTab === 1) {
+                                    fetchExerciseHistory();
+                                }
+                                return;
+                            } else if (data.type === 'error') {
+                                throw new Error(data.message);
+                            }
+                        } catch (parseError) {
+                            if (parseError.message && !parseError.message.includes('JSON')) {
+                                throw parseError;
+                            }
+                        }
+                    }
                 }
-            } else {
-                setError(response.data.message || '生成失败');
             }
         } catch (error) {
             console.error('生成实训练习失败:', error);
-            setError(error.response?.data?.message || '生成失败，请稍后重试');
+            setError(error.message || '生成失败，请稍后重试');
+            setIsStreaming(false);
+            setProgressMessage('');
         } finally {
             setLoading(false);
         }
@@ -486,6 +539,28 @@ const PracticalExerciseGenerator = () => {
                     {loading ? '生成中...' : '生成实训练习'}
                 </Button>
             </Box>
+
+            {/* SSE 流式进度和内容预览 */}
+            {isStreaming && (
+                <Box sx={{ mt: 3 }}>
+                    {progressMessage && (
+                        <Alert severity="info" sx={{ mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <CircularProgress size={20} />
+                                <Typography>{progressMessage}</Typography>
+                            </Box>
+                        </Alert>
+                    )}
+                    {streamingContent && (
+                        <Paper sx={{ p: 2, maxHeight: 300, overflow: 'auto', bgcolor: '#f5f5f5' }}>
+                            <Typography variant="subtitle2" gutterBottom>AI 生成内容预览</Typography>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                {streamingContent}
+                            </Typography>
+                        </Paper>
+                    )}
+                </Box>
+            )}
         </Paper>
     );
 

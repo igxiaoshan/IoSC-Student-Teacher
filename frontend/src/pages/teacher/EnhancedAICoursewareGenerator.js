@@ -64,7 +64,12 @@ const EnhancedAICoursewareGenerator = () => {
 
     // 生成结果
     const [generatedCourseware, setGeneratedCourseware] = useState(null);
-    
+
+    // SSE 流式状态
+    const [isStreaming, setIsStreaming] = useState(false);
+    const [streamingContent, setStreamingContent] = useState('');
+    const [progressMessage, setProgressMessage] = useState('');
+
     // 历史记录
     const [coursewareHistory, setCoursewareHistory] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
@@ -114,31 +119,74 @@ const EnhancedAICoursewareGenerator = () => {
         }
     }, [activeTab, fetchCoursewareHistory]);
 
-    // 生成课件
+    // 生成课件 - SSE 流式模式
     const generateCourseware = async () => {
         setLoading(true);
         setError('');
         setSuccess('');
-        
+        setIsStreaming(true);
+        setStreamingContent('');
+        setProgressMessage('正在连接AI服务...');
+
         try {
-            const response = await aiAPI.generateCourseware({
-                ...formData,
-                teacherId: currentUser._id
+            const response = await fetch(aiAPI.streamCoursewareUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...formData, teacherId: currentUser._id })
             });
 
-            if (response.data.success) {
-                setGeneratedCourseware(response.data.courseware);
-                setSuccess('课件生成成功！');
-                
-                // 如果在历史记录页面，刷新历史记录
-                if (activeTab === 1) {
-                    fetchCoursewareHistory();
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+
+                            if (data.type === 'connected') {
+                                setProgressMessage('已连接，等待AI响应...');
+                            } else if (data.type === 'progress') {
+                                setProgressMessage(data.message);
+                            } else if (data.type === 'chunk') {
+                                setStreamingContent(prev => prev + data.content);
+                                setProgressMessage('AI正在生成课件内容...');
+                            } else if (data.type === 'complete') {
+                                setGeneratedCourseware(data.courseware);
+                                setSuccess('课件生成成功！');
+                                setIsStreaming(false);
+                                setProgressMessage('');
+                                if (activeTab === 1) {
+                                    fetchCoursewareHistory();
+                                }
+                                return;
+                            } else if (data.type === 'error') {
+                                throw new Error(data.message);
+                            }
+                        } catch (parseError) {
+                            if (parseError.message && !parseError.message.includes('JSON')) {
+                                throw parseError;
+                            }
+                        }
+                    }
                 }
-            } else {
-                setError(response.data.message || '生成失败');
             }
         } catch (err) {
-            setError('生成课件时发生错误：' + (err.response?.data?.message || err.message));
+            setError('生成课件时发生错误：' + (err.message || '未知错误'));
+            setIsStreaming(false);
+            setProgressMessage('');
         } finally {
             setLoading(false);
         }
@@ -452,6 +500,28 @@ const EnhancedAICoursewareGenerator = () => {
                     {loading ? '生成中...' : '生成课件'}
                 </Button>
             </Box>
+
+            {/* SSE 流式进度和内容预览 */}
+            {isStreaming && (
+                <Box sx={{ mt: 3 }}>
+                    {progressMessage && (
+                        <Alert severity="info" sx={{ mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <CircularProgress size={20} />
+                                <Typography>{progressMessage}</Typography>
+                            </Box>
+                        </Alert>
+                    )}
+                    {streamingContent && (
+                        <Paper sx={{ p: 2, maxHeight: 300, overflow: 'auto', bgcolor: '#f5f5f5' }}>
+                            <Typography variant="subtitle2" gutterBottom>AI 生成内容预览</Typography>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                {streamingContent}
+                            </Typography>
+                        </Paper>
+                    )}
+                </Box>
+            )}
 
             {/* 生成结果预览 */}
             {generatedCourseware && (

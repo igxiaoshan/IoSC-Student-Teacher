@@ -9,6 +9,7 @@ const {
     batchDeletePracticalExercises,
     publishPracticalExercise
 } = require('../controllers/practical-exercise-controller');
+const { streamGeneratePracticalExercise } = require('../controllers/streamingPracticalExercise-controller');
 
 // 中间件
 const { aiRateLimit, aiFeatureToggle, aiCacheMiddleware } = require('../middleware/aiMiddleware');
@@ -18,10 +19,17 @@ const { aiRateLimit, aiFeatureToggle, aiCacheMiddleware } = require('../middlewa
  */
 
 // 生成实训练习
-router.post('/generate/:teacherId', 
+router.post('/generate/:teacherId',
     aiRateLimit,
     aiFeatureToggle('practicalExercise'),
     generatePracticalExercise
+);
+
+// 流式生成实训练习 (SSE)
+router.post('/generate/stream/:teacherId',
+    aiRateLimit,
+    aiFeatureToggle('practicalExercise'),
+    streamGeneratePracticalExercise
 );
 
 // 获取教师的实训练习列表
