@@ -67,7 +67,8 @@ const streamLearningAssistant = async (req, res) => {
                 subjectName: subjectInfo?.subName || '通用',
                 conversationId,
                 courseContent: subjectInfo?.description || '',
-                studentHistory: '暂无历史记录'
+                studentHistory: '暂无历史记录',
+            userType: difyUserType
             };
 
             // 流式回调函数
@@ -92,6 +93,7 @@ const streamLearningAssistant = async (req, res) => {
 
             const onError = (error) => {
                 console.error('流式对话错误:', error);
+                if (res.writableEnded) return;
                 res.write(`data: ${JSON.stringify({ 
                     type: 'error', 
                     message: error.message || '对话过程中发生错误' 
@@ -186,7 +188,8 @@ const chatLearningAssistant = async (req, res) => {
             subjectName: subjectInfo?.subName || '通用',
             conversationId,
             courseContent: subjectInfo?.description || '',
-            studentHistory: '暂无历史记录'
+            studentHistory: '暂无历史记录',
+        userType: difyUserType
         };
 
         // 调用Dify API

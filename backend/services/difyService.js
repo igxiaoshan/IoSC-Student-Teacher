@@ -76,7 +76,7 @@ class DifyService {
             // 使用一个轻量级的测试请求来检查服务可用性
             // 发送一个简单的请求到chat-messages端点
             const testResponse = await axios.post(`${this.baseURL}/chat-messages`, {
-                inputs: {},
+                inputs: {subjectName: '健康检查', courseContent: '', studentHistory: '', userType: '学生'},
                 query: "health check",
                 response_mode: 'blocking',
                 user: 'health_check'
@@ -126,7 +126,21 @@ class DifyService {
 
     // 通用的Dify API调用方法
     async callDifyAPI(endpoint, data, options = {}) {
-        try {
+                // 为 advanced-chat 应用自动注入基础 inputs
+        if (data.inputs && Object.keys(data.inputs).length === 0) {
+            data.inputs = {
+                subjectName: '通用',
+                courseContent: '暂无特定教学内容',
+                studentHistory: '暂无历史记录',
+                userType: '学生',
+            };
+        } else if (data.inputs) {
+            if (!data.inputs.subjectName) data.inputs.subjectName = '通用';
+            if (!data.inputs.courseContent) data.inputs.courseContent = '暂无特定教学内容';
+            if (!data.inputs.studentHistory) data.inputs.studentHistory = '暂无历史记录';
+            if (!data.inputs.userType) data.inputs.userType = '学生';
+        }
+try {
             const config = {
                 method: 'POST',
                 url: `${this.baseURL}${endpoint}`,
@@ -230,6 +244,20 @@ class DifyService {
 
     // 流式API调用方法
     async callDifyStreamingAPI(endpoint, data, onChunk, onComplete, onError) {
+        // 为 advanced-chat 应用自动注入基础 inputs
+        if (data.inputs && Object.keys(data.inputs).length === 0) {
+            data.inputs = {
+                subjectName: '通用',
+                courseContent: '暂无特定教学内容',
+                studentHistory: '暂无历史记录',
+                userType: '学生',
+            };
+        } else if (data.inputs) {
+            if (!data.inputs.subjectName) data.inputs.subjectName = '通用';
+            if (!data.inputs.courseContent) data.inputs.courseContent = '暂无特定教学内容';
+            if (!data.inputs.studentHistory) data.inputs.studentHistory = '暂无历史记录';
+            if (!data.inputs.userType) data.inputs.userType = '学生';
+        }
         try {
             const config = {
                 method: 'POST',
@@ -2362,7 +2390,7 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
 
             // 根据Dify官方文档的正确格式
             const response = await this.callDifyAPI('/chat-messages', {
-                inputs: {},  // 空的inputs对象
+                inputs: {subjectName: '连接测试', courseContent: '', studentHistory: '', userType: '学生'},
                 query: '你好，这是一个连接测试',
                 response_mode: 'blocking',
                 user: 'test_user'
