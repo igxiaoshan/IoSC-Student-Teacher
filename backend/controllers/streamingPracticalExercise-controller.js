@@ -5,6 +5,21 @@ const Subject = require('../models/subjectSchema');
 const difyService = require('../services/difyService');
 const AIResponseParser = require('../utils/aiResponseParser');
 
+// 提取AI响应中的JSON内容（剥离代码块、前后说明文字等）
+const extractJSON = (raw) => {
+    if (!raw || typeof raw !== 'string') return raw;
+    // 1. 提取 ```json ... ``` 代码块
+    const codeBlockMatch = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch) return codeBlockMatch[1].trim();
+    // 2. 提取最外层 { ... } 或 [ ... ]
+    const curlyMatch = raw.match(/\{[\s\S]*\}/);
+    if (curlyMatch) return curlyMatch[0];
+    const bracketMatch = raw.match(/\[[\s\S]*\]/);
+    if (bracketMatch) return bracketMatch[0];
+    // 3. 原样返回
+    return raw.trim();
+};
+
 /**
  * SSE 流式实训练习生成
  */
@@ -110,21 +125,23 @@ const streamGeneratePracticalExercise = async (req, res) => {
                 const rawResponse = result.fullContent || fullContent;
                 sendSSE('progress', { message: 'AI生成完成，正在解析并保存...' });
 
+                const cleanedResponse = extractJSON(rawResponse);
                 // 使用多元化解析器
                 let aiGeneratedExercise;
                 let dataSource = 'dify';
 
-                const parseResult = AIResponseParser.parsePracticalExercise(rawResponse);
+                const parseResult = AIResponseParser.parsePracticalExercise(cleanedResponse);
                 if (parseResult.success) {
                     aiGeneratedExercise = parseResult.data;
                     dataSource = 'dify_parsed';
                 } else {
                     // 尝试直接 JSON 解析
                     try {
-                        aiGeneratedExercise = JSON.parse(rawResponse);
+                        aiGeneratedExercise = JSON.parse(cleanedResponse);
                         dataSource = 'dify';
                     } catch (e) {
-                        sendSSE('error', { message: 'AI返回内容解析失败' });
+                        console.error('实训SSE解析失败, raw长度:', rawResponse.length, 'cleaned长度:', cleanedResponse.length);
+                        sendSSE('error', { message: 'AI返回内容解析失败：' + e.message });
                         res.end();
                         return;
                     }

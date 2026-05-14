@@ -3,6 +3,18 @@ const Subject = require('../models/subjectSchema');
 const Teacher = require('../models/teacherSchema');
 const difyService = require('../services/difyService');
 
+// 提取AI响应中的JSON内容（剥离代码块、前后说明文字等）
+const extractJSON = (raw) => {
+    if (!raw || typeof raw !== 'string') return raw;
+    const codeBlockMatch = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch) return codeBlockMatch[1].trim();
+    const curlyMatch = raw.match(/\{[\s\S]*\}/);
+    if (curlyMatch) return curlyMatch[0];
+    const bracketMatch = raw.match(/\[[\s\S]*\]/);
+    if (bracketMatch) return bracketMatch[0];
+    return raw.trim();
+};
+
 /**
  * SSE 流式课件生成
  */
@@ -100,7 +112,7 @@ const streamGenerateCourseware = async (req, res) => {
                 // 解析 AI 内容
                 let coursewareContent;
                 try {
-                    coursewareContent = JSON.parse(content);
+                    coursewareContent = JSON.parse(extractJSON(content));
                 } catch (e) {
                     coursewareContent = parseTextContent(content, subject.subName);
                 }
