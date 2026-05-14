@@ -442,7 +442,12 @@ try {
         
         try {
             const requestData = {
-                inputs: {},
+                inputs: {
+                    subjectName: context.subjectName || '通用',
+                    courseContent: courseContent || '暂无特定教学内容',
+                    studentHistory: studentHistory || '暂无历史记录',
+                    userType: context.userType || '学生'
+                },
                 query: `[角色: 学习助手]
 [学科: ${context.subjectName || '通用'}]
 [教学内容: ${courseContent || '暂无特定教学内容'}]
@@ -485,7 +490,12 @@ ${message}`,
 
         try {
             const requestData = {
-                inputs: {},
+                inputs: {
+                    subjectName: context.subjectName || '通用',
+                    courseContent: courseContent || '暂无特定教学内容',
+                    studentHistory: studentHistory || '暂无历史记录',
+                    userType: context.userType || '学生'
+                },
                 query: `[角色: 学习助手]
 [学科: ${context.subjectName || '通用'}]
 [教学内容: ${courseContent || '暂无特定教学内容'}]
@@ -615,7 +625,12 @@ ${message}`,
   this.timeout = this.practicalExerciseTimeout;
         try {
             const response = await this.callDifyAPI('/chat-messages', {
-                inputs: {},
+                inputs: {
+                    subjectName: context.subjectName || '通用',
+                    courseContent: chapterContent || '基础内容',
+                    studentHistory: studentWeakAreas.join(', ') || '暂无历史记录',
+                    userType: '学生'
+                },
                 query: systemPrompt,
                 response_mode: 'blocking',
                 user: `student_${studentId || 'anonymous'}`,
@@ -760,7 +775,12 @@ ${message}`,
 
         try {
             const response = await this.callDifyAPI('/chat-messages', {
-                inputs: {},
+                inputs: {
+                    subjectName: question.knowledgePoints?.[0] || '通用',
+                    courseContent: question.questionText || '暂无特定教学内容',
+                    studentHistory: '暂无历史记录',
+                    userType: '学生'
+                },
                 query: systemPrompt,
                 response_mode: 'blocking',
                 user: `student_${context.studentId || 'anonymous'}`,
@@ -1363,7 +1383,12 @@ ${studentAnswers.map((answer, index) => `
 
         try {
             const response = await this.callDifyAPI('/chat-messages', {
-                inputs: {},
+                inputs: {
+                    subjectName: subject || '通用',
+                    courseContent: '暂无特定教学内容',
+                    studentHistory: '暂无历史记录',
+                    userType: '老师'
+                },
                 query: systemPrompt,
                 response_mode: 'blocking',
                 user: `teacher_${teacherId}`,
@@ -1608,7 +1633,12 @@ ${studyGoals || '提高整体成绩'}
 
         try {
             const response = await this.callDifyAPI('/chat-messages', {
-                inputs: {},
+                inputs: {
+                    subjectName: '通用',
+                    courseContent: '暂无特定教学内容',
+                    studentHistory: weakAreas?.join(', ') || '暂无历史记录',
+                    userType: '学生'
+                },
                 query: systemPrompt,
                 response_mode: 'blocking',
                 user: `student_${studentId}`,
@@ -1716,7 +1746,12 @@ ${studyGoals || '提高整体成绩'}
 
         try {
             const response = await this.callDifyAPI('/chat-messages', {
-                inputs: {},
+                inputs: {
+                    subjectName: subject_name || '通用',
+                    courseContent: course_title || '暂无特定教学内容',
+                    studentHistory: '暂无历史记录',
+                    userType: '老师'
+                },
                 query: systemPrompt,
                 response_mode: 'blocking',
                 conversation_id: '',
@@ -1797,7 +1832,12 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
             }
 
             const response = await this.callDifyAPI('/chat-messages', {
-                inputs: {},
+                inputs: {
+                    subjectName: subject_name || '通用',
+                    courseContent: assessment_title || '暂无特定教学内容',
+                    studentHistory: '暂无历史记录',
+                    userType: '老师'
+                },
                 query: systemPrompt,
                 response_mode: 'blocking',
                 conversation_id: '',
@@ -2557,7 +2597,12 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
                 console.log(`超时设置: ${this.timeout}ms`);
 
                 const response = await this.callDifyAPI('/chat-messages', {
-                    inputs: {},
+                    inputs: {
+                        subjectName: subject_name || '通用',
+                        courseContent: exercise_title || '暂无特定教学内容',
+                        studentHistory: '暂无历史记录',
+                        userType: '老师'
+                    },
                     query: systemPrompt,
                     response_mode: 'blocking',
                     conversation_id: '',
