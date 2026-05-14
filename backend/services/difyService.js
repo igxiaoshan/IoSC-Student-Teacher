@@ -536,8 +536,14 @@ ${message}`,
 - 题目类型: ${questionTypes.join(', ')}
 - 学生薄弱环节: ${studentWeakAreas.join(', ') || '无特定薄弱环节'}
 
-**重要：必须严格按照以下JSON格式返回，不要添加任何其他文字说明：**
+**最重要：你必须严格按照"题目类型"和"难度等级"的要求生成题目！**
+- 如果题目类型要求是"填空题"，则所有题目都必须是填空题，不能生成选择题
+- 如果题目类型要求是"选择题"，则所有题目都必须是选择题
+- 难度等级必须与要求一致，不能自行降低或提高
 
+**必须严格按照以下JSON格式返回，不要添加任何其他文字说明：**
+
+选择题格式：
 {
   "questions": [
     {
@@ -553,7 +559,41 @@ ${message}`,
       "correctAnswer": "B",
       "correctAnswerText": "选项B内容",
       "explanation": "详细解析",
-      "difficulty": "简单",
+      "difficulty": "${difficulty || '中等'}",
+      "points": 10,
+      "knowledgePoints": ["相关知识点"]
+    }
+  ]
+}
+
+填空题格式：
+{
+  "questions": [
+    {
+      "questionId": "q1",
+      "questionText": "在TensorFlow.js中，创建张量的核心方法是____。",
+      "questionType": "填空题",
+      "correctAnswer": "tf.tensor()",
+      "correctAnswerText": "tf.tensor()",
+      "explanation": "详细解析",
+      "difficulty": "${difficulty || '中等'}",
+      "points": 10,
+      "knowledgePoints": ["相关知识点"]
+    }
+  ]
+}
+
+简答题格式：
+{
+  "questions": [
+    {
+      "questionId": "q1",
+      "questionText": "请简述xxx的概念",
+      "questionType": "简答题",
+      "correctAnswer": "参考答案内容",
+      "correctAnswerText": "参考答案内容",
+      "explanation": "详细解析",
+      "difficulty": "${difficulty || '中等'}",
       "points": 10,
       "knowledgePoints": ["相关知识点"]
     }
@@ -561,13 +601,13 @@ ${message}`,
 }
 
 **关键要求：**
-1. 每道题目必须有明确的正确答案
-2. 选择题的options数组中，只有一个选项的isCorrect为true
-3. correctAnswer字段必须是选项标签（A、B、C、D）
-4. correctAnswerText字段必须是完整的正确答案内容
-5. 正确答案要随机分布，不要总是A选项
-6. 每个选项必须有label字段（A、B、C、D）
-7. 题目要有实际意义，答案要准确无误
+1. questionType字段必须与要求的题目类型完全一致
+2. difficulty字段必须与要求的难度等级完全一致
+3. 选择题的options数组中，只有一个选项的isCorrect为true
+4. 填空题不需要options字段，用correctAnswer存储标准答案
+5. correctAnswer字段：选择题填选项标签（A/B/C/D），填空题填标准答案文本
+6. 题目要有实际意义，答案要准确无误
+7. 正确答案要随机分布（选择题），不要总是A选项
 
 请严格按照上述JSON格式返回，确保JSON格式正确，可以被程序解析。`;
 
@@ -3399,8 +3439,14 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
 - 题目类型: ${questionTypes.join(', ')}
 - 学生薄弱环节: ${studentWeakAreas.join(', ') || '无特定薄弱环节'}
 
-**重要：必须严格按照以下JSON格式返回，不要添加任何其他文字说明：**
+**最重要：你必须严格按照"题目类型"和"难度等级"的要求生成题目！**
+- 如果题目类型要求是"填空题"，则所有题目都必须是填空题，不能生成选择题
+- 如果题目类型要求是"选择题"，则所有题目都必须是选择题
+- 难度等级必须与要求一致，不能自行降低或提高
 
+**必须严格按照以下JSON格式返回，不要添加任何其他文字说明：**
+
+选择题格式：
 {
   "questions": [
     {
@@ -3416,7 +3462,41 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
       "correctAnswer": "B",
       "correctAnswerText": "选项B内容",
       "explanation": "详细解析",
-      "difficulty": "简单",
+      "difficulty": "${difficulty || '中等'}",
+      "points": 10,
+      "knowledgePoints": ["相关知识点"]
+    }
+  ]
+}
+
+填空题格式：
+{
+  "questions": [
+    {
+      "questionId": "q1",
+      "questionText": "在TensorFlow.js中，创建张量的核心方法是____。",
+      "questionType": "填空题",
+      "correctAnswer": "tf.tensor()",
+      "correctAnswerText": "tf.tensor()",
+      "explanation": "详细解析",
+      "difficulty": "${difficulty || '中等'}",
+      "points": 10,
+      "knowledgePoints": ["相关知识点"]
+    }
+  ]
+}
+
+简答题格式：
+{
+  "questions": [
+    {
+      "questionId": "q1",
+      "questionText": "请简述xxx的概念",
+      "questionType": "简答题",
+      "correctAnswer": "参考答案内容",
+      "correctAnswerText": "参考答案内容",
+      "explanation": "详细解析",
+      "difficulty": "${difficulty || '中等'}",
       "points": 10,
       "knowledgePoints": ["相关知识点"]
     }
@@ -3424,13 +3504,13 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
 }
 
 **关键要求：**
-1. 每道题目必须有明确的正确答案
-2. 选择题的options数组中，只有一个选项的isCorrect为true
-3. correctAnswer字段必须是选项标签（A、B、C、D）
-4. correctAnswerText字段必须是完整的正确答案内容
-5. 正确答案要随机分布，不要总是A选项
-6. 每个选项必须有label字段（A、B、C、D）
-7. 题目要有实际意义，答案要准确无误
+1. questionType字段必须与要求的题目类型完全一致
+2. difficulty字段必须与要求的难度等级完全一致
+3. 选择题的options数组中，只有一个选项的isCorrect为true
+4. 填空题不需要options字段，用correctAnswer存储标准答案
+5. correctAnswer字段：选择题填选项标签（A/B/C/D），填空题填标准答案文本
+6. 题目要有实际意义，答案要准确无误
+7. 正确答案要随机分布（选择题），不要总是A选项
 
 请严格按照上述JSON格式返回，确保JSON格式正确，可以被程序解析。`;
 

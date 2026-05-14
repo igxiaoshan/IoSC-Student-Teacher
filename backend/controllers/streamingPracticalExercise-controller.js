@@ -5,6 +5,12 @@ const Subject = require('../models/subjectSchema');
 const difyService = require('../services/difyService');
 const AIResponseParser = require('../utils/aiResponseParser');
 
+// 难度等级映射（AI可能返回英文枚举）
+const mapDifficulty = (val) => {
+    const map = { 'EASY': '初级', 'MEDIUM': '中级', 'HARD': '高级', 'easy': '初级', 'medium': '中级', 'hard': '高级', '初级': '初级', '中级': '中级', '高级': '高级', '简单': '初级', '中等': '中级', '困难': '高级' };
+    return map[val] || map[String(val).toLowerCase()] || '中级';
+};
+
 // 提取AI响应中的JSON内容（剥离代码块、前后说明文字等）
 const extractJSON = (raw) => {
     if (!raw || typeof raw !== 'string') return raw;
@@ -147,8 +153,10 @@ const streamGeneratePracticalExercise = async (req, res) => {
                     }
                 }
 
+                console.log('实训SSE解析结果:', JSON.stringify({ dataSource, hasQuestions: !!aiGeneratedExercise.questions, questionsCount: aiGeneratedExercise.questions?.length, topKeys: Object.keys(aiGeneratedExercise || {}) }));
                 // 转换题目格式（复用 practical-exercise-controller 的逻辑）
-                const convertedQuestions = (aiGeneratedExercise.questions || []).map((q, index) => {
+                const rawQuestions = aiGeneratedExercise.questions || aiGeneratedExercise.exercises || aiGeneratedExercise.tasks || aiGeneratedExercise.题目列表 || [];
+                const convertedQuestions = rawQuestions.map((q, index) => {
                     let explanationText = '';
                     if (q.explanation) {
                         explanationText = Array.isArray(q.explanation)
@@ -170,13 +178,13 @@ const streamGeneratePracticalExercise = async (req, res) => {
                     return {
                         questionNumber: q.questionNumber || index + 1,
                         questionType: q.type || q.questionType || '实操题',
-                        questionText: String(q.question || q.questionText || ''),
+                        questionText: String(q.question || q.questionText || q.task || q.description || q.title || `题目${index + 1}`),
                         requirements: Array.isArray(q.requirements) ? q.requirements : [],
-                        referenceAnswer: String(q.referenceAnswer || q.answer || ''),
+                        referenceAnswer: String(q.referenceAnswer || q.answer || q.expectedOutput || q.solution || q.correctAnswer || '\u8bf7\u6839\u636e\u9898\u76ee\u8981\u6c42\u5b8c\u6210\u64cd\u4f5c'),
                         codeTemplate: q.codeTemplate || null,
                         gradingCriteria: Array.isArray(q.gradingCriteria) ? q.gradingCriteria : [],
                         explanation: explanationText,
-                        difficulty: String(q.difficulty || difficulty),
+                        difficulty: mapDifficulty(q.difficulty || difficulty),
                         points: Number(q.points || 20),
                         estimatedTime: Number(q.estimatedTime || Math.floor(duration / questionCount)),
                         knowledgePoints: knowledgePointsArray,

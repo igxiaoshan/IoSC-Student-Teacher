@@ -298,15 +298,13 @@ const generatePracticeQuestions = async (req, res) => {
         // 分析学生薄弱环节
         const studentWeakAreas = learningRecord.learningProgress.weakAreas.map(wa => wa.area);
         
-        // 根据历史表现调整难度
+        // 根据历史表现调整难度（只升级不降级，尊重用户选择）
         const recentAccuracy = learningRecord.recentPerformance?.reduce((sum, p) => sum + p.accuracy, 0) / 
                               (learningRecord.recentPerformance?.length || 1);
         
         let adjustedDifficulty = difficulty;
         if (recentAccuracy > 85) {
             adjustedDifficulty = difficulty === '简单' ? '中等' : difficulty === '中等' ? '困难' : '困难';
-        } else if (recentAccuracy < 60) {
-            adjustedDifficulty = difficulty === '困难' ? '中等' : difficulty === '中等' ? '简单' : '简单';
         }
 
 

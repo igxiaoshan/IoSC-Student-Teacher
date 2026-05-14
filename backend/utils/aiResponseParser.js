@@ -182,6 +182,10 @@ class AIResponseParser {
             // 方案1: 直接JSON解析
             const parsed = JSON.parse(response);
             console.log('✅ JSON解析成功');
+        console.log('原始JSON顶层字段:', Object.keys(parsed));
+        if (parsed.tasks) console.log('tasks数量:', parsed.tasks.length, 'tasks[0]字段:', Object.keys(parsed.tasks[0] || {}));
+        if (parsed.questions) console.log('questions数量:', parsed.questions.length, 'questions[0]字段:', Object.keys(parsed.questions[0] || {}));
+        if (parsed.exercises) console.log('exercises数量:', parsed.exercises.length, 'exercises[0]字段:', Object.keys(parsed.exercises[0] || {}));
 
             // 检测不同的响应格式
             let exerciseData = null;
@@ -211,6 +215,18 @@ class AIResponseParser {
                 exerciseData = parsed;
                 questions = parsed.题目列表;
             }
+			// 格式5: { questions: [...] } 标准questions格式
+			else if (parsed.questions && Array.isArray(parsed.questions)) {
+				console.log('检测到标准questions格式');
+				exerciseData = parsed;
+				questions = parsed.questions;
+			}
+			// 格式6: { tasks: [...] } tasks格式
+			else if (parsed.tasks && Array.isArray(parsed.tasks)) {
+				console.log('检测到tasks格式');
+				exerciseData = parsed;
+				questions = parsed.tasks;
+			}
 
             if (questions && questions.length > 0) {
                 // 转换题目格式，处理类型转换问题
@@ -323,9 +339,9 @@ class AIResponseParser {
         return {
             questionNumber: q.题目编号 || index + 1,
             questionType: '实操题',
-            questionText: String(q.题目描述 || q.questionText || ''),
+            questionText: String(q.题目描述 || q.questionText || q.taskName || q.description || q.task || q.title || q.name || q.question || ''),
             requirements: requirements,
-            referenceAnswer: String(q.参考答案和实现方案 || q.referenceAnswer || ''),
+            referenceAnswer: String(q.参考答案和实现方案 || q.referenceAnswer || q.answer || q.solution || q.expectedOutput || q.reference_solution || ''),
             codeTemplate: {
                 language: 'python',
                 template: String(q.代码模板 || q.codeTemplate || ''),
