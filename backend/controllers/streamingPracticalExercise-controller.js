@@ -108,7 +108,7 @@ const streamGeneratePracticalExercise = async (req, res) => {
             exercise_description: description,
             courseware_title: courseware.title,
             courseware_content: coursewareContent,
-            difficulty,
+                difficulty_level: difficulty,
             question_count: questionCount,
             question_types: questionTypes,
             duration,
@@ -129,6 +129,7 @@ const streamGeneratePracticalExercise = async (req, res) => {
         const onComplete = async (result) => {
             try {
                 const rawResponse = result.fullContent || fullContent;
+                console.log('实训SSE原始响应(前2000字符):', rawResponse.substring(0, 2000));
                 sendSSE('progress', { message: 'AI生成完成，正在解析并保存...' });
 
                 const cleanedResponse = extractJSON(rawResponse);

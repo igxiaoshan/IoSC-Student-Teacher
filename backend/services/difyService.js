@@ -3349,7 +3349,8 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
     async generatePracticalExerciseStream(inputData, onChunk, onComplete, onError) {
         const {
             subject_name, teacher_name, exercise_title,
-            exercise_description, exercise_type, difficulty_level
+            exercise_description, exercise_type, difficulty_level,
+            question_count, question_types, duration, focus_areas
         } = inputData;
 
         const systemPrompt = `你是一名专业的实训题目设计专家。请根据以下信息设计实训练习。
@@ -3360,6 +3361,13 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
 实训描述：${exercise_description}
 实训类型：${exercise_type || '综合实训'}
 难度级别：${difficulty_level || '中级'}
+题目数量：${question_count || 5}
+题目类型：${Array.isArray(question_types) ? question_types.join(', ') : question_types || '实操题'}
+预计时长：${duration || 120}分钟
+重点领域：${Array.isArray(focus_areas) ? focus_areas.join(', ') : focus_areas || '基础概念'}
+
+**重要：必须严格按照"题目数量"生成对应数量的tasks，不能少于要求的数量。**
+
 
 请以JSON格式返回，包含以下字段：
 {
