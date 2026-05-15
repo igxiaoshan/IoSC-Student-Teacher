@@ -490,35 +490,41 @@ const EnhancedAIAssessmentGenerator = () => {
         }
     };
 
- // 复制分享链接
- const copyShareLink = () => {
- const url = shareDialog.shareUrl;
- if (navigator.clipboard && window.isSecureContext) {
- navigator.clipboard.writeText(url).then(() => {
- setSuccess('分享链接已复制到剪贴板！');
- }).catch(() => {
- fallbackCopy(url);
- });
- } else {
- fallbackCopy(url);
- }
- };
+    // 复制到剪贴板（兼容 HTTP 环境）
+    const fallbackCopy = (text) => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.top = '0';
+        textarea.style.left = '0';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        textarea.setSelectionRange(0, text.length);
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+        document.body.removeChild(textarea);
+        return ok;
+    };
 
- const fallbackCopy = (text) => {
- const textarea = document.createElement('textarea');
- textarea.value = text;
- textarea.style.position = 'fixed';
- textarea.style.opacity = '0';
- document.body.appendChild(textarea);
- textarea.select();
- try {
- document.execCommand('copy');
- setSuccess('分享链接已复制到剪贴板！');
- } catch {
- setError('复制失败，请手动复制链接');
- }
- document.body.removeChild(textarea);
- };
+    // 复制分享链接
+    const copyShareLink = async () => {
+        const url = shareDialog.shareUrl;
+        if (!url) { setError('链接不存在'); return; }
+        let copied = false;
+        if (navigator.clipboard && window.isSecureContext) {
+            try { await navigator.clipboard.writeText(url); copied = true; } catch (e) { copied = false; }
+        }
+        if (!copied) copied = fallbackCopy(url);
+        if (copied) {
+            setSuccess('分享链接已复制到剪贴板！');
+            setShareDialog({ ...shareDialog, open: false });
+        } else {
+            setError('复制失败，请手动复制链接');
+        }
+    };
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
             {success && (
