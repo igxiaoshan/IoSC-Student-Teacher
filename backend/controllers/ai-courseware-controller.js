@@ -180,17 +180,16 @@ const generateSubjectOverview = async (teacher, subject, params) => {
 const generateDetailedCourseware = async (teacher, subject, params) => {
     try {
         const difyInput = {
-            subject_name: subject.subName,
-            teacher_name: teacher.name,
-            course_title: params.title,
-            course_description: params.description,
-            course_syllabus: params.syllabus,
-            course_level: params.courseLevel,
-            student_count: params.studentCount,
-            duration: params.duration,
-            focus_areas: params.focusAreas?.join(', ')
-        };
-
+ subject_name: subject.subName,
+ teacher_name: teacher.name,
+ course_title: params.title || `${subject.subName}详细课件`,
+ course_description: params.description || `${subject.subName}科目的AI生成详细课件`,
+ course_syllabus: params.syllabus || `${subject.subName}课程大纲`,
+ course_level: params.courseLevel || '中级',
+ student_count: params.studentCount || 30,
+ duration: params.duration || 45,
+ focus_areas: params.focusAreas?.join(', ') || '理论基础, 实践应用'
+ };
         const difyResponse = await difyService.generateLessonPlan(difyInput);
         const content = difyResponse.answer || difyResponse.data || '';
         

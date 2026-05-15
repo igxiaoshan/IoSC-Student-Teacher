@@ -26,7 +26,14 @@
       "mcp__ide__getDiagnostics",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:github.com)",
-      "mcp__sequential-thinking__sequentialthinking"
+      "mcp__sequential-thinking__sequentialthinking",
+      "mcp__openapi-mcp-core__AlibabaCloud___CallCLI",
+      "mcp__openapi-mcp-core__AlibabaCloud___SearchApis",
+      "mcp__openapi-mcp-core__AlibabaCloud___GetApiDefinition"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "openapi-mcp-core"
+  ]
 }

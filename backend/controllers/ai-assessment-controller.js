@@ -1059,7 +1059,7 @@ const generateAssessmentShareLink = async (req, res) => {
         const shareToken = `share_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
         // 生成分享链接（指向前端页面）
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
         const shareUrl = `${frontendUrl}/share/assessment/${shareToken}`;
 
         res.json({

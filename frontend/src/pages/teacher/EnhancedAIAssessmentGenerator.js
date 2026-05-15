@@ -490,12 +490,35 @@ const EnhancedAIAssessmentGenerator = () => {
         }
     };
 
-    // 复制分享链接
-    const copyShareLink = () => {
-        navigator.clipboard.writeText(shareDialog.shareUrl);
-        setSuccess('分享链接已复制到剪贴板！');
-    };
+ // 复制分享链接
+ const copyShareLink = () => {
+ const url = shareDialog.shareUrl;
+ if (navigator.clipboard && window.isSecureContext) {
+ navigator.clipboard.writeText(url).then(() => {
+ setSuccess('分享链接已复制到剪贴板！');
+ }).catch(() => {
+ fallbackCopy(url);
+ });
+ } else {
+ fallbackCopy(url);
+ }
+ };
 
+ const fallbackCopy = (text) => {
+ const textarea = document.createElement('textarea');
+ textarea.value = text;
+ textarea.style.position = 'fixed';
+ textarea.style.opacity = '0';
+ document.body.appendChild(textarea);
+ textarea.select();
+ try {
+ document.execCommand('copy');
+ setSuccess('分享链接已复制到剪贴板！');
+ } catch {
+ setError('复制失败，请手动复制链接');
+ }
+ document.body.removeChild(textarea);
+ };
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
             {success && (

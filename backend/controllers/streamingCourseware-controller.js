@@ -82,18 +82,18 @@ const streamGenerateCourseware = async (req, res) => {
                 syllabus_outline: syllabus || ''
             };
         } else {
-            difyInput = {
-                subject_name: subject.subName,
-                teacher_name: teacher.name,
-                course_title: title,
-                course_description: description,
-                course_syllabus: syllabus,
-                course_level: courseLevel,
-                student_count: studentCount,
-                duration: duration,
-                focus_areas: focusAreas?.join(', ')
-            };
-        }
+ difyInput = {
+ subject_name: subject.subName,
+ teacher_name: teacher.name,
+ course_title: title || `${subject.subName}详细课件`,
+ course_description: description || `${subject.subName}科目的AI生成详细课件`,
+ course_syllabus: syllabus || `${subject.subName}课程大纲`,
+ course_level: courseLevel || '中级',
+ student_count: studentCount || 30,
+ duration: duration || 45,
+ focus_areas: focusAreas?.join(', ') || '理论基础, 实践应用'
+ };
+ }
 
         let fullContent = '';
 

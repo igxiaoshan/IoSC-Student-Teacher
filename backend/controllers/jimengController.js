@@ -288,13 +288,49 @@ const getTaskStatus = async (req, res) => {
             : await jimengService.getVideoTaskResult(taskId);
 
         if (result.status === 'done') {
-            await jimengService.updateGenerationStatus(
-                taskId,
-                'completed',
-                result.imageUrls?.[0] || result.videoUrls?.[0],
-                result.videoUrls || []
-            );
-        }
+ await jimengService.updateGenerationStatus(
+ taskId,
+ 'completed',
+ result.imageUrls?.[0] || result.videoUrls?.[0],
+ result.videoUrls || []
+ );
+
+ // 视频完成后异步下载到本地（不阻塞响应）
+ if (type === 'video' && result.videoUrls?.[0]) {
+ const videoUrl = result.videoUrls[0];
+ const dbRecord = await JimengGeneration.findOne({ taskId }).lean();
+ if (dbRecord && !dbRecord.localFilePath) {
+ (async () => {
+ try {
+ const fs = require('fs');
+ const path = require('path');
+ const VIDEO_DIR = path.join(__dirname, '..', 'videos');
+ if (!fs.existsSync(VIDEO_DIR)) fs.mkdirSync(VIDEO_DIR, { recursive: true });
+
+ const fileName = `${taskId}_${Date.now()}.mp4`;
+ const filePath = path.join(VIDEO_DIR, fileName);
+
+ const response = await axios({ method: 'GET', url: videoUrl, responseType: 'stream', timeout: 120000 });
+ const writer = fs.createWriteStream(filePath);
+ await new Promise((resolve, reject) => {
+ response.data.pipe(writer);
+ writer.on('finish', resolve);
+ writer.on('error', reject);
+ });
+
+ console.log('[后台下载] 视频已保存:', filePath);
+ await JimengGeneration.findOneAndUpdate(
+ { taskId },
+ { localFilePath: filePath, resultUrl: `/api/knowledge/video/${dbRecord._id}` },
+ { new: true }
+ );
+ } catch (err) {
+ console.error('[后台下载] 失败:', err.message);
+ }
+ })();
+ }
+ }
+ }
 
         res.json({
             success: true,

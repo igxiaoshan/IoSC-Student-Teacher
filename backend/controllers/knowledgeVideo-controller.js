@@ -382,7 +382,7 @@ const queryDifyKnowledge = async (keyword, subject) => {
                     'Authorization': `Bearer ${apiKey}`,
                     'Content-Type': 'application/json',
                 },
-                timeout: 30000,
+                timeout: 10000,
             }
         );
 
@@ -502,92 +502,27 @@ const generateKnowledgeVideo = async (req, res) => {
             });
         }
 
-        // Step 4: 调用即梦AI生成视频
-        const videoResult = await jimengService.textToVideo(videoPrompt, {
-            duration: 5,
-            resolution: '720p',
-            aspect_ratio: '16:9',
-        });
+ // Step 4: 调用即梦AI生成视频
+ const videoResult = await jimengService.textToVideo(videoPrompt, {
+ duration: 5,
+ resolution: '720p',
+ aspect_ratio: '16:9',
+ });
 
-        console.log('[视频生成] 提交成功, taskId:', videoResult.taskId);
+ console.log('[视频生成] 提交成功, taskId:', videoResult.taskId);
 
-        // 保存记录（pending状态）
-        const record = await saveKnowledgeVideoRecord(userId, userType, videoResult.taskId, keyword, videoPrompt, knowledgeSource);
+ // 保存记录（pending状态）
+ const record = await saveKnowledgeVideoRecord(userId, userType, videoResult.taskId, keyword, videoPrompt, knowledgeSource);
 
-        // Step 5: 轮询获取视频URL
-        console.log('[视频生成] 开始轮询获取视频URL...');
-        let videoUrl = null;
-        let pollCount = 0;
-        const maxPolls = 60; // 最多轮询60次（5分钟）
-
-        while (pollCount < maxPolls) {
-            try {
-                const taskResult = await jimengService.getVideoTaskResult(videoResult.taskId);
-                console.log(`[视频生成] 轮询${pollCount + 1}: status=${taskResult.status}`);
-
-                if (taskResult.status === 'done' && taskResult.videoUrls && taskResult.videoUrls.length > 0) {
-                    videoUrl = taskResult.videoUrls[0];
-                    console.log('[视频生成] 获取到视频URL:', videoUrl);
-                    break;
-                }
-
-                if (taskResult.status === 'failed') {
-                    console.log('[视频生成] 视频生成失败');
-                    await updateKnowledgeVideoRecord(videoResult.taskId, 'failed');
-                    return res.status(500).json({
-                        success: false,
-                        message: '视频生成失败',
-                    });
-                }
-
-                // 等待5秒后继续轮询
-                await new Promise(resolve => setTimeout(resolve, 5000));
-                pollCount++;
-            } catch (pollError) {
-                console.error('[视频生成] 轮询出错:', pollError.message);
-                pollCount++;
-                await new Promise(resolve => setTimeout(resolve, 5000));
-            }
-        }
-
-        if (!videoUrl) {
-            console.log('[视频生成] 轮询超时，未获取到视频URL');
-            return res.status(500).json({
-                success: false,
-                message: '获取视频超时',
-            });
-        }
-
-        // Step 6: 下载视频到本地
-        // 测试发现：不带Referer可以成功下载，带Referer反而403
-        console.log('[视频生成] 开始下载视频到本地...');
-        let localFilePath = null;
-        try {
-            localFilePath = await downloadVideoToLocal(videoUrl, videoResult.taskId);
-            console.log('[视频生成] 视频下载完成:', localFilePath);
-        } catch (downloadError) {
-            console.error('[视频生成] 视频下载失败:', downloadError.message);
-            // 下载失败但视频URL已获取，继续使用CDN URL
-        }
-
-        // Step 7: 更新记录状态
-        const finalResultUrl = localFilePath ? `/api/knowledge/video/${record?._id}` : videoUrl;
-        await updateKnowledgeVideoRecord(videoResult.taskId, 'completed', localFilePath, finalResultUrl);
-
-        res.json({
-            success: true,
-            taskId: videoResult.taskId,
-            status: 'completed',
-            message: '视频生成成功',
-            knowledgeSource,
-            recordId: record?._id,
-            // 下载成功返回本地路径，否则返回CDN URL
-            videoUrl: localFilePath ? `/api/knowledge/video/${record?._id}` : videoUrl,
-            originalUrl: videoUrl,
-            localFilePath: localFilePath,
-            downloaded: !!localFilePath,
-        });
-
+ // 异步模式：立即返回taskId，前端通过轮询 /api/jimeng/task/:taskId 获取状态
+ res.json({
+ success: true,
+ taskId: videoResult.taskId,
+ status: 'pending',
+ message: '视频生成任务已提交',
+ knowledgeSource,
+ recordId: record?._id,
+ });
     } catch (error) {
         console.error('知识视频生成错误:', error.message);
         res.status(500).json({
