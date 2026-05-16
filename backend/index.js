@@ -24,6 +24,7 @@ setupUnhandledRejectionHandler();
 const PORT = process.env.PORT || 5000;
 
 // 基础中间件
+app.set('trust proxy', 1); // 信任反向代理（Nginx），使 rate-limit 能正确识别客户端IP
 app.use(express.json({ limit: '10mb' }));
 app.use(cors());
 
