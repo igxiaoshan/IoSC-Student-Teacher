@@ -5,6 +5,7 @@ const difyService = require('../services/difyService');
 const ExcelJS = require('exceljs');
 const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, UnderlineType } = require('docx');
 const crypto = require('crypto');
+const { normalizeDifficulty } = require('../utils/difficultyNormalizer');
 
 // AI课件生成服务 - 优化版本，使用Dify API
 const generateCourseware = async (req, res) => {
@@ -73,6 +74,20 @@ const generateCourseware = async (req, res) => {
             });
         }
 
+        // 规范化 difficulty 值，确保符合 Schema enum ['初级', '中级', '高级']
+        const normalizedKnowledgePoints = (coursewareContent.knowledgePoints || []).map(kp => ({
+            ...kp,
+            difficulty: normalizeDifficulty(kp.difficulty),
+        }));
+
+        const normalizedTeachingContent = { ...coursewareContent.teachingContent };
+        if (normalizedTeachingContent.practicalExercises) {
+            normalizedTeachingContent.practicalExercises = normalizedTeachingContent.practicalExercises.map(ex => ({
+                ...ex,
+                difficulty: normalizeDifficulty(ex.difficulty),
+            }));
+        }
+
         // 创建课件记录
         const courseware = new Courseware({
             title: title || `${subject.subName}课件概览`,
@@ -81,8 +96,8 @@ const generateCourseware = async (req, res) => {
             teacher: teacherId,
             school: teacher.school,
             syllabus: syllabus || coursewareContent.syllabus,
-            knowledgePoints: coursewareContent.knowledgePoints || [],
-            teachingContent: coursewareContent.teachingContent || {},
+            knowledgePoints: normalizedKnowledgePoints,
+            teachingContent: normalizedTeachingContent,
             practiceExercises: coursewareContent.practiceExercises || [],
             isAIGenerated: true,
             generationType: generateType,

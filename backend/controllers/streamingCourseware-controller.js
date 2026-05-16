@@ -2,6 +2,7 @@ const Courseware = require('../models/coursewareSchema');
 const Subject = require('../models/subjectSchema');
 const Teacher = require('../models/teacherSchema');
 const difyService = require('../services/difyService');
+const { normalizeDifficulty } = require('../utils/difficultyNormalizer');
 
 // 提取AI响应中的JSON内容（剥离代码块、前后说明文字等）
 const extractJSON = (raw) => {
@@ -117,6 +118,20 @@ const streamGenerateCourseware = async (req, res) => {
                     coursewareContent = parseTextContent(content, subject.subName);
                 }
 
+                // 规范化 difficulty 值，确保符合 Schema enum ['初级', '中级', '高级']
+                const normalizedKnowledgePoints = (coursewareContent.knowledgePoints || []).map(kp => ({
+                    ...kp,
+                    difficulty: normalizeDifficulty(kp.difficulty),
+                }));
+
+                const normalizedTeachingContent = { ...coursewareContent.teachingContent };
+                if (normalizedTeachingContent.practicalExercises) {
+                    normalizedTeachingContent.practicalExercises = normalizedTeachingContent.practicalExercises.map(ex => ({
+                        ...ex,
+                        difficulty: normalizeDifficulty(ex.difficulty),
+                    }));
+                }
+
                 // 构造 Courseware 文档
                 const courseware = new Courseware({
                     title: title || `${subject.subName}课件概览`,
@@ -125,8 +140,8 @@ const streamGenerateCourseware = async (req, res) => {
                     teacher: teacherId,
                     school: teacher.school,
                     syllabus: syllabus || coursewareContent.syllabus || '',
-                    knowledgePoints: coursewareContent.knowledgePoints || [],
-                    teachingContent: coursewareContent.teachingContent || {},
+                    knowledgePoints: normalizedKnowledgePoints,
+                    teachingContent: normalizedTeachingContent,
                     practiceExercises: coursewareContent.practiceExercises || [],
                     isAIGenerated: true,
                     generationType: generateType,
