@@ -10,6 +10,12 @@ const { Signer } = require('@volcengine/openapi');
 const jimengConfig = require('../config/jimengConfig');
 const JimengGeneration = require('../models/JimengGeneration');
 
+// 不可恢复的HTTP状态码，遇到这些错误应立即停止重试
+const UNRECOVERABLE_STATUS_CODES = [401, 403, 402, 405];
+const UNRECOVERABLE_API_CODES = [50400]; // Access Denied 等权限错误
+// 最大API调用失败次数（针对可恢复错误的重试上限）
+const MAX_API_FAILURES = 3;
+
 // 单例模式
 let jimengServiceInstance = null;
 
@@ -80,7 +86,23 @@ class JimengService {
             return response.data;
         } catch (error) {
             if (error.response) {
-                throw new Error(`API错误: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+                const status = error.response.status;
+                const data = error.response.data;
+                // 不可恢复错误（认证/权限），立即终止不重试
+                if (UNRECOVERABLE_STATUS_CODES.includes(status)) {
+                    const authError = new Error(`API错误: ${status} - ${JSON.stringify(data)}`);
+                    authError.isUnrecoverable = true;
+                    authError.statusCode = status;
+                    throw authError;
+                }
+                // API业务层权限错误（如 Access Denied 50400）
+                if (data?.status && UNRECOVERABLE_API_CODES.includes(data.status)) {
+                    const authError = new Error(`API错误: ${status} - ${JSON.stringify(data)}`);
+                    authError.isUnrecoverable = true;
+                    authError.statusCode = status;
+                    throw authError;
+                }
+                throw new Error(`API错误: ${status} - ${JSON.stringify(data)}`);
             }
             throw error;
         }
@@ -135,7 +157,7 @@ class JimengService {
      */
     async getImageTaskResult(taskId) {
         const params = {
-            req_key: 'jimeng_t2i_v30',
+            req_key: 'high_aes_general_v30l_zt2i',
             task_id: taskId,
             req_json: JSON.stringify({
                 return_url: true,
@@ -270,22 +292,44 @@ class JimengService {
     async waitForTaskCompletion(taskId, type = 'image') {
         const { maxAttempts, intervalMs, timeoutMs } = jimengConfig.polling;
         const startTime = Date.now();
+        let consecutiveFailures = 0;
 
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             if (Date.now() - startTime > timeoutMs) {
                 throw new Error('任务超时');
             }
 
-            const result = type === 'image'
-                ? await this.getImageTaskResult(taskId)
-                : await this.getVideoTaskResult(taskId);
+            try {
+                const result = type === 'image'
+                    ? await this.getImageTaskResult(taskId)
+                    : await this.getVideoTaskResult(taskId);
 
-            if (result.status === 'done' && result.code === 10000) {
-                return result;
-            }
+                // 查询成功，重置失败计数
+                consecutiveFailures = 0;
 
-            if (result.status === 'failed' || result.code !== 10000) {
-                throw new Error(result.message || '任务失败');
+                if (result.status === 'done' && result.code === 10000) {
+                    return result;
+                }
+
+                if (result.status === 'failed' || result.code !== 10000) {
+                    throw new Error(result.message || '任务失败');
+                }
+            } catch (error) {
+                // 不可恢复错误（认证/权限），立即终止
+                if (error.isUnrecoverable) {
+                    console.error('不可恢复错误，停止轮询:', error.message);
+                    await this.updateGenerationStatus(taskId, 'failed', null, [], error.message);
+                    throw error;
+                }
+
+                consecutiveFailures++;
+                if (consecutiveFailures >= MAX_API_FAILURES) {
+                    console.error(`连续${MAX_API_FAILURES}次API调用失败，停止轮询`);
+                    await this.updateGenerationStatus(taskId, 'failed', null, [], `连续查询失败: ${error.message}`);
+                    throw new Error(`连续${MAX_API_FAILURES}次查询失败，停止重试: ${error.message}`);
+                }
+
+                console.warn(`查询失败(${consecutiveFailures}/${MAX_API_FAILURES}):`, error.message);
             }
 
             await new Promise(resolve => setTimeout(resolve, intervalMs));

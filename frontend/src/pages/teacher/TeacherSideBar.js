@@ -17,6 +17,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ImageIcon from '@mui/icons-material/Image';
 import BuildIcon from '@mui/icons-material/Build';
+import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import { useSelector } from 'react-redux';
 import { getSafeClassName } from '../../utils/safeAccess';
 
@@ -53,6 +54,7 @@ const TeacherSideBar = () => {
         { path: '/Teacher/practical-exercise', icon: <BuildIcon />, label: tTeacher('practicalExerciseGenerator') },
         { path: '/Teacher/jimeng-image', icon: <ImageIcon />, label: tTeacher('aiImageGenerator') },
         { path: '/Teacher/knowledge-video', icon: <AutoAwesomeIcon />, label: tTeacher('knowledgeVideoGenerator') },
+        { path: '/Teacher/video-manager', icon: <VideoLibraryIcon />, label: '视频课堂' },
     ];
 
     const userNavItems = [

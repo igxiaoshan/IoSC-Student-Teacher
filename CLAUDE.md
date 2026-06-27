@@ -186,12 +186,34 @@ await workflow.debug(issue, errorLog);
 
 ### 已集成的 AI 服务
 
-| 服务 | 配置文件 | 服务文件 | 用途 |
-|------|----------|----------|------|
-| Dify | `backend/config/difyConfig.js` | `backend/services/difyService.js` | 课件生成、评估、对话 |
-| Ollama | `backend/config/ollamaConfig.js` | `backend/services/ollamaService.js` | 本地模型支持 |
-| 即梦AI | `backend/config/jimengConfig.js` | `backend/services/jimengService.js` | 文生图、文生视频 |
-| Gemini | `backend/services/aiConfig.js` | `backend/services/geminiService.js` | 通用 AI 推理 |
+| 服务 | 服务文件 | 用途 |
+|------|----------|------|
+| Dify | `backend/services/difyService.js` | 课件生成、评估、对话（含内置 MD5 响应缓存，TTL 1小时，上限 500 条） |
+| SmartDifyWrapper | `backend/services/smartDifyWrapper.js` | 对 DifyService 的二次封装，提供分级超时（30s/2min/5min/10min）和重试策略 |
+| 即梦AI | `backend/services/jimengService.js` | 文生图、文生视频（火山引擎 HMAC-SHA256 签名认证） |
+| Gemini | `backend/services/geminiService.js` | 通用 AI 推理 |
+
+> 注意：`backend/services/difyService_1.js` 是旧版备份，不要引用。
+
+### SSE 流式响应模式
+
+AI 生成类接口使用 Server-Sent Events 流式输出，固定格式如下：
+
+```javascript
+// 设置 SSE 响应头
+res.writeHead(200, {
+  'Content-Type': 'text/event-stream',
+  'Cache-Control': 'no-cache',
+  'Connection': 'keep-alive',
+  'Access-Control-Allow-Origin': '*',
+});
+// 发送事件
+res.write(`data: ${JSON.stringify(payload)}\n\n`);
+```
+
+相关控制器：`streamingCourseware-controller.js`、`streamingAI-controller.js`、`streamingLearningAssistant-controller.js`、`streamingPracticalExercise-controller.js`。
+
+AI 响应中的 JSON 需剥离 markdown 代码块，使用 `extractJSON()` 工具函数处理，参见 `streamingCourseware-controller.js:8`。
 
 ### 新增 AI 服务模式
 
@@ -224,10 +246,15 @@ await workflow.debug(issue, errorLog);
 # 数据库
 MONGO_URL=mongodb://127.0.0.1/school
 
-# AI 服务 (Dify)
+# Dify AI — URL 和 Key 分开配置
 DIFY_BASE_URL=https://api.dify.ai
+DIFY_API_URL=https://api.dify.ai/v1   # 注意：服务层读 DIFY_API_URL，不是 DIFY_BASE_URL
 DIFY_API_KEY=app-xxx
 DIFY_TEACHER_LESSON_APP_ID=xxx
+DIFY_TEACHER_EXAM_APP_ID=xxx
+DIFY_TEACHER_ANALYTICS_APP_ID=xxx
+DIFY_STUDENT_LEARNING_APP_ID=xxx
+DIFY_STUDENT_PRACTICE_APP_ID=xxx
 
 # Ollama (本地 AI)
 OLLAMA_URL=http://localhost:11434
@@ -235,10 +262,14 @@ OLLAMA_MODEL=deepseek-r1
 
 # 即梦AI (火山引擎)
 JIMENG_API_URL=https://visual.volcengineapi.com
-VOLC_ACCESS_KEY=your_volc_access_key  # 火山引擎AccessKey
-VOLC_SECRET_KEY=your_volc_secret_key  # 火山引擎SecretKey
+VOLC_ACCESS_KEY=your_volc_access_key
+VOLC_SECRET_KEY=your_volc_secret_key
+JIMENG_IMAGE_ENABLED=true
+JIMENG_VIDEO_ENABLED=true
 
-# 其他配置参考 backend/.env.example
+# 功能开关
+AI_LESSON_PLAN=true
+AI_QUESTION_GEN=true
 ```
 
 ### 前端环境变量 (frontend/.env)
@@ -255,8 +286,9 @@ REACT_APP_BASE_URL=http://localhost:5000
 
 ## Important Notes
 
-1. **网络问题**: 如果遇到 API 连接问题，检查 `frontend/.env` 的 `REACT_APP_BASE_URL` 是否配置正确
-2. **删除功能**: 生产环境默认禁用删除功能，需要在 `userHandle.js` 和相关页面中手动启用
-3. **Electron 打包**: 使用 `electron-builder`，配置在根目录 `package.json` 的 `build` 字段
-4. **AI 功能**: 需要配置有效的 Dify API Key、本地 Ollama 服务或即梦AI API Key
-5. **模拟模式**: AI 服务未配置时会返回模拟数据用于开发测试
+1. **Dify URL 配置**：服务层读取 `DIFY_API_URL`（含 `/v1` 后缀），`DIFY_BASE_URL` 仅用于健康检查，两者必须同时配置。
+2. **路由注册位置**：所有路由统一在 `backend/routes/route.js` 挂载，新增路由必须在此文件中 `require` 并 `router.use()`。
+3. **删除功能**：生产环境默认禁用删除功能，需在 `userHandle.js` 和相关页面中手动启用。
+4. **AI 模拟模式**：AI 服务未配置时返回模拟数据，不会报错，便于前端开发调试。
+5. **难度值归一化**：AI 生成内容的难度字段需经 `backend/utils/difficultyNormalizer.js` 的 `normalizeDifficulty()` 处理，再存入数据库。
+6. **Electron 入口**：当前 `package.json` main 指向 `electron-main-simple.js`，打包时注意配置文件选择。

@@ -75,6 +75,9 @@ const streamGenerateCourseware = async (req, res) => {
             difyInput = {
                 subject_name: subject.subName,
                 teacher_name: teacher.name,
+                course_title: title || `${subject.subName}课件概览`,
+                course_description: description || `${subject.subName}科目的AI生成课件概览`,
+                course_syllabus: syllabus || `${subject.subName}课程大纲`,
                 course_level: courseLevel || '中级',
                 student_count: studentCount || 30,
                 duration: duration || 45,
@@ -83,18 +86,18 @@ const streamGenerateCourseware = async (req, res) => {
                 syllabus_outline: syllabus || ''
             };
         } else {
- difyInput = {
- subject_name: subject.subName,
- teacher_name: teacher.name,
- course_title: title || `${subject.subName}详细课件`,
- course_description: description || `${subject.subName}科目的AI生成详细课件`,
- course_syllabus: syllabus || `${subject.subName}课程大纲`,
- course_level: courseLevel || '中级',
- student_count: studentCount || 30,
- duration: duration || 45,
- focus_areas: focusAreas?.join(', ') || '理论基础, 实践应用'
- };
- }
+            difyInput = {
+                subject_name: subject.subName,
+                teacher_name: teacher.name,
+                course_title: title || `${subject.subName}详细课件`,
+                course_description: description || `${subject.subName}科目的AI生成详细课件`,
+                course_syllabus: syllabus || `${subject.subName}课程大纲`,
+                course_level: courseLevel || '中级',
+                student_count: studentCount || 30,
+                duration: duration || 45,
+                focus_areas: focusAreas?.join(', ') || '理论基础, 实践应用'
+            };
+        }
 
         let fullContent = '';
 
@@ -111,26 +114,15 @@ const streamGenerateCourseware = async (req, res) => {
                 sendSSE('progress', { message: 'AI生成完成，正在解析并保存...' });
 
                 // 解析 AI 内容
-                let coursewareContent;
+                let aiContent;
                 try {
-                    coursewareContent = JSON.parse(extractJSON(content));
+                    aiContent = JSON.parse(extractJSON(content));
                 } catch (e) {
-                    coursewareContent = parseTextContent(content, subject.subName);
+                    aiContent = parseTextContent(content, subject.subName);
                 }
 
-                // 规范化 difficulty 值，确保符合 Schema enum ['初级', '中级', '高级']
-                const normalizedKnowledgePoints = (coursewareContent.knowledgePoints || []).map(kp => ({
-                    ...kp,
-                    difficulty: normalizeDifficulty(kp.difficulty),
-                }));
-
-                const normalizedTeachingContent = { ...coursewareContent.teachingContent };
-                if (normalizedTeachingContent.practicalExercises) {
-                    normalizedTeachingContent.practicalExercises = normalizedTeachingContent.practicalExercises.map(ex => ({
-                        ...ex,
-                        difficulty: normalizeDifficulty(ex.difficulty),
-                    }));
-                }
+                // 将 AI 响应映射为 Schema 结构（含 difficulty 规范化）
+                const coursewareContent = mapAIToSchema(aiContent, duration);
 
                 // 构造 Courseware 文档
                 const courseware = new Courseware({
@@ -140,9 +132,9 @@ const streamGenerateCourseware = async (req, res) => {
                     teacher: teacherId,
                     school: teacher.school,
                     syllabus: syllabus || coursewareContent.syllabus || '',
-                    knowledgePoints: normalizedKnowledgePoints,
-                    teachingContent: normalizedTeachingContent,
-                    practiceExercises: coursewareContent.practiceExercises || [],
+                    knowledgePoints: coursewareContent.knowledgePoints,
+                    teachingContent: coursewareContent.teachingContent,
+                    practiceExercises: coursewareContent.practiceExercises,
                     isAIGenerated: true,
                     generationType: generateType,
                     generationParams: {
@@ -190,7 +182,60 @@ const streamGenerateCourseware = async (req, res) => {
     }
 };
 
-// 文本内容解析（Dify返回非JSON时的fallback）
+// 将 AI 返回的 JSON 结构映射为 coursewareSchema 要求的结构
+// AI 可能返回: knowledgePoints, teachingActivities, practiceExercises, introduction, objectives, summary
+// Schema 需要: knowledgePoints, teachingContent { lectures, practicalExercises, timeDistribution }
+const mapAIToSchema = (aiContent, duration) => {
+    const knowledgePoints = (aiContent.knowledgePoints || []).map(kp => ({
+        title: kp.title || '知识点',
+        content: kp.content || '',
+        difficulty: normalizeDifficulty(kp.difficulty),
+        estimatedTime: Number(kp.estimatedTime) || 15,
+    }));
+
+    // teachingActivities → lectures
+    const lectures = (aiContent.teachingActivities || aiContent.teaching_content || []).map(act => ({
+        title: act.activity || act.title || act.name || '教学活动',
+        content: act.description || act.content || '',
+        duration: Number(act.duration) || 15,
+        resources: act.resources || [],
+    }));
+
+    // 顶层 practiceExercises → teachingContent.practicalExercises
+    const practicalExercises = (aiContent.practiceExercises || aiContent.practical_exercises || []).map(ex => ({
+        title: ex.title || ex.name || '练习',
+        description: ex.description || '',
+        instructions: ex.instructions || ex.description || '',
+        difficulty: normalizeDifficulty(ex.difficulty),
+        estimatedTime: Number(ex.estimatedTime) || 15,
+        resources: ex.resources || [],
+    }));
+
+    // 计算时间分配
+    const totalLectureTime = lectures.reduce((sum, l) => sum + l.duration, 0);
+    const totalPracticeTime = practicalExercises.reduce((sum, p) => sum + p.estimatedTime, 0);
+    const totalDuration = duration || 45;
+    const discussionTime = Math.round(totalDuration * 0.15);
+    const assessmentTime = Math.round(totalDuration * 0.1);
+
+    const teachingContent = {
+        lectures,
+        practicalExercises,
+        timeDistribution: {
+            lectureTime: totalLectureTime || Math.round(totalDuration * 0.5),
+            practiceTime: totalPracticeTime || Math.round(totalDuration * 0.25),
+            discussionTime,
+            assessmentTime,
+        },
+    };
+
+    return {
+        syllabus: aiContent.syllabus || '',
+        knowledgePoints,
+        teachingContent,
+        practiceExercises: practicalExercises, // 顶层字段也保留
+    };
+};
 const parseTextContent = (content, subjectName) => {
     const lines = content.split('\n').filter(line => line.trim());
 

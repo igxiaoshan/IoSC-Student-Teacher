@@ -77,6 +77,9 @@ router.use('/student-dashboard', studentDashboardRoutes);
 // 第三方服务路由
 // ============================================
 
+// 视频课程（上传+字幕）
+router.use('/video-lesson', require('./videoLesson'));
+
 // 即梦 AI
 router.use('/jimeng', require('./jimeng'));
 

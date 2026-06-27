@@ -3329,42 +3329,37 @@ ${courseware_content ? `参考课件内容：\n${courseware_content}` : ''}
 1. 首先检索知识库，获取与课程相关的教学内容
 2. 结合检索到的内容和提供的课程信息，生成课件内容
 
-请生成一个完整的课件内容，包括：
-1. 课程介绍
-2. 学习目标
-3. 知识点详解（应包含从知识库检索到的相关教学内容）
-4. 教学活动设计
-5. 练习题目
-6. 课程总结
+请生成完整的课件内容，必须包含：至少4-6个知识点、3-4个教学活动、2-3个练习题。
 
-请以JSON格式返回，包含以下字段：
+【严格要求】请以JSON格式返回，difficulty字段只能使用"初级"、"中级"、"高级"三个值，不要使用"中"、"高"、"低"等简写。
+
+JSON结构如下：
 {
-  "title": "课程标题",
-  "introduction": "课程介绍",
-  "objectives": ["学习目标1", "学习目标2"],
   "knowledgePoints": [
     {
       "title": "知识点标题",
-      "content": "详细内容",
-      "difficulty": "难度级别",
-      "estimatedTime": 时间(分钟)
+      "content": "详细内容描述（不少于50字）",
+      "difficulty": "初级|中级|高级",
+      "estimatedTime": 15
     }
   ],
   "teachingActivities": [
     {
-      "activity": "活动名称",
-      "description": "活动描述",
-      "duration": 时间(分钟)
+      "activity": "教学活动名称",
+      "description": "活动详细描述",
+      "duration": 20
     }
   ],
   "practiceExercises": [
     {
       "title": "练习标题",
       "description": "练习描述",
-      "difficulty": "难度级别",
-      "estimatedTime": 时间(分钟)
+      "difficulty": "初级|中级|高级",
+      "estimatedTime": 15
     }
   ],
+  "introduction": "课程介绍",
+  "objectives": ["学习目标1", "学习目标2"],
   "summary": "课程总结"
 }`;
 
